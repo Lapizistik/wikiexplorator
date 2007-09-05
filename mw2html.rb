@@ -34,10 +34,10 @@ def replace(content)
   content = content + "\n\n{!end}"
   
   # categories
-  content.gsub!( /\[\[Kategorie(.*?)\]\]/i ) { "{category}<font color=\"#FF0000\">Kategorie:#{$1}</font>{/category}<br>" }
+  content.gsub!( /\[\[Kategorie:(.*?)\]\]/i ) { "{category}<font color=\"#FF0000\">Kategorie:#{$1}</font>{/category}<br>" }
   
   # images
-  content.gsub!( /\[\[Bild(?:.*)\|(.*)\]\]/i ) { "{image}<font color=\"#FFFF00\">Image#{$1}</font>{/image}<br>"}
+  content.gsub!( /\[\[Bild:(.*?)\]\]/i ) { "{image}Bild:#{$1.gsub!(/.*\|/,'')}{/image}<br>"} # Bild:lpscreen.jpg|thumb|Bereichseite des Landesportals
 
   # bold
   content.gsub!(/'''(.*?)'''/) {"<strong>#{$1}</strong>"}
@@ -82,7 +82,7 @@ def replace(content)
   content.gsub!( /(^(?:\w|<strong|<em|<a|\").*)\n\s*\n/ ) {"<p>\{p\}#{$1}\{/p\}</p>\n"}
   
   # special markup of qualidative data analysis
-  content.gsub!( /(\{id\}.*\{\/title\})/ ) { "<p><strong><em>#{$1}</em></strong></p>" }
+  content.gsub!( /(\{id\}.*\{\/title\})/ ) { "<p><strong><em>#{$1.gsub!(/_/,' ')}</em></strong></p>" }
   
 #  //$html = nl2br($html);
 #  	// line breaks
