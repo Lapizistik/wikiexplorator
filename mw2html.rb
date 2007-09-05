@@ -21,8 +21,8 @@ def replace(content)
   
   # templates
   content.gsub!( /\{\{Zitat\|(.*)\|.*\}\}\s*$\n/ ) { "\{p\}\"#{$1}\"\{/p\}\n" } # citation
-  content.gsub!( /\{\{.*(Finale Version).*\}\}/ ) { "<font color=\"#FF0000\">#{$1}</font><br>" } # final version
-  content.gsub!( /\{\{Vorlage:(Dokument.*)\n*(.*)\}\}/ ) { "<font color=\"#FF0000\">#{$1} #{$2}</font><br>" } # document status
+  content.gsub!( /\{\{.*(Finale Version).*\}\}/ ) { "{status}<font color=\"#FF0000\">#{$1}</font>{/status}<br>" } # final version
+  content.gsub!( /\{\{Vorlage:(Dokument.*)\n*(.*)\}\}/ ) { "{status}<font color=\"#FF0000\">#{$1} #{$2}</font>{/status}<br>" } # document status
   content.gsub!( /\{\{.*\}\} *$/ ) { '' } # remove single line templates
   content.gsub!( /\{\{.*\n?.*\}\} *$/ ) { '' } # remove all remaining templates
   
@@ -30,10 +30,6 @@ def replace(content)
   content.gsub!( /<nowiki>(.*?)<\/nowiki>/ ) { "<pre>#{$1}</pre>" }
   content.gsub!( /^ +(.*)/ ) { "<pre>#{$1}</pre>" }
 
-  # special characters
-  content.gsub!(/\{/,'(') # left braces
-  content.gsub!(/\}/,')') # right braces
-  
   # special markup of qualidative data analysis
   content = content + "\n\n{!end}"
   
@@ -41,7 +37,7 @@ def replace(content)
   content.gsub!( /\[\[Kategorie(.*?)\]\]/i ) { "{category}<font color=\"#FF0000\">Kategorie:#{$1}</font>{/category}<br>" }
   
   # images
-  content.gsub!( /\[\[Bild(?:.*)\|*(.*)\]\]/i ) { "{image}<font color=\"#FF0000\">Image#{$1}</font>{/image}<br>"}
+  content.gsub!( /\[\[Bild(?:.*)\|(.*)\]\]/i ) { "{image}<font color=\"#FFFF00\">Image#{$1}</font>{/image}<br>"}
 
   # bold
   content.gsub!(/'''(.*?)'''/) {"<strong>#{$1}</strong>"}
@@ -52,7 +48,7 @@ def replace(content)
   content.gsub!(/''(.*?)$/) {"<em>#{$1}</em>"}
 
   # headings
-  6.downto(1) { |i| content.gsub!( /^={#{i}}(.*?)={#{i}} *$/ ) { "<h#{i}>\{h#{i}\}#{$1}\{/h#{i}\}</h#{i}>" } }
+  6.downto(1) { |i| content.gsub!( /^={#{i}}(.*?)={#{i}} *$/ ) { "<h#{i}>\{h>#{i}\}#{$1}\{/h>#{i}\}</h#{i}>" } }
   
   # links, internal
   content.gsub!( /\[\[([^\[\n]*?)\| *(.*?)\]\]/ ) { "<a class=\"internal\" href=\"#{$1}\">#{$2}</a>" } # with piped text
@@ -64,8 +60,8 @@ def replace(content)
   
   # lists
   content.gsub!(/^:+/,'') # remove forced indenting
-  content.gsub!( /^((?:\*.*\n+)+)/ ) { "\{ul\}<ul>\n#{$1.split(/\n/).collect { |line| "<li>#{line.gsub!(/^\*/,'')}</li>\n" }.join}</ul>\{/ul\}<br>\n" } # first level ul
-  content.gsub!( /^((?:#.*\n+)+)/ ) { "\{ol\}<ol>\n#{$1.split(/\n/).collect { |line| "<li>#{line.gsub!(/^#/,'')}</li>\n" }.join}</ol>\{/ol\}<br>\n" } # first level ol
+  content.gsub!( /^((?:\*.*\n+)+)/ ) { "\{l>ul\}<ul>\n#{$1.split(/\n/).collect { |line| "<li>#{line.gsub!(/^\*/,'')}</li>\n" }.join}</ul>\{/l>ul\}<br>\n" } # first level ul
+  content.gsub!( /^((?:#.*\n+)+)/ ) { "\{l>ol\}<ol>\n#{$1.split(/\n/).collect { |line| "<li>#{line.gsub!(/^#/,'')}</li>\n" }.join}</ol>\{/l>ol\}<br>\n" } # first level ol
   content.gsub!( /<li>\s*<\/li>\n/ ) { '' } # remove empty list entries (this may occur if first-level wiki-lists are entered with \n\n; they look like a single list when, in fact, they are but multiple single lists)
   content.gsub!( /^((?:<li>\*.*\n+)+)/ ) { "<ul>\n#{$1.gsub(/^<li>\*/,"<li>")}</ul>\n" } # second level ul
   content.gsub!( /^((?:<li>#.*\n+)+)/ ) { "<ol>\n#{$1.gsub(/^<li>#/,"<li>")}</ol>\n" } # second level ol
@@ -81,12 +77,12 @@ def replace(content)
   content.gsub!( /^!(.*)/ ) { "<th>#{$1}</th>" } # table header without piped markup
   content.gsub!( /^\|(.*?)\|(.*)/ ) { "<td #{$1}>#{$2}" } # table data with piped markup
   content.gsub!( /^\|(.*)/ ) { "<td>#{$1}" } # table data without piped markup
-  
-  # special markup of qualidative data analysis
-  content.gsub!( /(\{title\}.*\{\/title\})/ ) { "<h1>#{$1}</h1>" }
-
+      
   # line breaks
   content.gsub!( /(^(?:\w|<strong|<em|<a|\").*)\n\s*\n/ ) {"<p>\{p\}#{$1}\{/p\}</p>\n"}
+  
+  # special markup of qualidative data analysis
+  content.gsub!( /(\{id\}.*\{\/title\})/ ) { "<p><strong><em>#{$1}</em></strong></p>" }
   
 #  //$html = nl2br($html);
 #  	// line breaks
