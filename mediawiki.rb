@@ -240,6 +240,10 @@ module Mediawiki
       @revisions << r
     end
 
+    def inspect
+      "#<Mediawiki::User id=#{@uid} name=\"#{@name}\">"
+    end
+
   end
   
   # One page with all revisions
@@ -303,6 +307,22 @@ module Mediawiki
     # adds a revision to the page
     def <<(revision)
       @revisions << revision
+    end
+
+    # view on revisions through _filter_
+    def revisions(filter=@wiki.filter)
+      RevisionsView.new(@revisions, filter) # Reuse views?
+    end
+
+    # view on users through _filter_
+    def users(filter=@wiki.filter)
+      a = Set.new
+      revisions(filter).each { |r| a << r.user }
+      UsersView.new(a, filter)
+    end
+
+    def inspect
+      "#<Mediawiki::Page id=#{@pid} title=\"#{@title}\">"
     end
 
     #:nodoc:
@@ -384,6 +404,9 @@ module Mediawiki
       PageView.new(@links)
     end
 
+    def inspect
+      "#<Mediawiki::Revision id=#{@rid} page=#{@page.inspect}>"
+    end
 
     private
     def set_links
@@ -448,6 +471,10 @@ module Mediawiki
     # we need to decide whether a link is dangling)
     def each_link(&block)
       @internal_links.each(&block)
+    end
+
+    def inspect
+      "#<Mediawiki::Text id=#{@tid}>"
     end
 
     private
@@ -528,15 +555,17 @@ module Mediawiki
     
     alias length size
 
-    private
+    # :nodoc:
     def each_item &block
       @list.each { |i| block.call(i) if allowed?(i) }
     end
 
+    # :nodoc:
     def each_value &block
       @list.each_value { |i| block.call(i) if allowed?(i) }
     end
 
+    private
     # care for the differences between Arrays and Hashes
     def select_methods
       if @list.respond_to?(:each_value)
@@ -595,4 +624,7 @@ end
 
 if __FILE__ == $0
   wio = Mediawiki.wio(IO.getpw)
+  puts wio.pages.to_a[0].users
+
+
 end
