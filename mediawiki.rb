@@ -325,8 +325,7 @@ module Mediawiki
       "#<Mediawiki::Page id=#{@pid} title=\"#{@title}\">"
     end
 
-    #:nodoc:
-    def update_current
+    def update_current     #:nodoc:
       @current_revision = @wiki.revision_by_id(@current_revision)
     end
   end
@@ -555,13 +554,11 @@ module Mediawiki
     
     alias length size
 
-    # :nodoc:
-    def each_item &block
+    def each_item &block     # :nodoc:
       @list.each { |i| block.call(i) if allowed?(i) }
     end
 
-    # :nodoc:
-    def each_value &block
+    def each_value &block    # :nodoc:
       @list.each_value { |i| block.call(i) if allowed?(i) }
     end
 
@@ -624,7 +621,13 @@ end
 
 if __FILE__ == $0
   wio = Mediawiki.wio(IO.getpw)
-  puts wio.pages.to_a[0].users
 
+  ## Beispiele:
 
+  # Anzahl Nutzer pro Seite:
+  nusers = wio.pages.collect { |p| p.users.length }
+  puts "Avg. # of users: #{nusers.inject(0.0) { |s,i| s+i }/nusers.length}"
+  l = (nusers.select { |i| i>1 }).length
+  puts "# of pages with more than one user: %d/%d (%.2f%%)" % 
+    [l, nusers.length, l.to_f/nusers.length*100]
 end
