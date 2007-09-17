@@ -145,14 +145,14 @@ module Mediawiki
       
       # Collect the users
       @users_id = {}
-      mysql.query("select * from user").typed_each do |row|
+      mysql.each("select * from user") do |row|
         user = User.new(self, *row)
         @users_id[user.uid] = user
       end
       
       # Assign groups to them
       @usergroups = Hash.new { |h,k| h[k]=[] }
-      mysql.query("select * from user_groups").typed_each do |uid,g|
+      mysql.each("select * from user_groups") do |uid,g|
         user = @users_id[uid]
         user.groups << g
         @usergroups[g] << user
@@ -160,14 +160,14 @@ module Mediawiki
       
       # Read all the raw text data
       @texts_id = {}
-      mysql.query("select * from text").typed_each do |tid, t, flags|
+      mysql.each("select * from text") do |tid, t, flags|
         @texts_id[tid] = Text.new(self, tid, t, flags)
       end
       
       # and the pages
       @pages_id = {}
       @pages_title = {}
-      mysql.query("select * from page").typed_each do |row|
+      mysql.each("select * from page") do |row|
         page = Page.new(self, *row)
         @pages_id[page.pid] = page
         @pages_title[page.title] = page
@@ -176,7 +176,7 @@ module Mediawiki
       # And now the revisions
       @revisions_id = {}
       @timeline = []
-      mysql.query("select * from revision").typed_each do |row|
+      mysql.each("select * from revision") do |row|
         revision = Revision.new(self, *row)
         @revisions_id[revision.rid] = revision
         @timeline << revision.timestamp
@@ -308,9 +308,6 @@ module Mediawiki
     #:nodoc:
     def update_current
       @current_revision = @wiki.revision_by_id(@current_revision)
-      class << self
-        private :update_current
-      end
     end
   end
   

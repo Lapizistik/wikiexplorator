@@ -5,6 +5,7 @@ require 'mysql'
 class Mysql
   class Result
     
+    # costly, use Mysql#each instead.
     def typed_each
       convert = fetch_fields.collect do |f| 
         if !f.is_num?
@@ -23,5 +24,13 @@ class Mysql
       end
     end
   end
+
+  def each(stmt, &block)
+    st = prepare(stmt)
+    st.execute
+    st.each &block
+    st.close
+  end
+    
 end
 
