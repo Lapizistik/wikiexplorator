@@ -131,7 +131,7 @@ module Mediawiki
 
     # view on revisions through _filter_
     def revisions(filter=@filter)
-      new RevisionsView(@pages_id, filter) # Reuse views?
+      RevisionsView.new(@revisions_id, filter) # Reuse views?
     end
 
     #
@@ -144,7 +144,10 @@ module Mediawiki
       puts "connected." if DEBUG
       
       # Collect the users
-      @users_id = {}
+      # The uid=0 user:
+      u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
+                   '', nil, nil, nil, nil, nil, nil, nil, nil, nil);
+      @users_id = {0 => u0}      
       mysql.each("select * from user") do |row|
         user = User.new(self, *row)
         @users_id[user.uid] = user
@@ -362,18 +365,16 @@ module Mediawiki
       @rid = rev_id
       @comment = comment
       @timestamp = Mediawiki.s2time(timestamp)
-      @minor_edit = minor_edit
+      @minor_edit = (minor_edit == 1)
       # @deleted = deleted  # unused
       @len = len
       @parent_id = parent_id
 
-      if user_id>0             # non-anonymous edit
-        @user = @wiki.user_by_id(user_id)
-        if @user
-          @user << self
-        else
-          warn "Revision #{@rid}: User #{user_id} does not exist!"
-        end
+      @user = @wiki.user_by_id(user_id)
+      if @user
+        @user << self
+      else
+        warn "Revision #{@rid}: User #{user_id} does not exist!"
       end
       @page = @wiki.page_by_id(page_id)
       if @page
