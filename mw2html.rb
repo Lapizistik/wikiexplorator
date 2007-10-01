@@ -82,7 +82,7 @@ def replace(content)
   content.gsub!( /(^(?:\w|<strong|<em|<a|\").*)\n\s*\n/ ) {"<p>\{p\}#{$1}\{/p\}</p>\n"}
   
   # special markup of qualidative data analysis
-  content.gsub!( /(\{id\}.*\{\/title\})/ ) { "<p><strong><em>#{$1.gsub!(/_/,' ')}</em></strong></p>" }
+  content.gsub!( /(\{id\}.*\{\/title\})/ ) { "<p><strong><em>#{$1.gsub(/_/,' ')}</em></strong></p>" }
   
 #  //$html = nl2br($html);
 #  	// line breaks
