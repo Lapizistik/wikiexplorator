@@ -38,7 +38,7 @@ module Mediawiki
   end
 
   
-  # Main class representing the whole wiki
+  # = Main class representing the whole wiki
   #
   # You can choose a view on the Wiki which only includes certain namespaces
   # and a certain point in time.
@@ -86,14 +86,20 @@ module Mediawiki
       puts "Done." if DEBUG
     end
     
-    def ns
-      @filter.ns
+    def namespaces
+      @filter.namespaces
     end
+
+    alias ns namespaces
 
     def namespace=(n)
       @filter.namespace = n
     end
     
+    def deny_user(u)
+      @filter.deny_user(u)
+    end
+
     def to_s
       @host+'/'+@db
     end
@@ -133,6 +139,44 @@ module Mediawiki
     def revisions(filter=@filter)
       RevisionsView.new(@revisions_id, filter) # Reuse views?
     end
+
+    def pagegraph(filter=@filter)
+      ps = pages(filter)
+      g = Graph.new(ps, :directed) { |n| n.title }
+      ps.each do |p|
+        p.links(filter).each do |q|
+          g.link(p,q)
+        end
+      end
+      g
+    end
+
+    def coauthorgraph(filter=@filter)
+      us = users(filter)
+      g = Graph.new(us, :undirected) { |n| n.name }
+      pages(filter).each do |p| 
+        nodes = p.users(filter)
+        nodes.each do |n| 
+          nodes.each do |m| 
+            g.link(n,m) if n.uid < m.uid
+          end
+        end
+      end
+      g
+    end
+
+    def communicationgraph(filter=@filter)
+      us = users(filter)
+      g = Graph.new(us, :directed) { |n| n.name }
+      pages(filter).each do |p| 
+        p.revisions(filter).inject do |a,b|
+          g.link(a.user,b.user)
+          b
+        end
+      end
+      g
+    end
+      
 
     #
     # internal stuff
@@ -317,6 +361,16 @@ module Mediawiki
       RevisionsView.new(@revisions, filter) # Reuse views?
     end
 
+    # current revision (may get changed while implementing history)
+    def revision
+      @current_revision
+    end
+
+    # links of current revision (may get changed while implementing history)
+    def links(filter=@filter)
+      revision.links(filter)
+    end
+
     # view on users through _filter_
     def users(filter=@wiki.filter)
       a = Set.new
@@ -352,7 +406,7 @@ module Mediawiki
     attr_reader :timestamp
     # length of revision in bytes (since 1.10)
     attr_reader :len
-    # list of links to non-existing pages (regardless ov views)
+    # list of links to non-existing pages (regardless of views)
     attr_reader :full_dangling
     
     # creates a new Revision. _wiki_ is the Wiki the revision belongs to, all
@@ -401,7 +455,7 @@ module Mediawiki
     
     # list of pages linked from this revision. Returns a list of Pages
     def links(filter=@wiki.filter)
-      PageView.new(@links)
+      PagesView.new(@links, filter)
     end
 
     def inspect
@@ -479,7 +533,8 @@ module Mediawiki
 
     private
     def parse_text
-      @text.gsub(/<nowiki>.*?<\/nowiki>/,'').scan(/\[\[.*?\]\]/m).each do |l|
+      @text.gsub(/<nowiki>.*?<\/nowiki>/,'').scan(/\[\[(.*?)\]\]/m).each do |l|
+        l = l.first
         if l =~/(.*)\|(.*)/  # Named link
           l = $1
         end
@@ -492,13 +547,18 @@ module Mediawiki
   # A filter used for the views
   class Filter
 
-    # the Set of namespaces to be allowed. To add namespaces use e.g.:
-    # <tt>filter.namespaces << 1</tt>
+    # The Set of namespaces to be allowed. To add namespaces use e.g.:
+    # <tt>filter.namespaces << 1</tt>.
+    #
+    # If the set includes :all all namespaces are included.
     attr_accessor :namespaces
 
     attr_accessor :denied_users
 
     attr_accessor :redirects
+
+    # If revisions with minor edits are included
+    attr_accessor :minor_edits
 
     # Creates a new filter for the _wiki_.
     #
@@ -514,7 +574,10 @@ module Mediawiki
     end
 
     # add user to the Set of denied users
+    #
+    # u is the user to be filtered or its uid.
     def deny_user(u)
+      u = @wiki.user_by_id if u.kind_of?(Integer)
       @denied_users << u
     end
 
@@ -525,6 +588,10 @@ module Mediawiki
 
     def include_namespace(n)
       @namespaces << n
+    end
+
+    def include_all_namespaces
+      @namespaces << :all
     end
 
     alias ns namespaces
@@ -586,25 +653,112 @@ module Mediawiki
 
   end
   
-  # ToDo handlin of redirects: as filtering works, but aliazing not!
+  # ToDo handling of redirects: as filtering works, but aliazing not!
   class PagesView < View
     def allowed?(page)
-      @filter.namespaces.include?(page.namespace) &&
+      (@filter.namespaces.include?(:all) || 
+       @filter.namespaces.include?(page.namespace)) &&
         (!(@filter.redirects==:filter) || !page.is_redirect?)
     end
   end
 
   class UsersView < View
     def allowed?(user)
-      !@filter.denied_users.include?(user)
+      !@filter.denied_users.include?(user) 
     end
   end
 
   class RevisionsView < View
     def allowed?(revision)
-      !@filter.denied_users.include?(revision.user)
+      !@filter.denied_users.include?(revision.user) &&
+        !(@filter.minor_edits && revision.minor_edit?)
     end
   end
+
+
+  # Container for simple Graphs
+  class Graph
+    attr_reader :nodes, :links, :linkcount, :directed
+    def initialize(nodes, *attrs, &lproc)
+      @nodes = nodes.to_a
+      @lproc = lproc || lambda { |n| n.label }
+      @links = Hash.new(0)
+      @linkcount = true
+      attrs.each do |attr|
+        case attr
+        when :directed : @directed = true
+        when :linkcount : @linkcount = true
+        when :nolinkcount : @linkcount = false
+        end
+      end
+    end
+    def link(src, dest, *attrs)
+      src, dest = dest, src  if !@directed && (src.object_id > dest.object_id)
+      @links[Link.new(self, src, dest, *attrs)] += 1
+    end
+
+    def to_dot(*attrs)
+      d = "#{'di' if @directed}graph G {\n"
+      d << attrs.join(';')
+      @nodes.each { |n| 
+        d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).tr('"',"'")}\"];\n" }
+      @links.each { |l,count| d << l.to_dot(count) }
+      d << "}\n"
+    end
+
+    def to_dotfile(filename, *attrs)
+      File.open(filename,'w') { |file| file << to_dot(*attrs) }
+    end
+
+    def Graph::nid(o)
+      "n%x" % o.object_id
+    end
+
+    class Link
+      attr_reader :src, :dest, :attr
+      def initialize(graph, src, dest, *attrs)
+        @graph = graph
+        @src = src
+        @dest = dest
+        @attrs = attrs
+      end
+      def to_dot(count)
+        s = "  \"#{nid(@src)}\" #{edgesymbol} \"#{nid(@dest)}\" "
+        s << "[#{@attrs.join(',')}]" unless @attrs.empty?
+        s << weightlabel(count) if linkcount
+        s << ";\n"
+        s
+      end
+
+      def edgesymbol
+        directed ? '->' : '--'
+      end
+
+      def nid(o)
+        Graph::nid(o)
+      end
+
+      def linkcount
+        @graph.linkcount
+      end
+
+      def directed
+        @graph.directed
+      end
+
+      def weightlabel(count)
+        "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
+      end
+
+      def eql?(other)
+        (@src==other.src) && (@dest==other.dest) && (@attr==other.attr)
+      end
+      def hash
+        @src.hash ^ @dest.hash
+      end
+    end
+  end
+
 
   # Utility funtions
 
