@@ -166,14 +166,33 @@ module Mediawiki
       g
     end
 
+    # Luhmann communication graph. Any revision is considered as an answer
+    # to the last revision before (direct linking)
     def communicationgraph(filter=@filter)
       us = users(filter)
       g = Graph.new(us, :directed) { |n| n.name }
       pages(filter).each do |p| 
         p.revisions(filter).inject do |a,b|
-          g.link(a.user,b.user)
+          g.link(b.user,a.user)
           b
         end
+      end
+      g
+    end
+
+    # Luhmann communication graph. Any revision is considered as an answer
+    # to all revisions before (group linking)
+    def groupcommunicationgraph(filter=@filter)
+      us = users(filter)
+      g = Graph.new(us, :directed) { |n| n.name }
+      s = Set.new
+      pages(filter).each do |p| 
+        s.clear
+        rusers = p.revisions(filter).collect { |r| r.user } 
+        while b = rusers.pop
+          rusers.each { |a| s << [a,b] }
+        end
+        s.each { |a,b| g.link(b, a) }
       end
       g
     end
@@ -293,6 +312,10 @@ module Mediawiki
       "#<Mediawiki::User id=#{@uid} name=\"#{@name}\">"
     end
 
+    def node_id
+      "u#{uid}"
+    end
+
   end
   
   # One page with all revisions
@@ -387,6 +410,10 @@ module Mediawiki
     def update_current     #:nodoc:
       @current_revision = @wiki.revision_by_id(@current_revision)
     end
+
+    def node_id
+      "p#{pid}"
+    end
   end
   
   
@@ -464,6 +491,10 @@ module Mediawiki
       "#<Mediawiki::Revision id=#{@rid} page=#{@page.inspect}>"
     end
 
+    def node_id
+      "r#{rid}"
+    end
+
     private
     def set_links
       @links = []
@@ -476,7 +507,6 @@ module Mediawiki
         end
       end
     end
-    
   end
   
   # the pure plain text
@@ -531,6 +561,10 @@ module Mediawiki
 
     def inspect
       "#<Mediawiki::Text id=#{@tid}>"
+    end
+
+    def node_id
+      "t#{tid}"
     end
 
     private
@@ -712,7 +746,11 @@ module Mediawiki
     end
 
     def Graph::nid(o)
-      "n%x" % o.object_id
+      if o.respond_to?(:node_id)
+        o.node_id
+      else
+        "n%x" % o.object_id
+      end
     end
 
     def nid(o)
