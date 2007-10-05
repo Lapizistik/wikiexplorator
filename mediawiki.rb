@@ -6,7 +6,8 @@
 # A kind of history object along timestamps should be built
 #++
 
-require 'mysql-typed' # my own hack
+#require 'mysql-typed' # my own hack
+require 'dbi'
 require 'set'
 
 # Asks for user input with echo off at console
@@ -182,60 +183,61 @@ module Mediawiki
     # internal stuff
     #
     private 
-    def read_db
+    def read_db(dbengine='Mysql')
       puts "connecting to database #{@host}/#{@db}" if DEBUG
-      mysql = Mysql::new(@host, @dbuser, @dbpassword, @db)
-      puts "connected." if DEBUG
+      DBI.connect("DBI:#{dbengine}:#{@db}:#{@host}", 
+                  @dbuser, @dbpassword) do |dbh|
+        puts "connected." if DEBUG
       
-      # Collect the users
-      # The uid=0 user:
-      u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
-                   '', nil, nil, nil, nil, nil, nil, nil, nil, nil);
-      @users_id = {0 => u0}      
-      mysql.each("select * from user") do |row|
-        user = User.new(self, *row)
-        @users_id[user.uid] = user
-      end
-      
-      # Assign groups to them
-      @usergroups = Hash.new { |h,k| h[k]=[] }
-      mysql.each("select * from user_groups") do |uid,g|
-        user = @users_id[uid]
-        user.groups << g
-        @usergroups[g] << user
-      end
-      
-      # Read all the raw text data
-      @texts_id = {}
-      mysql.each("select * from text") do |tid, t, flags|
-        @texts_id[tid] = Text.new(self, tid, t, flags)
-      end
-      
-      # and the pages
-      @pages_id = {}
-      @pages_title = {}
-      mysql.each("select * from page") do |row|
-        page = Page.new(self, *row)
-        @pages_id[page.pid] = page
-        @pages_title[page.title] = page
-      end
-
-      # And now the revisions
-      @revisions_id = {}
-      @timeline = []
-      mysql.each("select * from revision") do |row|
-        revision = Revision.new(self, *row)
-        @revisions_id[revision.rid] = revision
-        @timeline << revision.timestamp
-      end
-      @timeline.sort!
-      @time = @timeline.last
-
-      @pages_id.each_value do |page|
-        page.update_current
+        # Collect the users
+        # The uid=0 user:
+        u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
+                      '', nil, nil, nil, nil, nil, nil, nil, nil, nil);
+        @users_id = {0 => u0}      
+        dbh.select_all("select * from user") do |row|
+          user = User.new(self, *row)
+          @users_id[user.uid] = user
+        end
+        
+        # Assign groups to them
+        @usergroups = Hash.new { |h,k| h[k]=[] }
+        dbh.select_all("select * from user_groups") do |uid,g|
+          user = @users_id[uid]
+          user.groups << g
+          @usergroups[g] << user
+        end
+        
+        # Read all the raw text data
+        @texts_id = {}
+        dbh.select_all("select * from text") do |tid, t, flags|
+          @texts_id[tid] = Text.new(self, tid, t, flags)
+        end
+        
+        # and the pages
+        @pages_id = {}
+        @pages_title = {}
+        dbh.select_all("select * from page") do |row|
+          page = Page.new(self, *row)
+          @pages_id[page.pid] = page
+          @pages_title[page.title] = page
+        end
+        
+        # And now the revisions
+        @revisions_id = {}
+        @timeline = []
+        dbh.select_all("select * from revision") do |row|
+          revision = Revision.new(self, *row)
+          @revisions_id[revision.rid] = revision
+          @timeline << revision.timestamp
+        end
+        @timeline.sort!
+        @time = @timeline.last
+        
+        @pages_id.each_value do |page|
+          page.update_current
+        end
       end
     end
-
   end
   
   # One user
