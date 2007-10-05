@@ -565,8 +565,7 @@ module Mediawiki
     # By default the time is newest and the namespaces are #<Set: {0}>.
     def initialize(wiki)
       @wiki = wiki
-      @namespaces = [0]  # default namespace
-      @namespaces = Set.new
+      @namespaces = Set.new # default namespace
       @namespaces << 0
       @redirects = :keep
 
@@ -699,7 +698,7 @@ module Mediawiki
 
     def to_dot(*attrs)
       d = "#{'di' if @directed}graph G {\n"
-      d << attrs.join(';')
+      d << attrs.collect { |a| "  #{a};\n"}.join
       @nodes.each { |n| 
         d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).tr('"',"'")}\"];\n" }
       @links.each { |l,count| d << l.to_dot(count) }
@@ -712,6 +711,10 @@ module Mediawiki
 
     def Graph::nid(o)
       "n%x" % o.object_id
+    end
+
+    def nid(o)
+      Graph::nid(o)
     end
 
     class Link
