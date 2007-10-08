@@ -141,9 +141,13 @@ module Mediawiki
       RevisionsView.new(@revisions_id, filter) # Reuse views?
     end
 
-    def pagegraph(filter=@filter)
+    def pagegraph(filter=@filter, &block)
       ps = pages(filter)
-      g = Graph.new(ps, :directed) { |n| n.title }
+      if block
+        g = Graph.new(ps, :directed, block)
+      else
+        g = Graph.new(ps, :directed) { |n| n.title }
+      end
       ps.each do |p|
         p.links(filter).each do |q|
           g.link(p,q)
@@ -152,9 +156,13 @@ module Mediawiki
       g
     end
 
-    def coauthorgraph(filter=@filter)
+    def coauthorgraph(filter=@filter, &block)
       us = users(filter)
-      g = Graph.new(us, :undirected) { |n| n.name }
+      if block
+        g = Graph.new(us, :undirected, block)
+      else
+        g = Graph.new(us, :undirected) { |n| n.name }
+      end
       pages(filter).each do |p| 
         nodes = p.users(filter)
         nodes.each do |n| 
@@ -168,9 +176,13 @@ module Mediawiki
 
     # Luhmann communication graph. Any revision is considered as an answer
     # to the last revision before (direct linking)
-    def communicationgraph(filter=@filter)
+    def communicationgraph(filter=@filter, &block)
       us = users(filter)
-      g = Graph.new(us, :directed) { |n| n.name }
+      if block
+        g = Graph.new(us, :directed, block)
+      else
+        g = Graph.new(us, :directed) { |n| n.name }
+      end
       pages(filter).each do |p| 
         p.revisions(filter).inject do |a,b|
           g.link(b.user,a.user)
@@ -182,9 +194,13 @@ module Mediawiki
 
     # Luhmann communication graph. Any revision is considered as an answer
     # to all revisions before (group linking)
-    def groupcommunicationgraph(filter=@filter)
+    def groupcommunicationgraph(filter=@filter, &block)
       us = users(filter)
-      g = Graph.new(us, :directed) { |n| n.name }
+      if block
+        g = Graph.new(us, :directed, block)
+      else
+        g = Graph.new(us, :directed) { |n| n.name }
+      end
       s = Set.new
       pages(filter).each do |p| 
         s.clear
@@ -213,7 +229,7 @@ module Mediawiki
         u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
                       '', nil, nil, nil, nil, nil, nil, nil, nil, nil);
         @users_id = {0 => u0}      
-        dbh.select_all("select * from user") do |row|
+        dbh.select_all("select user_id, user_name, user_real_name, user_email, user_options, user_touched, user_email_authenticated, user_email_token_expires, user_registration, user_newpass_time, user_editcount from user") do |row|
           user = User.new(self, *row)
           @users_id[user.uid] = user
         end
@@ -268,20 +284,21 @@ module Mediawiki
     attr_reader :email
     attr_reader :options
     attr_reader :touched
-    attr_reader :token
     attr_reader :email_authenticated
-    attr_reader :email_token
     attr_reader :email_token_expires
     attr_reader :registration
     attr_reader :newpass_time
     attr_reader :editcount
     attr_reader :groups
     attr_reader :revisions
-    
+
+    # The parameters do not correspond exactly to the user table fields as we
+    # do not want to read the user_password, user_newpassword, user_token and
+    # user_email_token fields (as these may contain sensible data).
     def initialize(wiki,
-                   user_id, name, real_name, password, newpassword, 
-                   email, options, touched, token, email_authenticated, 
-                   email_token, email_token_expires, registration, 
+                   user_id, name, real_name,
+                   email, options, touched, email_authenticated, 
+                   email_token_expires, registration, 
                    newpass_time=nil, editcount=nil)
       @uid = user_id
       @name = name
@@ -291,9 +308,9 @@ module Mediawiki
       @email = email
       @options = options
       @touched = touched
-      @token = token
+      # @token = token
       @email_authenticated = email_authenticated
-      @email_token = email_token
+      # @email_token = email_token
       @email_token_expires = email_token_expires
       @registration = registration
       @newpass_time = newpass_time
@@ -433,7 +450,9 @@ module Mediawiki
     attr_reader :user
     # the time of edit (I don't bother whether this is GMT or MET)
     attr_reader :timestamp
-    # length of revision in bytes (since 1.10)
+    # length of revision in bytes (since 1.10). This is the length 
+    # as given in the revision table. For the length of the corresponding
+    # Text object use the methods #length or #size.
     attr_reader :len
     # list of links to non-existing pages (regardless of views)
     attr_reader :full_dangling
@@ -486,6 +505,14 @@ module Mediawiki
     def links(filter=@wiki.filter)
       PagesView.new(@links, filter)
     end
+
+    # Size of the Text object associated with this Revision object. 
+    # Don't confuse this with #len.
+    def size
+      @text.size
+    end
+
+    alias length size
 
     def inspect
       "#<Mediawiki::Revision id=#{@rid} page=#{@page.inspect}>"
@@ -566,6 +593,14 @@ module Mediawiki
     def node_id
       "t#{tid}"
     end
+
+    # the size of the text in bytes (this is similar but not equal to 
+    # the size of the text in chars due to UTF-8 encoding).
+    def size
+      @text.size
+    end
+
+    alias length size
 
     private
     def parse_text
