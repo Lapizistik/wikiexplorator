@@ -83,7 +83,9 @@ module Mediawiki
       
       @filter = Filter.new(self)
       
-      read_db
+      if (err=read_db)
+        warn err # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error handling!
+      end
       puts "Done." if DEBUG
     end
     
@@ -220,59 +222,64 @@ module Mediawiki
     private 
     def read_db(dbengine='Mysql')
       puts "connecting to database #{@host}/#{@db}" if DEBUG
-      DBI.connect("DBI:#{dbengine}:#{@db}:#{@host}", 
-                  @dbuser, @dbpassword) do |dbh|
-        puts "connected." if DEBUG
-      
-        # Collect the users
-        # The uid=0 user:
-        u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
-                      '', nil, nil, nil, nil, nil, nil, nil, nil, nil);
-        @users_id = {0 => u0}      
-        dbh.select_all("select user_id, user_name, user_real_name, user_email, user_options, user_touched, user_email_authenticated, user_email_token_expires, user_registration, user_newpass_time, user_editcount from user") do |row|
-          user = User.new(self, *row)
-          @users_id[user.uid] = user
+      begin
+        DBI.connect("DBI:#{dbengine}:#{@db}:#{@host}", 
+                    @dbuser, @dbpassword) do |dbh|
+          puts "connected." if DEBUG
+          
+          # Collect the users
+          # The uid=0 user:
+          u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
+                        '', nil, nil, nil, nil, nil);
+          @users_id = {0 => u0}      
+          dbh.select_all("select user_id, user_name, user_real_name, user_email, user_options, user_touched, user_email_authenticated, user_email_token_expires, user_registration, user_newpass_time, user_editcount from user") do |row|
+            user = User.new(self, *row)
+            @users_id[user.uid] = user
+          end
+          
+          # Assign groups to them
+          @usergroups = Hash.new { |h,k| h[k]=[] }
+          dbh.select_all("select * from user_groups") do |uid,g|
+            user = @users_id[uid]
+            user.groups << g
+            @usergroups[g] << user
+          end
+          
+          # Read all the raw text data
+          @texts_id = {}
+          dbh.select_all("select * from text") do |tid, t, flags|
+            @texts_id[tid] = Text.new(self, tid, t, flags)
+          end
+          
+          # and the pages
+          @pages_id = {}
+          @pages_title = {}
+          dbh.select_all("select * from page") do |row|
+            page = Page.new(self, *row)
+            @pages_id[page.pid] = page
+            @pages_title[page.title] = page
+          end
+          
+          # And now the revisions
+          @revisions_id = {}
+          @timeline = []
+          dbh.select_all("select * from revision") do |row|
+            revision = Revision.new(self, *row)
+            @revisions_id[revision.rid] = revision
+            @timeline << revision.timestamp
+          end
+          @timeline.sort!
+          @time = @timeline.last
+          
+          @pages_id.each_value do |page|
+            page.update_current
+          end
         end
-        
-        # Assign groups to them
-        @usergroups = Hash.new { |h,k| h[k]=[] }
-        dbh.select_all("select * from user_groups") do |uid,g|
-          user = @users_id[uid]
-          user.groups << g
-          @usergroups[g] << user
-        end
-        
-        # Read all the raw text data
-        @texts_id = {}
-        dbh.select_all("select * from text") do |tid, t, flags|
-          @texts_id[tid] = Text.new(self, tid, t, flags)
-        end
-        
-        # and the pages
-        @pages_id = {}
-        @pages_title = {}
-        dbh.select_all("select * from page") do |row|
-          page = Page.new(self, *row)
-          @pages_id[page.pid] = page
-          @pages_title[page.title] = page
-        end
-        
-        # And now the revisions
-        @revisions_id = {}
-        @timeline = []
-        dbh.select_all("select * from revision") do |row|
-          revision = Revision.new(self, *row)
-          @revisions_id[revision.rid] = revision
-          @timeline << revision.timestamp
-        end
-        @timeline.sort!
-        @time = @timeline.last
-        
-        @pages_id.each_value do |page|
-          page.update_current
-        end
+      rescue DBI::InterfaceError => err
+        return err
       end
     end
+    return nil
   end
   
   # One user
