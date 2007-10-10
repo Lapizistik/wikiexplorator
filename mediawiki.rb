@@ -306,6 +306,7 @@ module Mediawiki
                    email, options, touched, email_authenticated, 
                    email_token_expires, registration, 
                    newpass_time=nil, editcount=nil)
+      @wiki = wiki
       @uid = user_id
       @name = name
       @real_name = real_name
