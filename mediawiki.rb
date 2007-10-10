@@ -6,9 +6,9 @@
 # A kind of history object along timestamps should be built
 #++
 
-#require 'mysql-typed' # my own hack
-require 'dbi'
-require 'set'
+require 'dbi'      # generic database engine
+require 'set'      # the Set class
+require 'dotgraph' # generic dotfile graph class
 
 # Asks for user input with echo off at console
 def IO.getpw(question="Password: ")
@@ -146,9 +146,9 @@ module Mediawiki
     def pagegraph(filter=@filter, &block)
       ps = pages(filter)
       if block
-        g = Graph.new(ps, :directed, block)
+        g = DotGraph.new(ps, :directed, block)
       else
-        g = Graph.new(ps, :directed) { |n| n.title }
+        g = DotGraph.new(ps, :directed) { |n| n.title }
       end
       ps.each do |p|
         p.links(filter).each do |q|
@@ -161,9 +161,9 @@ module Mediawiki
     def coauthorgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = Graph.new(us, :undirected, block)
+        g = DotGraph.new(us, :undirected, block)
       else
-        g = Graph.new(us, :undirected) { |n| n.name }
+        g = DotGraph.new(us, :undirected) { |n| n.name }
       end
       pages(filter).each do |p| 
         nodes = p.users(filter)
@@ -181,9 +181,9 @@ module Mediawiki
     def communicationgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = Graph.new(us, :directed, block)
+        g = DotGraph.new(us, :directed, block)
       else
-        g = Graph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed) { |n| n.name }
       end
       pages(filter).each do |p| 
         p.revisions(filter).inject do |a,b|
@@ -199,9 +199,9 @@ module Mediawiki
     def groupcommunicationgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = Graph.new(us, :directed, block)
+        g = DotGraph.new(us, :directed, block)
       else
-        g = Graph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed) { |n| n.name }
       end
       s = Set.new
       pages(filter).each do |p| 
@@ -297,7 +297,6 @@ module Mediawiki
     attr_reader :newpass_time
     attr_reader :editcount
     attr_reader :groups
-    attr_reader :revisions
 
     # The parameters do not correspond exactly to the user table fields as we
     # do not want to read the user_password, user_newpassword, user_token and
@@ -328,6 +327,22 @@ module Mediawiki
       @revisions = []
     end
 
+    # view on revisions through _filter_
+    def revisions(filter=@wiki.filter)
+      RevisionsView.new(@revisions, filter) # Reuse views?
+    end
+
+    # unfiltered revisions
+    def all_revisions
+      @revisions
+    end
+
+    # view on pages edited by this user through _filter_
+    def pages(filter=@wiki.filter)
+      PagesView.new(revisions(filter).collect { r.page }.to_set)
+    end
+
+    # add a revision
     def <<(r)
       @revisions << r
     end
@@ -751,99 +766,6 @@ module Mediawiki
         !(@filter.minor_edits && revision.minor_edit?)
     end
   end
-
-
-  # Container for simple Graphs
-  class Graph
-    attr_reader :nodes, :links, :linkcount, :directed
-    def initialize(nodes, *attrs, &lproc)
-      @nodes = nodes.to_a
-      @lproc = lproc || lambda { |n| n.label }
-      @links = Hash.new(0)
-      @linkcount = true
-      attrs.each do |attr|
-        case attr
-        when :directed : @directed = true
-        when :linkcount : @linkcount = true
-        when :nolinkcount : @linkcount = false
-        end
-      end
-    end
-    def link(src, dest, *attrs)
-      src, dest = dest, src  if !@directed && (src.object_id > dest.object_id)
-      @links[Link.new(self, src, dest, *attrs)] += 1
-    end
-
-    def to_dot(*attrs)
-      d = "#{'di' if @directed}graph G {\n"
-      d << attrs.collect { |a| "  #{a};\n"}.join
-      @nodes.each { |n| 
-        d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).tr('"',"'")}\"];\n" }
-      @links.each { |l,count| d << l.to_dot(count) }
-      d << "}\n"
-    end
-
-    def to_dotfile(filename, *attrs)
-      File.open(filename,'w') { |file| file << to_dot(*attrs) }
-    end
-
-    def Graph::nid(o)
-      if o.respond_to?(:node_id)
-        o.node_id
-      else
-        "n%x" % o.object_id
-      end
-    end
-
-    def nid(o)
-      Graph::nid(o)
-    end
-
-    class Link
-      attr_reader :src, :dest, :attr
-      def initialize(graph, src, dest, *attrs)
-        @graph = graph
-        @src = src
-        @dest = dest
-        @attrs = attrs
-      end
-      def to_dot(count)
-        s = "  \"#{nid(@src)}\" #{edgesymbol} \"#{nid(@dest)}\" "
-        s << "[#{@attrs.join(',')}]" unless @attrs.empty?
-        s << weightlabel(count) if linkcount
-        s << ";\n"
-        s
-      end
-
-      def edgesymbol
-        directed ? '->' : '--'
-      end
-
-      def nid(o)
-        Graph::nid(o)
-      end
-
-      def linkcount
-        @graph.linkcount
-      end
-
-      def directed
-        @graph.directed
-      end
-
-      def weightlabel(count)
-        "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
-      end
-
-      def eql?(other)
-        (@src==other.src) && (@dest==other.dest) && (@attr==other.attr)
-      end
-      def hash
-        @src.hash ^ @dest.hash
-      end
-    end
-  end
-
 
   # Utility funtions
 
