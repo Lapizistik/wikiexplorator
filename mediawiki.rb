@@ -278,8 +278,8 @@ module Mediawiki
       rescue DBI::InterfaceError => err
         return err
       end
+      return nil
     end
-    return nil
   end
   
   # One user
