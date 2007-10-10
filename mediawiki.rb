@@ -340,7 +340,7 @@ module Mediawiki
 
     # view on pages edited by this user through _filter_
     def pages(filter=@wiki.filter)
-      PagesView.new(revisions(filter).collect { |r| r.page }.to_set, filter)
+      PagesView.new(revisions(filter).collect { |r| r.page }.compact.to_set, filter)
     end
 
     # add a revision
@@ -670,7 +670,7 @@ module Mediawiki
     #
     # u is the user to be filtered or its uid.
     def deny_user(u)
-      u = @wiki.user_by_id if u.kind_of?(Integer)
+      u = @wiki.user_by_id(u) if u.kind_of?(Integer)
       @denied_users << u
     end
 
