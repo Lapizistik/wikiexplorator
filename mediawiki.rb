@@ -340,7 +340,7 @@ module Mediawiki
 
     # view on pages edited by this user through _filter_
     def pages(filter=@wiki.filter)
-      PagesView.new(revisions(filter).collect { r.page }.to_set)
+      PagesView.new(revisions(filter).collect { |r| r.page }.to_set)
     end
 
     # add a revision
