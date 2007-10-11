@@ -24,21 +24,6 @@ end
 module Mediawiki
   DEBUG = true
 
-  # Creates a new Wiki object from the wio database.
-  #
-  # _pw_ is the database password.
-  def Mediawiki.wio(pw)
-    Wiki.wio(pw)
-  end
-
-  # Creates a new Wiki object from the mfg database.
-  #
-  # _pw_ is the database password.
-  def Mediawiki.mfg(pw)
-    Wiki.mfg(pw)
-  end
-
-  
   # = Main class representing the whole wiki
   #
   # You can choose a view on the Wiki which only includes certain namespaces
@@ -99,8 +84,8 @@ module Mediawiki
       @filter.namespace = n
     end
     
-    def deny_user(u)
-      @filter.deny_user(u)
+    def deny_user(*u)
+      @filter.deny_user(*u)
     end
 
     def to_s
@@ -111,19 +96,32 @@ module Mediawiki
       "#<Mediawiki::Wiki #{@dbuser}@#{@host}/#{@db} #{@pages_id.length} pages, #{@revisions_id.length} revisions, #{@users_id.length} users>"
     end
 
-    def page_by_title(t)
-      @pages_title[t]
+    # gives the Page object with title _t_ in namespace _ns_
+    def page_by_title(t, ns=0)
+      @pages_title[page_tns(t,ns)]
     end
 
+    # gives the Page object with pid _i_
     def page_by_id(i)
       @pages_id[i]
     end
+
+    # gives the Text object with tid _i_
     def text_by_id(i)
       @texts_id[i]
     end
+
+    # gives the User object with uid _i_
     def user_by_id(i)
       @users_id[i]
     end
+
+    # gives the User object with name _n_
+    def user_by_name(n)
+      @users_name[n]
+    end
+
+    # gives the Revision object with rid _i_
     def revision_by_id(i)
       @revisions_id[i]
     end
@@ -231,10 +229,12 @@ module Mediawiki
           # The uid=0 user:
           u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
                         '', nil, nil, nil, nil, nil);
+          @users_name = {}
           @users_id = {0 => u0}      
           dbh.select_all("select user_id, user_name, user_real_name, user_email, user_options, user_touched, user_email_authenticated, user_email_token_expires, user_registration, user_newpass_time, user_editcount from user") do |row|
             user = User.new(self, *row)
             @users_id[user.uid] = user
+            @users_name[user.name] = user
           end
           
           # Assign groups to them
@@ -257,7 +257,7 @@ module Mediawiki
           dbh.select_all("select * from page") do |row|
             page = Page.new(self, *row)
             @pages_id[page.pid] = page
-            @pages_title[page.title] = page
+            @pages_title[page_tns(page.title, page.namespace)] = page
           end
           
           # And now the revisions
@@ -274,11 +274,25 @@ module Mediawiki
           @pages_id.each_value do |page|
             page.update_current
           end
+
+          # And additional information by ourselves
+          # TODO: only if this table exists in the database!
+          dbh.select_all("select * from wio_genres") do |pid, genres|
+            if p = @pages_id[pid]
+              p.set_genres_from_string(genres)
+            else
+              warn "page_id #{pid} from wio_genres not found in pages!"
+            end
+          end
+
         end
       rescue DBI::InterfaceError => err
         return err
       end
       return nil
+    end
+    def page_tns(t, ns)
+      [t, ns]
     end
   end
   
@@ -373,6 +387,18 @@ module Mediawiki
     attr_reader :counter
     # some value used for Special:Randompage
     attr_reader :random
+    # the genres identified in this Page.
+    #
+    # For a standard Mediawiki database this is _nil_ for all pages.
+    # You may manually annotate some or all pages (we use TAWS for this)
+    # and create an additional table in the database:
+    #  CREATE TABLE 'wio_genres' (`page_id` INT(8),`genres` VARCHAR(255));
+    # with the pid of the annotated page in the first column and a 
+    # comma-separated list of strings representing the genres in the second.
+    #
+    # If the Page is in this table, _genres_ is an array containing all
+    # genres found.
+    attr_reader :genres
 
     # creates a new Page. _wiki_ is the Wiki the page belongs to, all
     # other parameters correspond to the fields in the corresponding database
@@ -453,6 +479,10 @@ module Mediawiki
 
     def node_id
       "p#{pid}"
+    end
+
+    def set_genres_from_string(genres) # :nodoc:
+      @genres = genres.split(/,\s*/)
     end
   end
   
@@ -550,7 +580,7 @@ module Mediawiki
       @links = []
       @full_dangling = []           # TODO: old versions my be different!
       @text.each_link do |l|
-        if (p = @wiki.page_by_title(l))
+        if (p = @wiki.page_by_title(l)) # TODO: namespaces other than 0.
           @links << p
         else
           @full_dangling << l
@@ -564,6 +594,9 @@ module Mediawiki
     
     # the text id
     attr_reader :tid
+
+    # Array of all internal links found in the Text as strings
+    attr_reader :internal_links
 
     # text flags: this could be 
     # gzip:: the text is compressed
@@ -668,10 +701,15 @@ module Mediawiki
 
     # add user to the Set of denied users
     #
-    # u is the user to be filtered or its uid.
-    def deny_user(u)
-      u = @wiki.user_by_id(u) if u.kind_of?(Integer)
-      @denied_users << u
+    # ua is one or more users to be filtered or its uid or name.
+    def deny_user(*ua)
+      ua.each do |u|
+        case u
+        when Integer    : u = @wiki.user_by_id(u)
+        when String     : u = @wiki.user_by_name(u)
+        end
+        @denied_users << u
+      end
     end
 
     def namespace=(n)
@@ -686,6 +724,8 @@ module Mediawiki
     def include_all_namespaces
       @namespaces << :all
     end
+
+    # def clone TODO!!!
 
     alias ns namespaces
   end
