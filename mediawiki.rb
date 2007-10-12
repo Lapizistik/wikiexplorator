@@ -6,19 +6,9 @@
 # A kind of history object along timestamps should be built
 #++
 
-require 'dbi'      # generic database engine
-require 'set'      # the Set class
-require 'dotgraph' # generic dotfile graph class
-
-# Asks for user input with echo off at console
-def IO.getpw(question="Password: ")
-  $stderr.print(question)
-  system("stty  -echo") 
-  pw = $stdin.gets.chomp
-  system("stty  echo")
-  $stderr.print "\n" 
-  return pw
-end
+require 'set'         # the Set class
+require 'mediawikidb' # database connector class
+require 'dotgraph'    # generic dotfile graph class
 
 # = The Mediawiki Namespace
 module Mediawiki
@@ -37,19 +27,16 @@ module Mediawiki
     # the filter used for the views
     attr_accessor :filter
     
-    # Creates a new Wiki object from the wio database.
-    #
-    # _pw_ is the database password.
-    def Wiki.wio(pw)
-      puts "Creating wio wiki." if DEBUG
-      Wiki.new("wikidb", "www.kinf.wiai.uni-bamberg.de", "wikiuser", pw)
-    end
-    
-    # Creates a new Wiki object from the mfg database.
-    #
-    # _pw_ is the database password.
-    def Wiki.mfg(pw)
-      Wiki.new("mfg", "kinf01.kinf.wiai.uni-bamberg.de", "mfg-reader", pw)
+    # Creates a new Wiki object from database connection _wikidb_.
+    def initialize(wikidb, version=1.8)
+      @version=version
+      
+      @filter = Filter.new(self)
+      
+      if (err=read_db(wikidb))
+        warn err # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error handling!
+      end
+      puts "Done." if DEBUG
     end
     
     # Creates a new Wiki object from a database
@@ -57,23 +44,13 @@ module Mediawiki
     # _host_:: database host
     # _user_:: database user
     # _pw_:: database password
+    # _engine_:: the database engine to be used.
     # _version_:: used, if reading the database is different in different
-    #             Mediawiki versions
-    def initialize(db, host, user, pw, version=1.8)
-      @db = db
-      @host = host
-      @dbuser = user
-      @dbpassword = pw
-      @version=version
-      
-      @filter = Filter.new(self)
-      
-      if (err=read_db)
-        warn err # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error handling!
-      end
-      puts "Done." if DEBUG
+    #             Mediawiki versions. Not really implemented until now!
+    def Wiki.open(db, host, user, pw, engine="Mysql", version=1.8)
+      Wiki.new(MediawikiDB.new(db, host, user, pw, engine, version), version)
     end
-    
+
     def namespaces
       @filter.namespaces
     end
@@ -212,17 +189,15 @@ module Mediawiki
       end
       g
     end
-      
 
     #
     # internal stuff
     #
     private 
-    def read_db(dbengine='Mysql')
+    def read_db(wikidb)
       puts "connecting to database #{@host}/#{@db}" if DEBUG
       begin
-        DBI.connect("DBI:#{dbengine}:#{@db}:#{@host}", 
-                    @dbuser, @dbpassword) do |dbh|
+        wikidb.connect do |dbh|
           puts "connected." if DEBUG
           
           # Collect the users
@@ -231,7 +206,7 @@ module Mediawiki
                         '', nil, nil, nil, nil, nil);
           @users_name = {}
           @users_id = {0 => u0}      
-          dbh.select_all("select user_id, user_name, user_real_name, user_email, user_options, user_touched, user_email_authenticated, user_email_token_expires, user_registration, user_newpass_time, user_editcount from user") do |row|
+          dbh.users do |row|
             user = User.new(self, *row)
             @users_id[user.uid] = user
             @users_name[user.name] = user
@@ -239,7 +214,7 @@ module Mediawiki
           
           # Assign groups to them
           @usergroups = Hash.new { |h,k| h[k]=[] }
-          dbh.select_all("select * from user_groups") do |uid,g|
+          dbh.usergroups do |uid,g|
             user = @users_id[uid]
             user.groups << g
             @usergroups[g] << user
@@ -247,14 +222,14 @@ module Mediawiki
           
           # Read all the raw text data
           @texts_id = {}
-          dbh.select_all("select * from text") do |tid, t, flags|
+          dbh.texts do |tid, t, flags|
             @texts_id[tid] = Text.new(self, tid, t, flags)
           end
           
           # and the pages
           @pages_id = {}
           @pages_title = {}
-          dbh.select_all("select * from page") do |row|
+          dbh.pages do |row|
             page = Page.new(self, *row)
             @pages_id[page.pid] = page
             @pages_title[page_tns(page.title, page.namespace)] = page
@@ -263,7 +238,7 @@ module Mediawiki
           # And now the revisions
           @revisions_id = {}
           @timeline = []
-          dbh.select_all("select * from revision") do |row|
+          dbh.revisions do |row|
             revision = Revision.new(self, *row)
             @revisions_id[revision.rid] = revision
             @timeline << revision.timestamp
@@ -276,8 +251,7 @@ module Mediawiki
           end
 
           # And additional information by ourselves
-          # TODO: only if this table exists in the database!
-          dbh.select_all("select * from wio_genres") do |pid, genres|
+          dbh.genres do |pid, genres|
             if p = @pages_id[pid]
               p.set_genres_from_string(genres)
             else
