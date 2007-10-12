@@ -195,7 +195,7 @@ module Mediawiki
     #
     private 
     def read_db(wikidb)
-      puts "connecting to database #{@host}/#{@db}" if DEBUG
+      puts "connecting to database #{wikidb}" if DEBUG
       begin
         wikidb.connect do |dbh|
           puts "connected." if DEBUG
@@ -203,7 +203,7 @@ module Mediawiki
           # Collect the users
           # The uid=0 user:
           u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
-                        '', nil, nil, nil, nil, nil);
+                        '19700101000000', nil, nil, nil, nil, nil);
           @users_name = {}
           @users_id = {0 => u0}      
           dbh.users do |row|
@@ -302,7 +302,7 @@ module Mediawiki
       # @newpassword = newpassword
       @email = email
       @options = options
-      @touched = touched
+      @touched = Mediawiki.s2time(touched)
       # @token = token
       @email_authenticated = email_authenticated
       # @email_token = email_token
@@ -328,7 +328,8 @@ module Mediawiki
 
     # view on pages edited by this user through _filter_
     def pages(filter=@wiki.filter)
-      PagesView.new(revisions(filter).collect { |r| r.page }.compact.to_set, filter)
+      PagesView.new(revisions(filter).collect { |r| r.page }.compact.to_set, 
+                    filter)
     end
 
     # add a revision
@@ -789,9 +790,11 @@ module Mediawiki
   # Otherwise it is assumed to be a string formed <tt>"yyyymmddhhmmss"</tt>
   # which is converted in the corresponding time object.
   def Mediawiki.s2time(s)
+    #    puts "s2time: converting time #{s.inspect}" if DEBUG
     return s if s.kind_of?(Time)
     return Time.gm(s[0..3], s[4..5], s[6..7], 
                    s[8..9], s[10..11], s[12..13])
+
   end
   
 end

@@ -30,6 +30,10 @@ class MediawikiDB
                 @dbuser, @dbpassword) { |dbh| yield(MWDBI.new(dbh)) }
   end
 
+  def to_s
+    "#{@host}/#{@db}"
+  end
+
   class MWDBI
     def initialize(dbh)
       @dbh = dbh
