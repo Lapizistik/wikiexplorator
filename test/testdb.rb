@@ -73,8 +73,8 @@ class TestDB
        [502, 1, 10002, '', 1, usertable.assoc(1)[2], '20060202000002',
         0, nil, nil, nil]]
 
-    
-    genretable = []
+    # pid, genres
+    genretable = [[0, 'portal, xxx']]
 
     TestDB.new("TestDB::default", usertable, ugtable, texttable, pagetable, 
                revtable, genretable)

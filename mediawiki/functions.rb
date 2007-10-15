@@ -3,18 +3,23 @@
 # = Mediawiki Extensions
 # This file extends the Mediawiki::Wiki class with a set of very specialized
 # functions for making things easier to us, but which are not part of core
-# functionality. You can directly require this file instead of 
-# <tt>mediawiki.rb</tt>.
+# functionality.
 
-require 'mediawiki'
+require 'mediawiki/core'
 
 module Mediawiki
   class Wiki
+
+    # :call-seq: 
+    #  typelinkusers(regexp=/^Kategorie:/, filter=@wiki.filter)
+    #  typelinkusers(regexp=/^Kategorie:/)
+    #  typelinkusers(filter=@wiki.filter)
+    #  typelinkusers()
+    #
     # Find all users adding internal links matching Regexp _type_ 
     # (<tt>/^Kategorie:/</tt> by default).
     # 
-    # A Regexp and a Filter may be given as parameters in any order.
-    def typelinkusers(*params)
+    def typelinkusers(*params) 
       type=/^Kategorie:/
       f = @filter
       params.each { |par|
@@ -35,6 +40,12 @@ module Mediawiki
       }
       kusers
     end
+    # :call-seq: 
+    #  pp_typelinkusers(regexp=/^Kategorie:/, filter=@wiki.filter)
+    #  pp_typelinkusers(regexp=/^Kategorie:/)
+    #  pp_typelinkusers(filter=@wiki.filter)
+    #  pp_typelinkusers()
+    #
     # Find and pretty print all users adding internal links 
     # matching Regexp type (see #typelinkusers).
     def pp_typelinkusers(*params)
@@ -49,6 +60,12 @@ module Mediawiki
       }.sort.collect { |a| "%-20s %-30s %4i %4i %4i" % a }.join("\n")
     end
 
+    # :call-seq: 
+    #  pp_user_revisiondensity(userkey=:name, filter=@wiki.filter)
+    #  pp_user_revisiondensity(userkey=:name)
+    #  pp_user_revisiondensity(filter=@wiki.filter)
+    #  pp_user_revisiondensity()
+    #
     # Pretty print the revision to page edit ratio of each user.
     # 
     # By default the _name_ of the user is printed, this may be changed e.g.
