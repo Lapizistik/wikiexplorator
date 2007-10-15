@@ -15,11 +15,14 @@ class TestMediawiki < Test::Unit::TestCase
   end
 
   def test_core
+
     # There is one user more in the wiki than in the user table as
     # the system user is not in the table:
     assert_equal(@wiki.users.size, @testdb.usertable.size+1)
     assert_equal(@wiki.pages.size, @testdb.pagetable.size)
     assert_equal(@wiki.revisions.size, @testdb.revtable.size)
+
+
 
     @testdb.usertable.each do |i, n,|
       assert_equal(@wiki.user_by_id(i).name, n)
@@ -48,11 +51,15 @@ class TestMediawiki < Test::Unit::TestCase
     assert_not_same(f1.minor_edits, f2.minor_edits)
 
     ### Genres
-    puts @wiki.page_by_id(0)
-    puts @wiki.page_by_id(0).genres.join(':')
-    assert(@wiki.page_by_id(0).has_genre?('portal'))
-    assert(!@wiki.page_by_id(1).has_genre?('portal'))
-    assert(@wiki.page_by_id(0).has_genre?(/^port/))
+    assert(@wiki.page_by_id(1).has_genre?('portal'))
+    assert(!@wiki.page_by_id(2).has_genre?('portal'))
+    assert(@wiki.page_by_id(1).has_genre?(/^port/))
+    f2.genregexp = /^port/
+    assert(@wiki.pages(f2).include?(@wiki.page_by_id(1)))
+    assert(!@wiki.pages(f2).include?(@wiki.page_by_id(2)))
+    f2.genreinclude = false
+    assert(!@wiki.pages(f2).include?(@wiki.page_by_id(1)))
+    assert(@wiki.pages(f2).include?(@wiki.page_by_id(2)))
   end
 
 end

@@ -25,6 +25,8 @@ module Mediawiki
     attr_reader :timeline
     # the filter used for the views
     attr_accessor :filter
+    # a list of namespaces found in this wiki
+    attr_reader :namespaces
     
     # Creates a new Wiki object from database connection _wikidb_.
     def initialize(wikidb, version=1.8)
@@ -48,23 +50,6 @@ module Mediawiki
     #             Mediawiki versions. Not really implemented until now!
     def Wiki.open(db, host, user, pw, engine="Mysql", version=1.8)
       Wiki.new(DB.new(db, host, user, pw, engine, version), version)
-    end
-
-    # Shortcut to the filter of this Wiki. See Filter#namespaces
-    def namespaces
-      @filter.namespaces
-    end
-
-    alias ns namespaces
-
-    # Shortcut to the filter of this Wiki. See Filter#namespace=
-    def namespace=(n)
-      @filter.namespace = n
-    end
-    
-    # Shortcut to the filter of this Wiki. See Filter#deny_user
-    def deny_user(*u)
-      @filter.deny_user(*u)
     end
 
     def to_s
@@ -159,11 +144,15 @@ module Mediawiki
           # and the pages
           @pages_id = {}
           @pages_title = {}
+          @namespaces = Set.new
           dbh.pages do |row|
             page = Page.new(self, *row)
             @pages_id[page.pid] = page
-            @pages_title[page_tns(page.title, page.namespace)] = page
+            ns = page.namespace
+            @namespaces << ns
+            @pages_title[page_tns(page.title, ns)] = page
           end
+          @namespaces = @namespaces.sort
           
           # And now the revisions
           @revisions_id = {}
@@ -304,7 +293,7 @@ module Mediawiki
     # with the pid of the annotated page in the first column and a 
     # comma-separated list of strings representing the genres in the second.
     #
-    # If the Page is in this table, _genres_ is an array containing all
+    # If the Page is in this table, _genres_ is a Set containing all
     # genres found.
     #
     # TODO: better in Revision?
@@ -332,7 +321,8 @@ module Mediawiki
       @current_revision = latest # will get replaced by a link to a Revision
                                  # object in #update_current
 
-      @genres = []  # may be updated in #set_genres_from_string
+      @genres = [''].to_set  # each page is at least in the empty genre.
+                             # may be updated in #set_genres_from_string
     end
     
     # The plain text of the current revision of the page
@@ -407,7 +397,7 @@ module Mediawiki
     end
 
     def set_genres_from_string(genres) # :nodoc:
-      @genres = (genres || '').split(/,\s*/)
+      @genres.merge((genres || '').split(/,\s*/))
     end
   end
   
@@ -494,6 +484,16 @@ module Mediawiki
 
     def inspect
       "#<Mediawiki::Revision id=#{@rid} page=#{@page.inspect}>"
+    end
+
+    # whether the Page this revision belongs to has the given genre _g_. 
+    # _g_ may be given as String (exact matching) or Regexp.
+    #
+    # TODO: it would be better to associate the revisions with genres,
+    # but very costly. We will see if we can improve this automatically
+    # in future.
+    def has_genre?(g)
+      @page && @page.has_genre?(g)
     end
 
     # id string for dotfile creation
@@ -604,7 +604,7 @@ module Mediawiki
     # The Set of namespaces to be allowed. To add namespaces use e.g.:
     # <tt>filter.namespaces << 1</tt>.
     #
-    # If the set includes :all all namespaces are included.
+    # This is {0} by default.
     attr_accessor :namespaces
 
     # Set of users to be skipped (empty by default).
@@ -618,6 +618,19 @@ module Mediawiki
     # If revisions with minor edits are included (default: true).
     attr_accessor :minor_edits
 
+    # All Pages/Revisions with one or more genres matching this Regex are
+    # included/excluded (dependent on _genreinclude_).
+    #
+    # Default is +//+ (matches always)
+    attr_accessor :genregexp
+
+    # Boolean deciding whether only Pages/Revisions with genres
+    # matching the Regexp _genregexp_ are included or all
+    # Pages/Revisions with matching genres are excluded by this Filter.
+    # 
+    # +true+ by default.
+    attr_accessor :genreinclude
+
     # Creates a new filter for the _wiki_.
     #
     # By default the time is newest and the namespaces are #<Set: {0}>.
@@ -627,6 +640,8 @@ module Mediawiki
       @namespaces << 0
       @redirects = :keep
       @minor_edits = true
+      @genregexp = // # matches on everything
+      @genreinclude = true
 
       @denied_users = Set.new
 
@@ -664,7 +679,7 @@ module Mediawiki
 
     # sets the filter to include all namespaces
     def include_all_namespaces
-      @namespaces << :all
+      include_namespace(*@wiki.namespaces)
     end
 
     # gives a deep copy of this filter.
@@ -745,9 +760,9 @@ module Mediawiki
   class PagesView < View
     # whether a given Page is seen through this filter.
     def allowed?(page)
-      (@filter.namespaces.include?(:all) || 
-       @filter.namespaces.include?(page.namespace)) &&
-        (!(@filter.redirects==:filter) || !page.is_redirect?)
+      @filter.namespaces.include?(page.namespace) &&
+        (!(@filter.redirects==:filter) || !page.is_redirect?) &&
+        !(@filter.genreinclude ^ page.has_genre?(@filter.genregexp))
     end
   end
 
@@ -764,7 +779,8 @@ module Mediawiki
     # whether a given Revision is seen through this filter.
     def allowed?(revision)
       !@filter.denied_users.include?(revision.user) &&
-        !(@filter.minor_edits && revision.minor_edit?)
+        !(@filter.minor_edits && revision.minor_edit?) &&
+        !(@filter.genreinclude ^ revision.has_genre?(@filter.genregexp))
     end
   end
 

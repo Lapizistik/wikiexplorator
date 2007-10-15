@@ -58,23 +58,23 @@ class TestDB
     # id, namespace, title, restrictions, counter, 
     # is_redirect, is_new, random, touched, latest, len
     pagetable = 
-      [[0, 0, 'Main Page', nil, 0, 0, 1, 4711, '20060101000001', 500,
+      [[1, 0, 'Main Page', nil, 0, 0, 1, 4711, '20060101000001', 500,
         texttable[0][1].length],
-       [1, 0, 'Working', nil, 0, 0, 0, 23, '20060202000002', 502,
+       [2, 0, 'Working', nil, 0, 0, 0, 23, '20060202000002', 502,
         texttable[2][1].length]]
 
     # id, page, text_id, comment, user, user_text, timestamp, 
     # minor_edit, deleted, len, parent_id
     revtable =
-      [[500, 0, 10000, '', 0, 'system', '20060101000001',
+      [[500, 1, 10000, '', 0, 'system', '20060101000001',
         0, nil, nil, nil],
-       [501, 1, 10001, '', 1, usertable.assoc(1)[2], '20060202000001',
+       [501, 2, 10001, '', 1, usertable.assoc(1)[2], '20060202000001',
         0, nil, nil, nil],
-       [502, 1, 10002, '', 1, usertable.assoc(1)[2], '20060202000002',
+       [502, 2, 10002, '', 1, usertable.assoc(1)[2], '20060202000002',
         0, nil, nil, nil]]
 
     # pid, genres
-    genretable = [[0, 'portal, xxx']]
+    genretable = [[1, 'portal, xxx']]
 
     TestDB.new("TestDB::default", usertable, ugtable, texttable, pagetable, 
                revtable, genretable)
