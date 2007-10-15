@@ -6,11 +6,11 @@ class TestDB
   
   def initialize(name,
                  usertable, ugtable, texttable, pagetable, 
-                 revtable, genretable)
+                 revtable, genretable, roletable)
     (@name, @usertable, @ugtable, @texttable, @pagetable, 
-     @revtable, @genretable) = 
+     @revtable, @genretable, @roletable) = 
       [name, usertable, ugtable, texttable, pagetable, 
-       revtable, genretable]
+       revtable, genretable, roletable]
   end
   def connect
     yield(self)
@@ -37,6 +37,9 @@ class TestDB
   def genres(&block)
     @genretable.each(&block)
   end
+  def roles(&block)
+    @roletable.each(&block)
+  end
 
   # The default database for testing
   def TestDB.default
@@ -44,7 +47,10 @@ class TestDB
     # email_token_expires, registration, newpass_time, editcount
     usertable = 
       [[1, 'dau', 'Dau User', 'dau@nil', '', '20070808080808', nil,
-        nil, '20060808000000', nil, 5]]
+        nil, '20060808000000', nil, 5],
+       [2, 'otto', 'Otto User', 'otto@nil', '', '20070808070605', nil,
+        nil, '20060809000000', nil, 5]
+      ]
 
     # user, group
     ugtable = []
@@ -76,8 +82,10 @@ class TestDB
     # pid, genres
     genretable = [[1, 'portal, xxx']]
 
+    roletable = [[1,'MasterOfTheUniverse, DAU']]
+
     TestDB.new("TestDB::default", usertable, ugtable, texttable, pagetable, 
-               revtable, genretable)
+               revtable, genretable, roletable)
   end
 end
 

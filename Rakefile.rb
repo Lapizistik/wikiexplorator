@@ -1,8 +1,9 @@
 require 'rake/rdoctask'
 require 'rake/testtask'
+require 'rake/clean'
 require 'rdoc/rdoc'
 
-puts $@
+task :default => [:test, :html]
 
 # Testing
 desc 'Run the test suite'

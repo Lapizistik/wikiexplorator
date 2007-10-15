@@ -60,6 +60,15 @@ class TestMediawiki < Test::Unit::TestCase
     f2.genreinclude = false
     assert(!@wiki.pages(f2).include?(@wiki.page_by_id(1)))
     assert(@wiki.pages(f2).include?(@wiki.page_by_id(2)))
+
+    ### Roles
+    assert(@wiki.user_by_id(1).has_role?('DAU'))
+    f2.roleregexp = /^Master/
+    assert(@wiki.users(f2).include?(@wiki.user_by_id(1)))
+    assert(!@wiki.users(f2).include?(@wiki.user_by_id(2)))
+    f2.roleinclude = false
+    assert(!@wiki.users(f2).include?(@wiki.user_by_id(1)))
+    assert(@wiki.users(f2).include?(@wiki.user_by_id(2)))
   end
 
 end

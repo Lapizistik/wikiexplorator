@@ -170,11 +170,21 @@ module Mediawiki
           end
 
           # And additional information by ourselves
+          # page genres ...
           dbh.genres do |pid, genres|
             if p = @pages_id[pid]
               p.set_genres_from_string(genres)
             else
               warn "page_id #{pid} from wio_genres not found in pages!"
+            end
+          end
+          # ... and user roles
+          dbh.roles do |uid, roles|
+            # puts "Adding roles #{roles} to user with uid #{uid}"
+            if u = @users_id[uid]
+              u.set_roles_from_string(roles)
+            else
+              warn "user_id #{uid} from wio_roles not found in users!"
             end
           end
         end
@@ -199,13 +209,23 @@ module Mediawiki
     attr_reader :email
     # personalization information 
     attr_reader :options
+    # time of last User interaction with the wiki causing _any_ change
     attr_reader :touched
-    attr_reader :email_authenticated
-    attr_reader :email_token_expires
+    attr_reader :email_authenticated # :nodoc:
+    attr_reader :email_token_expires # :nodoc:
+    # time of User registration
     attr_reader :registration
-    attr_reader :newpass_time
-    attr_reader :editcount
+    attr_reader :newpass_time # :nodoc:
+    attr_reader :editcount # :nodoc:
+    # Set of groups the User belongs to
     attr_reader :groups
+    # the roles identified for this User
+    #
+    # For a standard Mediawiki database this is a Set containing an empty
+    # String "" (the default role) for all users.
+    #
+    # See <tt>mediawiki/db.rb</tt> for how to use this.
+    attr_reader :roles
 
     # The parameters do not correspond exactly to the user table fields as we
     # do not want to read the user_password, user_newpassword, user_token and
@@ -232,8 +252,10 @@ module Mediawiki
       @newpass_time = newpass_time
       @editcount = editcount
       
-      @groups = []
+      @groups = Set.new
 
+      @roles = [''].to_set  # each user has at least the empty role.
+                            # may be updated in #set_roles_from_string
       @revisions = []
     end
 
@@ -262,11 +284,23 @@ module Mediawiki
       "#<Mediawiki::User id=#{@uid} name=\"#{@name}\">"
     end
 
+    # whether this User has the given role _r_. _r_ may be given as String 
+    # (exact matching) or Regexp.
+    def has_role?(r)
+      case r
+      when String : @roles.include?(r)
+      when Regexp : @roles.find { |s| s =~ r }
+      end
+    end
+
     # id string for dotfile creation
     def node_id
       "u#{uid}"
     end
 
+    def set_roles_from_string(roles) # :nodoc:
+      @roles.merge((roles || '').split(/,\s*/))
+    end
   end
   
   # One page with all revisions
@@ -276,9 +310,9 @@ module Mediawiki
     attr_reader :pid
     # the namespace the page is in
     attr_reader :namespace
-    # title of the page (all '_' converted to ' ')
+    # title of the page (all "_" converted to " ")
     attr_reader :title
-    # list of permition keys (Take care: only for 1.9 or lower)
+    # list of permission keys (Take care: only for 1.9 or lower)
     attr_reader :restrictions
     # number of views
     attr_reader :counter
@@ -286,17 +320,10 @@ module Mediawiki
     attr_reader :random
     # the genres identified in this Page.
     #
-    # For a standard Mediawiki database this is _nil_ for all pages.
-    # You may manually annotate some or all pages (we use TAWS for this)
-    # and create an additional table in the database:
-    #  CREATE TABLE 'wio_genres' (`page_id` INT(8),`genres` VARCHAR(255));
-    # with the pid of the annotated page in the first column and a 
-    # comma-separated list of strings representing the genres in the second.
+    # For a standard Mediawiki database this is a Set containing an empty
+    # String "" (the default genre) for all pages.
     #
-    # If the Page is in this table, _genres_ is a Set containing all
-    # genres found.
-    #
-    # TODO: better in Revision?
+    # See <tt>mediawiki/db.rb</tt> for how to use this.
     attr_reader :genres
 
     # creates a new Page. _wiki_ is the Wiki the page belongs to, all
@@ -631,6 +658,19 @@ module Mediawiki
     # +true+ by default.
     attr_accessor :genreinclude
 
+    # All Users with one or more roles matching this Regex are
+    # included/excluded (dependent on _rolesinclude_).
+    #
+    # Default is +//+ (matches always)
+    attr_accessor :roleregexp
+
+    # Boolean deciding whether only Users with roles
+    # matching the Regexp _roleregexp_ are included or all
+    # Users with matching rules are excluded by this Filter.
+    # 
+    # +true+ by default.
+    attr_accessor :roleinclude
+
     # Creates a new filter for the _wiki_.
     #
     # By default the time is newest and the namespaces are #<Set: {0}>.
@@ -642,10 +682,12 @@ module Mediawiki
       @minor_edits = true
       @genregexp = // # matches on everything
       @genreinclude = true
-
+      @roleregexp = // # matches on everything
+      @roleinclude = true
       @denied_users = Set.new
-
+      # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       # When adding new attributes do _not_ forget to adjust #clone_attrs
+      # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end
 
     # add user to the Set of denied users
@@ -754,6 +796,15 @@ module Mediawiki
 
   end
   
+  # A view on an Enumerable of users.
+  class UsersView < View
+    # whether a given User is seen through this filter.
+    def allowed?(user)
+      !@filter.denied_users.include?(user) &&
+        !(@filter.roleinclude ^ user.has_role?(@filter.roleregexp))
+    end
+  end
+
   # A view on an Enumerable of pages.
   #
   # TODO handling of redirects: as filtering works, but aliazing not!
@@ -763,14 +814,6 @@ module Mediawiki
       @filter.namespaces.include?(page.namespace) &&
         (!(@filter.redirects==:filter) || !page.is_redirect?) &&
         !(@filter.genreinclude ^ page.has_genre?(@filter.genregexp))
-    end
-  end
-
-  # A view on an Enumerable of users.
-  class UsersView < View
-    # whether a given User is seen through this filter.
-    def allowed?(user)
-      !@filter.denied_users.include?(user) 
     end
   end
 
