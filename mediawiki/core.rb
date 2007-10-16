@@ -57,7 +57,7 @@ module Mediawiki
     end
 
     def inspect
-      "#<Mediawiki::Wiki #{@dbuser}@#{@host}/#{@db} #{@pages_id.length} pages, #{@revisions_id.length} revisions, #{@users_id.length} users>"
+      "#<Mediawiki::Wiki #{@name} #{@pages_id.length} pages, #{@revisions_id.length} revisions, #{@users_id.length} users>"
     end
 
     # gives the Page object with title _t_ in namespace _ns_
@@ -221,8 +221,8 @@ module Mediawiki
     attr_reader :groups
     # the roles identified for this User
     #
-    # For a standard Mediawiki database this is a Set containing an empty
-    # String "" (the default role) for all users.
+    # For a standard Mediawiki database this is a Set containing the
+    # String "DEFAULT" (the default role) for all users.
     #
     # See <tt>mediawiki/db.rb</tt> for how to use this.
     attr_reader :roles
@@ -254,8 +254,8 @@ module Mediawiki
       
       @groups = Set.new
 
-      @roles = [''].to_set  # each user has at least the empty role.
-                            # may be updated in #set_roles_from_string
+      @roles = ['DEFAULT'].to_set  # each user has at least the DEFAULT role.
+                                   # may be updated in #set_roles_from_string
       @revisions = []
     end
 
@@ -320,8 +320,8 @@ module Mediawiki
     attr_reader :random
     # the genres identified in this Page.
     #
-    # For a standard Mediawiki database this is a Set containing an empty
-    # String "" (the default genre) for all pages.
+    # For a standard Mediawiki database this is a Set containing the
+    # String "DEFAULT" (the default genre) for all pages.
     #
     # See <tt>mediawiki/db.rb</tt> for how to use this.
     attr_reader :genres
@@ -348,8 +348,9 @@ module Mediawiki
       @current_revision = latest # will get replaced by a link to a Revision
                                  # object in #update_current
 
-      @genres = [''].to_set  # each page is at least in the empty genre.
-                             # may be updated in #set_genres_from_string
+      @genres = ['DEFAULT'].to_set  # each page is at least in the DEFAULT 
+                                    # genre. May be updated in 
+                                    # #set_genres_from_string
     end
     
     # The plain text of the current revision of the page
@@ -523,6 +524,11 @@ module Mediawiki
       @page && @page.has_genre?(g)
     end
 
+    # the namespace of the Page this Revision belongs to (-255 if no page)
+    def namespace
+      @page ? @page.namespace : -255
+    end
+
     # id string for dotfile creation
     def node_id
       "r#{rid}"
@@ -625,7 +631,11 @@ module Mediawiki
     end
   end
 
-  # A filter used for the views
+  # A Filter used for the views
+  #
+  # A Filter is applied any time a list of Pages, Users, Revisions, ...
+  # is accessed through a View. See the documentation for the corresponding
+  # Views.
   class Filter
 
     # The Set of namespaces to be allowed. To add namespaces use e.g.:
@@ -648,7 +658,7 @@ module Mediawiki
     # All Pages/Revisions with one or more genres matching this Regex are
     # included/excluded (dependent on _genreinclude_).
     #
-    # Default is +//+ (matches always)
+    # Default is <tt>//</tt> (matches always)
     attr_accessor :genregexp
 
     # Boolean deciding whether only Pages/Revisions with genres
@@ -661,7 +671,7 @@ module Mediawiki
     # All Users with one or more roles matching this Regex are
     # included/excluded (dependent on _rolesinclude_).
     #
-    # Default is +//+ (matches always)
+    # Default is <tt>//</tt> (matches always)
     attr_accessor :roleregexp
 
     # Boolean deciding whether only Users with roles
@@ -740,7 +750,12 @@ module Mediawiki
   end
 
 
-  # Base class for views on the Wiki. Used for filtering
+  # Base class for views on the Wiki. Used for subclassing.
+  #
+  # By using a View a list of Users (UsersView), Revisions (RevisionsView), 
+  # Pages (PagesView), ... can be accessed with some Filter applied, so
+  # only the elements matching the Filter rules are shown. See the 
+  # documentation for Filter and the derived Views for details.
   class View
 
     include Enumerable
@@ -772,8 +787,6 @@ module Mediawiki
       @list.each_value { |i| block.call(i) if allowed?(i) }
     end
 
-    alias each each_item    # mainly for rdoc
-
     # whether a given object is seen through this filter. To be
     # overwritten in subclasses.
     def allowed?(i)
@@ -785,11 +798,11 @@ module Mediawiki
     def select_methods
       if @list.respond_to?(:each_value)
         class << self
-          alias each each_value
+          alias each each_value # :nodoc:
         end
       else
         class << self
-          alias each each_item
+          alias each each_item # :nodoc:
         end        
       end
     end
@@ -797,6 +810,10 @@ module Mediawiki
   end
   
   # A view on an Enumerable of users.
+  #
+  # Users are filtered by
+  # user itself :: Filter#denied_users
+  # role :: Filter#roleregexp and Filter#roleinclude
   class UsersView < View
     # whether a given User is seen through this filter.
     def allowed?(user)
@@ -810,6 +827,11 @@ module Mediawiki
   # TODO handling of redirects: as filtering works, but aliazing not!
   class PagesView < View
     # whether a given Page is seen through this filter.
+    #
+    # Pages are filtered by 
+    # namespace :: Filter#namespaces,
+    # redirection :: Filter#redirects,
+    # genre :: Filter#genregexp and Filter#genreinclude
     def allowed?(page)
       @filter.namespaces.include?(page.namespace) &&
         (!(@filter.redirects==:filter) || !page.is_redirect?) &&
@@ -820,8 +842,16 @@ module Mediawiki
   # A view on an Enumerable of revisions.
   class RevisionsView < View
     # whether a given Revision is seen through this filter.
+    #
+    # Revisions are filtered by
+    # users :: Filter#denied_users
+    # namespace of the corresponding page :: Filter#namespaces,
+    # minor_edits :: Filter#minor_edits,
+    # genre of the corresponding page :: 
+    #   Filter#genregexp and Filter#genreinclude
     def allowed?(revision)
       !@filter.denied_users.include?(revision.user) &&
+        @filter.namespaces.include?(revision.namespace) &&
         !(@filter.minor_edits && revision.minor_edit?) &&
         !(@filter.genreinclude ^ revision.has_genre?(@filter.genregexp))
     end

@@ -1,6 +1,8 @@
 #!/usr/bin/ruby -w
 
 require 'test/unit'
+require 'set'
+
 
 $:.unshift File.join(File.dirname(__FILE__), '..') # here is the code
 
@@ -15,19 +17,6 @@ class TestMediawiki < Test::Unit::TestCase
   end
 
   def test_core
-
-    # There is one user more in the wiki than in the user table as
-    # the system user is not in the table:
-    assert_equal(@wiki.users.size, @testdb.usertable.size+1)
-    assert_equal(@wiki.pages.size, @testdb.pagetable.size)
-    assert_equal(@wiki.revisions.size, @testdb.revtable.size)
-
-
-
-    @testdb.usertable.each do |i, n,|
-      assert_equal(@wiki.user_by_id(i).name, n)
-      assert_equal(@wiki.user_by_name(n).uid, i)
-    end
 
     ### Filter
     f1 = @wiki.filter
@@ -49,6 +38,26 @@ class TestMediawiki < Test::Unit::TestCase
     assert_not_same(f1.denied_users, f2.denied_users)
     assert_not_same(f1.redirects, f2.redirects)
     assert_not_same(f1.minor_edits, f2.minor_edits)
+
+    # There is one user more in the wiki than in the user table as
+    # the system user is not in the table:
+    assert_equal(@wiki.users.size, @testdb.usertable.size+1)
+
+    ns0 = @testdb.pagetable.select { |pid, ns,| ns==0 }.size
+    assert_equal(@wiki.pages.size, ns0)
+
+    @wiki.filter.include_all_namespaces
+    assert_equal(@wiki.pages.size, @testdb.pagetable.size)
+    assert_equal(@wiki.revisions.size, @testdb.revtable.size)
+
+    ns = @testdb.pagetable.collect { |pid, ns,| ns }.to_set
+    assert_equal(@wiki.namespaces.to_set, ns)
+
+    @testdb.usertable.each do |i, n,|
+      assert_equal(@wiki.user_by_id(i).name, n)
+      assert_equal(@wiki.user_by_name(n).uid, i)
+    end
+
 
     ### Genres
     assert(@wiki.page_by_id(1).has_genre?('portal'))

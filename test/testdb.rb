@@ -58,8 +58,9 @@ class TestDB
     # id, text, flags
     texttable =
       [[10000, 'Text mit internem Link auf [[Dangling]], [[Working]]', ''],
-       [10001, 'Zweiter Text mit Linkkk auf [[Bla|blubb]], [[Working]]', ''],
-       [10002, 'Zweiter Text mit Link auf [[Bla|blubb]], [[Working]]', '']]
+       [10001, 'Zweiter Text mit Linkkk auf [[Bla|blubb]], [[Main Page]]', ''],
+       [10002, 'Zweiter Text mit Link auf [[Bla|blubb]], [[Testing]]', ''],
+       [10003, 'Noch ein Text mit Link auf [[Working]]', '']]
 
     # id, namespace, title, restrictions, counter, 
     # is_redirect, is_new, random, touched, latest, len
@@ -67,6 +68,8 @@ class TestDB
       [[1, 0, 'Main Page', nil, 0, 0, 1, 4711, '20060101000001', 500,
         texttable[0][1].length],
        [2, 0, 'Working', nil, 0, 0, 0, 23, '20060202000002', 502,
+        texttable[2][1].length],
+       [3, 6, 'Testing', nil, 0, 0, 0, 23, '20060909000009', 502,
         texttable[2][1].length]]
 
     # id, page, text_id, comment, user, user_text, timestamp, 
@@ -77,6 +80,8 @@ class TestDB
        [501, 2, 10001, '', 1, usertable.assoc(1)[2], '20060202000001',
         0, nil, nil, nil],
        [502, 2, 10002, '', 1, usertable.assoc(1)[2], '20060202000002',
+        0, nil, nil, nil],
+       [503, 3, 10003, '', 1, usertable.assoc(1)[2], '20060909000009',
         0, nil, nil, nil]]
 
     # pid, genres

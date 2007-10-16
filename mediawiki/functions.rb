@@ -92,5 +92,58 @@ module Mediawiki
       }.select { |t,ua| !ua.empty? }.collect { |t,ua| 
         "%-45s: %s" % [t, ua.join(', ')] }.join("\n") 
     end
+
+    # role distribution
+    def userroledist(filter=@filter)
+      roles = Hash.new(0)
+      users(filter).each { |u| u.roles.each { |r| roles[r]+=1 }}
+      roles
+    end
+    # pretty print role distribution
+    def pp_userroledist(filter=@filter)
+      pp_dist(userroledist(filter))
+    end
+
+    # genre distribution
+    #
+    # if <i>detailed</i> is +false+ the genre strings are cut at <tt>">"</tt>.
+    # This is because TAWS (which we used for genre annotation) uses this 
+    # to indicate sub-genres. So the genre <tt>"definition>computing"</tt> 
+    # is cut to <tt>"definition"</tt>.
+    def genredist(detailed=false, filter=@filter)
+      genres = Hash.new(0)
+      pages(filter).each { |p| 
+        p.genres.each { |g| 
+          g = g.split('>').first unless detailed
+          genres[g]+=1 
+        }
+      }
+      genres
+    end
+    # pretty print genre distribution
+    #
+    # see #genredist for discussion of parameter _detailed_.
+    def pp_genredist(detailed=false, filter=@filter)
+      pp_dist(genredist(detailed, filter))
+    end
+
+    # distribution of number of page edits
+    def pageeditdist(filter=@filter)
+      edits = Hash.new(0)
+      pages(filter).each { |p| edits[p.revisions.length] += 1 }
+      edits
+    end
+
+    # pretty print distribution of number of page edits
+    def pp_pageeditdist(filter=@filter)
+      pp_dist(pageeditdist(filter))
+    end
+
+    private
+    def pp_dist(hash)
+      puts hash.sort.collect { |kv|
+        "%-40s: %3i" % kv
+      }.join("\n")
+    end
   end
 end
