@@ -29,8 +29,11 @@ module Mediawiki
     attr_reader :namespaces
     
     # Creates a new Wiki object from database connection _wikidb_.
-    def initialize(wikidb, version=1.8)
-      @version=version
+    #
+    # For description of _options_ see Wiki.open
+    def initialize(wikidb, options)
+      @version = options[:version] || 1.8
+      @uid_aliases = options[:uid_aliases] || {}
       @name = wikidb.to_s
       @filter = Filter.new(self)
       
@@ -45,11 +48,23 @@ module Mediawiki
     # _host_:: database host
     # _user_:: database user
     # _pw_:: database password
-    # _engine_:: the database engine to be used.
-    # _version_:: used, if reading the database is different in different
-    #             Mediawiki versions. Not really implemented until now!
-    def Wiki.open(db, host, user, pw, engine="Mysql", version=1.8)
-      Wiki.new(DB.new(db, host, user, pw, engine, version), version)
+    # _options_:: 
+    #   a hash with further options:
+    #   <i>:engine=>"Mysql"</i>:: the database engine to be used.
+    #   <i>:version=>1.8</i>:: 
+    #     used, if reading the database is different in different Mediawiki 
+    #     versions. Not really implemented until now!
+    #   <i>:uid_aliases=>{}</i>:: 
+    #     hash of uids to be aliased. E.g. if the user with uid=15 was 
+    #     registered by mistake (e.g. with the wrong user name) and the user 
+    #     reregistered with uid=22, use:
+    #       :uid_aliases => {17 => 22}
+    #     and all appearances of uid=17 will be mapped to 22. No user
+    #     with uid 17 will show up in the Wiki object.
+    def Wiki.open(db, host, user, pw, *options)
+      options = options.first
+      Wiki.new(DB.new(db, host, user, pw, options[:engine] || "Mysql", 
+                      options[:version] || 1.8), options)
     end
 
     def to_s
@@ -120,19 +135,25 @@ module Mediawiki
           u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
                         '19700101000000', nil, nil, nil, nil, nil);
           @users_name = {}
-          @users_id = {0 => u0}      
-          dbh.users do |row|
-            user = User.new(self, *row)
-            @users_id[user.uid] = user
-            @users_name[user.name] = user
+          @users_id = {0 => u0}
+          users_aliased = {}
+          dbh.users do |uid, *row|
+            user = User.new(self, uid, *row)
+            if alias_uid = @uid_aliases[uid]
+              users_aliased[alias_uid] = user
+            else
+              @users_id[user.uid] = user
+              @users_name[user.name] = user
+            end
           end
           
           # Assign groups to them
+          # TODO: how to deal with aliasing here?
           @usergroups = Hash.new { |h,k| h[k]=[] }
           dbh.usergroups do |uid,g|
             user = @users_id[uid]
             user.groups << g
-            @usergroups[g] << user
+            @usergroups[g] << user unless @uid_aliases[uid]
           end
           
           # Read all the raw text data
@@ -157,8 +178,13 @@ module Mediawiki
           # And now the revisions
           @revisions_id = {}
           @timeline = []
-          dbh.revisions do |row|
-            revision = Revision.new(self, *row)
+          dbh.revisions do |rid, pid, tid, comment, uid, user, *row|
+            if alias_uid = @uid_aliases[uid] # user aliasing
+              uid = alias_uid
+              user = @users_id[uid]
+            end
+            revision = Revision.new(self, 
+                                    rid, pid, tid, comment, uid, user, *row)
             @revisions_id[revision.rid] = revision
             @timeline << revision.timestamp
           end
@@ -181,7 +207,7 @@ module Mediawiki
           # ... and user roles
           dbh.roles do |uid, roles|
             # puts "Adding roles #{roles} to user with uid #{uid}"
-            if u = @users_id[uid]
+            if u = (@users_id[uid] || @users_id[@uid_aliases[uid]])
               u.set_roles_from_string(roles)
             else
               warn "user_id #{uid} from wio_roles not found in users!"
