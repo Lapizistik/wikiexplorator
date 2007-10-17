@@ -16,7 +16,7 @@ end
 
 # Documentation
 rd_main = "mediawiki.rb"
-rd_include = [rd_main, "dotgraph.rb", "wio.rb", "mediawiki/"]
+rd_include = [rd_main, "wio.rb", "mediawiki/", "util/"]
 
 desc 'Generate the documentation in html'
 Rake::RDocTask.new(:html) do |rd|

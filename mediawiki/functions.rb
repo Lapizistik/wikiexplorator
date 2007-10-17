@@ -10,6 +10,77 @@ require 'mediawiki/core'
 module Mediawiki
   class Wiki
 
+    # user statistics
+    def userstats(filter=@filter)
+      se = Hash.new(0)
+      fe = Hash.new(0)
+      ke = typelinkusers(/^Kategorie:/, filter) 
+      ie = typelinkusers(/^Bild:/, filter) 
+      pages(filter).each { |p| 
+        p.self_edits(filter).each { |u,n| se[u] += n }
+        p.foreign_edits(filter).each { |u,n| fe[u] += n }
+      }
+      uh = Hash.new
+      users(filter).each { |u| 
+        # user => [edits, pages, edits/pages
+        #          self edits, foreign edits, category edits, image edits]
+        uh[u] = [el=u.revisions(filter).length, 
+                 pl=u.pages(filter).length, el.to_f/pl,
+                 se[u], fe[u], ke[u], ie[u]]
+      }
+      uh
+    end
+
+    # Pretty print user statistics
+    def pp_userstats(filter=@filter, &sortby)
+      ul = userstats(filter)
+      if sortby
+        ul = ul.sort_by(&sortby)
+      else
+        ul = ul.sort_by { |u,| u.name }
+      end
+      puts ul.collect { |u,values|
+        ('%-12s %-23s %4s %4i %4i %6.2f %4i %4i %4i %4i' %
+         ([u.name, u.real_name, u.uid] + values))
+      }.join("\n")
+    end    
+
+    # global user statistics.
+    #
+    # A cumulated view on #userstats.
+    def global_userstats(filter=@filter)
+      ['Edits', 'Edited Pages', 'Edits/Page', 
+       'Self-Edits', 'Foreign-Edits', 
+       'Category-Edits', 'Image-Edits'
+      ].zip(userstats(filter).values.transpose.collect { |a| 
+              descstats(a) }).collect { |a| a.flatten }
+    end
+
+    # Pretty print global user statistics. See #global_userstats.
+    def pp_global_userstats(filter=@filter)
+      puts '%-20s  %7s %7s %5s %5s %5s' % ["global user stats",
+                                           "avg","std","med","min","max"]
+      puts global_userstats(filter).collect { |a|
+        '%-20s: %7.2f %7.2f %5i %5i %5i' % a
+      }.join("\n")
+    end
+
+    # Descriptive statistics on the values of Enumerable _a_.
+    def descstats(a)
+      ll = a.length
+      a = a.reject { |i| i.respond_to?(:nan?) && i.nan? }
+      l = a.length
+      warn "Found some NaN's! Removed!" if l < ll
+      a.sort!
+      sum = a.inject { |s,x| s+x }
+      qsum = a.inject(0) { |s,x| s+x*x }
+      avg = sum.to_f/l
+      std = qsum.to_f/l - avg**2
+      std = (std.nan? ? std : Math.sqrt(std))
+      [avg, std, a[(l-1)/2], a.first, a.last]
+    end
+
+
     # :call-seq: 
     #  typelinkusers(regexp=/^Kategorie:/, filter=@wiki.filter)
     #  typelinkusers(regexp=/^Kategorie:/)
@@ -53,12 +124,7 @@ module Mediawiki
         "%-20s: %4i" % [u.name,c] }.join("\n")
     end
 
-    # Pretty print user statistics
-    def pp_userstats(filter=@filter)
-      puts users(filter).collect { |u| 
-        [u.name, u.real_name, u.uid, u.revisions.length, u.pages.length] 
-      }.sort.collect { |a| "%-20s %-30s %4i %4i %4i" % a }.join("\n")
-    end
+
 
     # :call-seq: 
     #  pp_user_revisiondensity(userkey=:name, filter=@wiki.filter)
@@ -85,7 +151,7 @@ module Mediawiki
     end
 
     # Pretty print users editing foreign user pages:
-    def pp_user_foreignedits(filter=@filter)
+    def pp_user_foreign_up_edits(filter=@filter)
       puts pages(f).collect { |p| 
         pt = p.title.split("/").first
         [p.title, p.users(f).collect { |u| u.name }.select { |un| pt != un}] 
@@ -100,8 +166,10 @@ module Mediawiki
       roles
     end
     # pretty print role distribution
-    def pp_userroledist(filter=@filter)
-      pp_dist(userroledist(filter))
+    #
+    # see #pp_dist for discussion of <i>&sortby</i>
+    def pp_userroledist(filter=@filter, &sortby)
+      pp_dist(userroledist(filter), &sortby)
     end
 
     # genre distribution
@@ -123,8 +191,10 @@ module Mediawiki
     # pretty print genre distribution
     #
     # see #genredist for discussion of parameter _detailed_.
-    def pp_genredist(detailed=false, filter=@filter)
-      pp_dist(genredist(detailed, filter))
+    #
+    # see #pp_dist for discussion of <i>&sortby</i>
+    def pp_genredist(detailed=false, filter=@filter, &sortby)
+      pp_dist(genredist(detailed, filter), &sortby)
     end
 
     # distribution of number of page edits
@@ -135,13 +205,24 @@ module Mediawiki
     end
 
     # pretty print distribution of number of page edits
-    def pp_pageeditdist(filter=@filter)
-      pp_dist(pageeditdist(filter))
+    #
+    # see #pp_dist for discussion of <i>&sortby</i>
+    def pp_pageeditdist(filter=@filter, &sortby)
+      pp_dist(pageeditdist(filter), &sortby)
     end
 
-    private
-    def pp_dist(hash)
-      puts hash.sort.collect { |kv|
+    # pretty print a Hash (or assoc array) as distribution.
+    # 
+    # If a block <i>&sort_by</i> is given, it is used for sorting:
+    # <tt>pp_dist(h) { |k,v| k }</tt>:: sorts by the key
+    # <tt>pp_dist(h) { |k,v| v }</tt>:: sorts by the key
+    def pp_dist(hash, &sortby)
+      if sortby
+        hs = hash.sort_by(&sortby)
+      else
+        hs = hash.sort
+      end
+      puts hs.collect { |kv|
         "%-40s: %3i" % kv
       }.join("\n")
     end

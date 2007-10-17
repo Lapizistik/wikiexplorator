@@ -274,7 +274,7 @@ module Mediawiki
       PagesView.new(revisions(filter).collect { |r| r.page }.compact.to_set, 
                     filter)
     end
-
+    
     # add a revision
     def <<(r)
       @revisions << r
@@ -410,6 +410,37 @@ module Mediawiki
       UsersView.new(a, filter)
     end
 
+    # The timestamp of the oldest revision of this page.
+    def creationtime
+      @revisions.first.timestamp # this works past calling #update_current
+    end
+
+    # returns a hash where the key is a user and the value is the
+    # number of revisions answering a revision of the _same_ user 
+    # (number of self-edits)
+    def self_edits(filter=@wiki.filter)
+      h = Hash.new(0)
+      revisions(filter).inject { |a,b| 
+        ua = a.user; ub = b.user
+        h[ub] += 1 if ua==ub
+        b
+      }
+      h
+    end
+
+    # returns a hash where the key is a user and the value is the
+    # number of revisions answering a revision of _another_ user 
+    # (number of self-edits)
+    def foreign_edits(filter=@wiki.filter)
+      h = Hash.new(0)
+      revisions(filter).inject { |a,b| 
+        ua = a.user; ub = b.user
+        h[ub] += 1 if ua!=ub
+        b
+      }
+      h
+    end
+
     def inspect
       "#<Mediawiki::Page id=#{@pid} title=\"#{@title}\">"
     end
@@ -422,6 +453,7 @@ module Mediawiki
 
     def update_current     #:nodoc:
       @current_revision = @wiki.revision_by_id(@current_revision)
+      @revisions = @revisions.sort_by { |r| r.timestamp }
     end
 
     def set_genres_from_string(genres) # :nodoc:
@@ -852,7 +884,7 @@ module Mediawiki
     def allowed?(revision)
       !@filter.denied_users.include?(revision.user) &&
         @filter.namespaces.include?(revision.namespace) &&
-        !(@filter.minor_edits && revision.minor_edit?) &&
+        (@filter.minor_edits || !revision.minor_edit?) &&
         !(@filter.genreinclude ^ revision.has_genre?(@filter.genregexp))
     end
   end

@@ -2,7 +2,7 @@
 # :title: Mediawiki Graph - Ruby Lib
 # = Mediawiki graph functions
 
-require 'dotgraph'    # generic dotfile graph class
+require 'util/dotgraph'    # generic dotfile graph class
 
 # = The Mediawiki Namespace
 module Mediawiki
