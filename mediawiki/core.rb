@@ -62,7 +62,7 @@ module Mediawiki
     #     and all appearances of uid=17 will be mapped to 22. No user
     #     with uid 17 will show up in the Wiki object.
     def Wiki.open(db, host, user, pw, *options)
-      options = options.first
+      options = options.first || {}
       Wiki.new(DB.new(db, host, user, pw, options[:engine] || "Mysql", 
                       options[:version] || 1.8), options)
     end
@@ -146,6 +146,11 @@ module Mediawiki
               @users_name[user.name] = user
             end
           end
+
+          # Merging aliased Users:
+          users_aliased.each do |uid, auser|
+            @users_id[uid].merge_user(auser)
+          end
           
           # Assign groups to them
           # TODO: how to deal with aliasing here?
@@ -192,7 +197,10 @@ module Mediawiki
           @time = @timeline.last
           
           @pages_id.each_value do |page|
-            page.update_current
+            page.sort_revisions
+          end
+          @users_id.each_value do |user|
+            user.sort_revisions
           end
 
           # And additional information by ourselves
@@ -327,6 +335,24 @@ module Mediawiki
     def set_roles_from_string(roles) # :nodoc:
       @roles.merge((roles || '').split(/,\s*/))
     end
+
+    def merge_user(other) # :nodoc:
+      @touched = [@touched, other.touched].max
+      # we have to check if there were registration timestamps in the database
+      # as this is only for version>=1.8
+      if @registration 
+        @registration = [@registration, other.registration].min
+      end
+      # editcount was introduced in 1.9
+      @editcount += (other.editcount || 0) if @editcount
+      # we do not merge @groups. Think about!
+      @revisions += other.all_revisions
+    end
+    
+    def sort_revisions # :nodoc:
+      @revisions = @revisions.sort_by { |r| r.timestamp }
+    end
+
   end
   
   # One page with all revisions
@@ -477,7 +503,7 @@ module Mediawiki
     end
 
 
-    def update_current     #:nodoc:
+    def sort_revisions     #:nodoc:
       @current_revision = @wiki.revision_by_id(@current_revision)
       @revisions = @revisions.sort_by { |r| r.timestamp }
     end
@@ -770,6 +796,20 @@ module Mediawiki
         @denied_users << u
       end
     end
+
+    # remove user from the Set of denied users
+    #
+    # ua is one or more users not longer to be filtered or its uid or name.
+     def undeny_user(*ua)
+      ua.each do |u|
+        case u
+        when Integer    : u = @wiki.user_by_id(u)
+        when String     : u = @wiki.user_by_name(u)
+        end
+        @denied_users.delete(u)
+      end
+    end
+
 
     alias ns namespaces
 

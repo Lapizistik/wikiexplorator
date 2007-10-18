@@ -13,11 +13,10 @@ class TestMediawiki < Test::Unit::TestCase
   
   def setup
     @testdb = TestDB.default
-    @wiki = Mediawiki::Wiki.new(@testdb)
+    @wiki = Mediawiki::Wiki.new(@testdb, {})
   end
 
-  def test_core
-
+  def filter
     ### Filter
     f1 = @wiki.filter
     # Defaults:
@@ -38,7 +37,9 @@ class TestMediawiki < Test::Unit::TestCase
     assert_not_same(f1.denied_users, f2.denied_users)
     assert_not_same(f1.redirects, f2.redirects)
     assert_not_same(f1.minor_edits, f2.minor_edits)
+  end
 
+  def database
     # There is one user more in the wiki than in the user table as
     # the system user is not in the table:
     assert_equal(@wiki.users.size, @testdb.usertable.size+1)
@@ -58,7 +59,7 @@ class TestMediawiki < Test::Unit::TestCase
       assert_equal(@wiki.user_by_name(n).uid, i)
     end
 
-
+    f2 = @wiki.filter.clone
     ### Genres
     assert(@wiki.page_by_id(1).has_genre?('portal'))
     assert(!@wiki.page_by_id(2).has_genre?('portal'))
@@ -78,6 +79,11 @@ class TestMediawiki < Test::Unit::TestCase
     f2.roleinclude = false
     assert(!@wiki.users(f2).include?(@wiki.user_by_id(1)))
     assert(@wiki.users(f2).include?(@wiki.user_by_id(2)))
+  end
+
+  def test_core
+    filter
+    database
   end
 
 end
