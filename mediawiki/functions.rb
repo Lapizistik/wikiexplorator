@@ -72,7 +72,7 @@ module Mediawiki
       l = a.length
       warn "Found some NaN's! Removed!" if l < ll
       a.sort!
-      sum = a.inject { |s,x| s+x }
+      sum = a.inject(0) { |s,x| s+x }
       qsum = a.inject(0) { |s,x| s+x*x }
       avg = sum.to_f/l
       std = qsum.to_f/l - avg**2
@@ -198,9 +198,10 @@ module Mediawiki
     end
 
     # distribution of number of page edits
+    #
     def pageeditdist(filter=@filter)
       edits = Hash.new(0)
-      pages(filter).each { |p| edits[p.revisions.length] += 1 }
+      pages(filter).each { |p| edits[p.revisions(filter).length] += 1 }
       edits
     end
 
@@ -209,6 +210,40 @@ module Mediawiki
     # see #pp_dist for discussion of <i>&sortby</i>
     def pp_pageeditdist(filter=@filter, &sortby)
       pp_dist(pageeditdist(filter), &sortby)
+    end
+
+    # distribution of number of page self edits (see Page#foreign_edits).
+    #
+    def pageselfdist(filter=@filter)
+      edits = Hash.new(0)
+      pages(filter).each { |p| 
+        edits[p.self_edits(filter).values.inject(0) {|s,i| s+i}] += 1 }
+      edits
+    end
+
+    # pretty print distribution of number of page self edits 
+    # (see Page#self_edits).
+    #
+    # see #pp_dist for discussion of <i>&sortby</i>
+    def pp_pageselfdist(filter=@filter, &sortby)
+      pp_dist(pageselfdist(filter), &sortby)
+    end
+
+    # distribution of number of page foreign edits (see Page#foreign_edits).
+    #
+    def pageforeigndist(filter=@filter)
+      edits = Hash.new(0)
+      pages(filter).each { |p| 
+        edits[p.foreign_edits(filter).values.inject(0) {|s,i| s+i}] += 1 }
+      edits
+    end
+
+    # pretty print distribution of number of page foreign edits 
+    # (see Page#foreign_edits).
+    #
+    # see #pp_dist for discussion of <i>&sortby</i>
+    def pp_pageforeigndist(filter=@filter, &sortby)
+      pp_dist(pageforeigndist(filter), &sortby)
     end
 
     # pretty print a Hash (or assoc array) as distribution.
