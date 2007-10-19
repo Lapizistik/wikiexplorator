@@ -27,7 +27,7 @@ class DotGraph
   #           <em>:nolinkcount</em> :: the dotfile should show the link count
   def initialize(nodes, *attrs, &lproc)
     @nodes = nodes.to_a
-    @lproc = lproc || lambda { |n| n.label }
+    @lproc = lproc || lambda { |n| n.node_id }
     @links = Hash.new(0)
     @linkcount = true
     attrs.each do |attr|
@@ -50,7 +50,7 @@ class DotGraph
     d = "#{'di' if @directed}graph G {\n"
     d << attrs.collect { |a| "  #{a};\n"}.join
     @nodes.each { |n| 
-      d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).tr('"',"'")}\"];\n" }
+      d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).to_s.tr('"',"'")}\"];\n"}
     @links.each { |l,count| d << l.to_dot(count) }
     d << "}\n"
   end

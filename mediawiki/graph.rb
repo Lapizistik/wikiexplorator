@@ -10,7 +10,7 @@ module Mediawiki
     def pagegraph(filter=@filter, &block)
       ps = pages(filter)
       if block
-        g = DotGraph.new(ps, :directed, block)
+        g = DotGraph.new(ps, :directed, &block)
       else
         g = DotGraph.new(ps, :directed) { |n| n.title }
       end
@@ -25,7 +25,7 @@ module Mediawiki
     def coauthorgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = DotGraph.new(us, :undirected, block)
+        g = DotGraph.new(us, :undirected, &block)
       else
         g = DotGraph.new(us, :undirected) { |n| n.name }
       end
@@ -45,7 +45,7 @@ module Mediawiki
     def communicationgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, block)
+        g = DotGraph.new(us, :directed, &block)
       else
         g = DotGraph.new(us, :directed) { |n| n.name }
       end
@@ -63,7 +63,7 @@ module Mediawiki
     def groupcommunicationgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, block)
+        g = DotGraph.new(us, :directed, &block)
       else
         g = DotGraph.new(us, :directed) { |n| n.name }
       end
