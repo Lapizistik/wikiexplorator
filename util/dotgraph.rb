@@ -38,6 +38,9 @@ class DotGraph
       end
     end
   end
+
+  # add a link to this graph. Any list of attributes may be given to be used 
+  # as additional link label.
   def link(src, dest, *attrs)
     src, dest = dest, src  if !@directed && (src.object_id > dest.object_id)
     # the following line is not very efficient: 
@@ -46,6 +49,89 @@ class DotGraph
     @links[Link.new(self, src, dest, *attrs)] += 1
   end
   
+  # Computes in- and out-degrees of all nodes. Returns a hash with the
+  # nodes as keys and arrays _a_ with outdegree (<i>a[0]</i>) and
+  # indegree (<i>a[1]</i>) as values.
+  #
+  # Take care: if the graph is _indirected_, it is random whether a link
+  # counts as in- or outlink so only the sum of both is valid.
+  def degrees
+    h = Hash.new { |h,k| h[k] = [0,0] }
+    @nodes.each { |n| h[n] = [0,0] }   # prefill
+    @links.each { |l,c|
+      h[l.src][0]  += c
+      h[l.dest][1] += c
+    }
+    h
+  end
+
+  DEGREESSORTNR = { :node=>0, :degree=>1, :out=>2, :in=>3} # :nodoc:
+  # Pretty print the degrees of all nodes.
+  # _sortnr_:: 
+  #    by which column the output should be sorted
+  #    0 or :node   :: by node
+  #    1 or :degree :: by degree
+  #    2 or :out    :: by outdegree
+  #    3 or :in     :: by indegree
+  # _up_:: _true_ for ascending, _false_ for descending sort.
+  # <i>&block</i>:: 
+  #   if a block is given it is called with each node and its 
+  #   return value (preferable a String) is used for printing the node.
+  #   Otherwise the block given while creating the graph or the default
+  #   block is used, respectively.
+  def pp_degrees(sortnr=0, up=true, &block)
+    sortnr = DEGREESSORTNR[sortnr] if sortnr.kind_of?(Symbol)
+    puts sortnr
+    lproc = block || @lproc
+    if @directed
+      fmt = "%-30s: %4s %4s %4s"
+    else
+      fmt = "%-30s: %4s"
+    end
+    puts fmt % ["Node","deg","out","in"]
+    d = degrees.collect { |n,a|
+      [lproc.call(n), a[0]+a[1]]+a
+    }
+    d = if up
+          d.sort { |a,b| a[sortnr]<=>b[sortnr] }
+        else
+          d.sort { |b,a| a[sortnr]<=>b[sortnr] }
+        end
+    d.each { |a| puts(fmt % a) }
+    nil
+  end
+
+  # compute distance matrix for all nodes
+  def distances
+    # prepare matrix
+    ni = Hash.new
+    @nodes.each_with_index { |n,i| ni[n]=i }
+    matrix = Array.new(@nodes.length) { Array.new(@nodes.size, 1.0/0) }
+    matrix.each_with_index { |a,i| a[i]=0 }
+    @links.each_key { |l| 
+      i = ni[l.src]
+      j = ni[l.dest]
+      if i!=j
+        matrix[i][j] = 1 
+        matrix[j][i] = 1 unless @directed
+      end
+    }
+    # compute pathes (Floyd)
+    matrix.each_index do |k|
+      matrix.each_index do |i|
+        matrix.each_index do |j|
+          d = matrix[i][k]+matrix[k][j]
+          matrix[i][j] = d if d<matrix[i][j]
+        end
+      end
+    end
+  end
+
+  # returns a String representing the whole graph in +dot+-Syntax 
+  # (see GraphViz http://www.graphviz.org/ for description).
+  #
+  # Any attributes given are included as graph attributes 
+  # (e.g. <tt>"overflow=scale"</tt>).
   def to_dot(*attrs)
     d = "#{'di' if @directed}graph G {\n"
     d << attrs.collect { |a| "  #{a};\n"}.join
@@ -55,11 +141,12 @@ class DotGraph
     d << "}\n"
   end
   
+  # Writes graph to dotfile. See #to_dot.
   def to_dotfile(filename, *attrs)
     File.open(filename,'w') { |file| file << to_dot(*attrs) }
   end
   
-  def DotGraph::nid(o)
+  def DotGraph::nid(o) # :nodoc:
     if o.respond_to?(:node_id)
       o.node_id
     else
@@ -67,11 +154,11 @@ class DotGraph
     end
   end
   
-  def nid(o)
+  def nid(o) # :nodoc:
     DotGraph::nid(o)
   end
   
-  class Link
+  class Link # :nodoc:
     attr_reader :src, :dest, :attr
     def initialize(graph, src, dest, *attrs)
       @graph = graph
