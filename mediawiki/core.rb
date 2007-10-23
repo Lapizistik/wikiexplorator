@@ -439,6 +439,50 @@ module Mediawiki
       @current_revision
     end
 
+    # We say an User _v_ answers another User _u_ if one or more revisions
+    # of _v_ follow a revision of _u_ (similar to Wiki#communicationgraph).
+    #
+    # If two or more revisions of _v_ follow a revision of _u_ this counts
+    # as one answer. But if a revision of _v_ follows a _new_ revision of
+    # _u_ this counts as _new_ answer.
+    #
+    # For a revision history of
+    #  0 1 2 3 4 5 6 7 8 9 
+    #  u x u v u u x u v x
+    # we have (this excludes self-answers for simplification)
+    #  x1 -> u0,   u2 -> x1,   v3 -> x1,   v3 -> u2,   u4 -> v3,
+    #  x6 -> v3,   x6 -> u5,   u7 -> x6,   v8 -> x6,   v8 -> u7, 
+    #  x9 -> u7,   x9 -> v8.
+    #
+    # So we get (including self-answers): 
+    #  u -> u  =  4    u -> v  =  1    u -> x  =  2
+    #  v -> u  =  2    v -> v  =  1    v -> x  =  2
+    #  x -> u  =  3    x -> v  =  2    x -> x  =  2
+    #
+    # If a block is given it is called with each user and the result
+    # used as key. E.g.:
+    #  page.answers { |u| u.name }
+    def answers(filter=@wiki.filter) # :yields: user
+      if block_given?
+        us = revisions(filter).collect { |r| yield(r.user) }
+      else
+        us = revisions(filter).collect { |r| r.user }
+      end
+      latest_users = Hash.new
+      users = Hash.new { |h,k| h[k]=Hash.new }
+      
+      us.each_with_index { |u,i|
+        latest_users.each_pair { |lu,j| users[u][j] = lu }
+        latest_users[u] = i
+      }
+      uhs = Hash.new { |h,k| h[k]=Hash.new(0) }
+      users.each_pair { |u,h|
+        uh = uhs[u]
+        h.each_value { |v| uh[v] += 1 }
+      }
+      uhs
+    end
+
     # whether this Page has the given genre _g_. _g_ may be given as String 
     # (exact matching) or Regexp.
     #
