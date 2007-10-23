@@ -101,12 +101,11 @@ class DotGraph
     nil
   end
 
-  # compute distance matrix for all nodes
-  def distances
+  def adjacencymatrix(inf=1.0/0)
     # prepare matrix
     ni = Hash.new
     @nodes.each_with_index { |n,i| ni[n]=i }
-    matrix = Array.new(@nodes.length) { Array.new(@nodes.size, 1.0/0) }
+    matrix = Array.new(@nodes.length) { Array.new(@nodes.size, inf) }
     matrix.each_with_index { |a,i| a[i]=0 }
     @links.each_key { |l| 
       i = ni[l.src]
@@ -116,10 +115,33 @@ class DotGraph
         matrix[j][i] = 1 unless @directed
       end
     }
+    matrix
+  end
+
+  # compute distance matrix for all nodes
+  def distances(debug=false)
+    matrix = adjacencymatrix
     # compute pathes (Floyd)
     matrix.each_index do |k|
+      print '.' if debug
       matrix.each_index do |i|
         matrix.each_index do |j|
+          d = matrix[i][k]+matrix[k][j]
+          matrix[i][j] = d if d<matrix[i][j]
+        end
+      end
+    end
+  end
+
+  # compute distance matrix for all nodes
+  def distances2(debug=false)
+    matrix = adjacencymatrix
+    # compute pathes (Floyd)
+    l = matrix.length-1
+    0.upto(l) do |k|
+      print '.' if debug
+      0.upto(l) do |i|
+        0.upto(l) do |j|
           d = matrix[i][k]+matrix[k][j]
           matrix[i][j] = d if d<matrix[i][j]
         end
