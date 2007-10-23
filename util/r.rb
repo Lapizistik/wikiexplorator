@@ -151,7 +151,7 @@ else
       params = params.first || {}
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
-      pp_key_value(prestige(params), sortby, up, &block)
+      pp_key_value(prestige(params), sortby, up, '%20i', &block)
     end
 
 
@@ -168,10 +168,11 @@ else
     #   return value (preferable a String) is used for printing the node.
     #   Otherwise the block given while creating the graph or the default
     #   block is used, respectively.
-    def pp_key_value(h, sortby=0, up=true, &block)
+    def pp_key_value(h, sortby=0, up=true, fmt='%20.10f', &block)
       sortby = SORTBY[sortby] if sortby.kind_of?(Symbol)
       lproc = block || @lproc
       puts "%-30s: %20s" % ["Node","betweenness"]
+      puts '='*60
       d = h.collect { |n,v|
         [lproc.call(n), v]
       }
@@ -180,7 +181,7 @@ else
           else
             d.sort { |b,a| sorter_nan(a[sortby],b[sortby]) }
           end
-      d.each { |a| puts("%-30s: %20.10f" % a) }
+      d.each { |a| puts("%-30s: #{fmt}" % a) }
       nil
     end
     
