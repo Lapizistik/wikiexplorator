@@ -77,6 +77,7 @@ else
       params = params.first || {}
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
+      puts "%-30s: %20s" % ["Node","betweenness"]
       pp_key_value(betweenness(params), sortby, up, &block)
     end
 
@@ -114,6 +115,7 @@ else
       params = params.first || {}
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
+      puts "%-30s: %20s" % ["Node","closeness"]
       pp_key_value(closeness(params), sortby, up, &block)
     end
 
@@ -151,6 +153,7 @@ else
       params = params.first || {}
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
+      puts "%-30s: %20s" % ["Node","prestige"]
       pp_key_value(prestige(params), sortby, up, '%20i', &block)
     end
 
@@ -171,7 +174,6 @@ else
     def pp_key_value(h, sortby=0, up=true, fmt='%20.10f', &block)
       sortby = SORTBY[sortby] if sortby.kind_of?(Symbol)
       lproc = block || @lproc
-      puts "%-30s: %20s" % ["Node","betweenness"]
       puts '='*60
       d = h.collect { |n,v|
         [lproc.call(n), v]
