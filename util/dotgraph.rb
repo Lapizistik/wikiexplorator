@@ -81,7 +81,6 @@ class DotGraph
   #   block is used, respectively.
   def pp_degrees(sortnr=0, up=true, &block)
     sortnr = DEGREESSORTNR[sortnr] if sortnr.kind_of?(Symbol)
-    puts sortnr
     lproc = block || @lproc
     if @directed
       fmt = "%-30s: %4s %4s %4s"
@@ -101,7 +100,7 @@ class DotGraph
     nil
   end
 
-  def adjacencymatrix(inf=1.0/0)
+  def adjacencymatrix(inf=0)
     # prepare matrix
     ni = Hash.new
     @nodes.each_with_index { |n,i| ni[n]=i }
@@ -119,29 +118,14 @@ class DotGraph
   end
 
   # compute distance matrix for all nodes
-  def distances(debug=false)
+  # this is native ruby and therefor slow on large datasets
+  def distances_native(debug=false)
     matrix = adjacencymatrix
     # compute pathes (Floyd)
     matrix.each_index do |k|
       print '.' if debug
       matrix.each_index do |i|
         matrix.each_index do |j|
-          d = matrix[i][k]+matrix[k][j]
-          matrix[i][j] = d if d<matrix[i][j]
-        end
-      end
-    end
-  end
-
-  # compute distance matrix for all nodes
-  def distances2(debug=false)
-    matrix = adjacencymatrix
-    # compute pathes (Floyd)
-    l = matrix.length-1
-    0.upto(l) do |k|
-      print '.' if debug
-      0.upto(l) do |i|
-        0.upto(l) do |j|
           d = matrix[i][k]+matrix[k][j]
           matrix[i][j] = d if d<matrix[i][j]
         end
