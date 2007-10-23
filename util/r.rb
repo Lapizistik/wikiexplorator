@@ -119,6 +119,45 @@ else
       pp_key_value(closeness(params), sortby, up, &block)
     end
 
+    # computes the stress centrality scores for all nodes using R.
+    #
+    # _params_:: 
+    #     Hash with all named parameters for R::stresscent.
+    #     Try e.g.:
+    #       g.stresscent(:rescale => true) 
+    #     or
+    #       g.stresscent(:cmode => 'undirected', :rescale => true)
+    #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
+    def stresscent(*params)
+      params = params.first || {}
+      r = RSRuby.instance
+      params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
+      params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
+      b = r.stresscent(to_r_matrix, params)
+      h = Hash.new
+      @nodes.each_with_index { |n,i| h[n] = b[i] }
+      h
+    end
+
+    # :call-seq:
+    # pp_stresscent(:sortby => 0, :up => true, ...)
+    # pp_stresscent(:sortby => 0, :up => true, ...) { |n| ... }
+    #
+    # Pretty print the stress centrality scores of all nodes (using R).
+    #
+    # _params_ is a Hash of named parameters:
+    # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
+    # #pp_key_value (see there), all other params are passed to 
+    # #stresscent (see there).
+    def pp_stresscent(*params, &block)
+      params = params.first || {}
+      sortby = params.delete(:sortby) || 0
+      up = params.delete(:up) || true
+      puts "%-30s: %20s" % ["Node","stresscent"]
+      pp_key_value(stresscent(params), sortby, up, &block)
+    end
+
+
 
     # computes the prestige for all nodes using R.
     #
