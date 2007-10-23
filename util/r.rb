@@ -3,7 +3,7 @@
 # = RSRuby DotGraph library
 #
 # This library extends the DotGraph class with methods for social network 
-# analysis. It is based on the RSRuby library, which uses the statistical
+# analysis. It is based on the RSRuby library which uses the statistical
 # computing environment R <http://www.r-project.org> and on the R library sna. 
 # 
 # Please require explicitly (for R, sna, RSRuby  may not be installed 
