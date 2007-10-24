@@ -70,7 +70,7 @@ class DotGraph
   # if _w_ is given, only links with weight smaller _w_ are deleted.
   #
   # For convenience this method returns self (i.e. the DotGraph object).
-  def del_links(w=nil)
+  def remove_links(w=nil)
     w = w || (1.0/0)
     @links.delete_if { |k,v| v<w }
     self
