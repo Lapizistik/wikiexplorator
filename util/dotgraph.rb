@@ -22,9 +22,12 @@ class DotGraph
 
   # _nodes_:: any Enumerable object giving the nodes of the graph
   # _attrs_:: any number of flags:
-  #           <em>:directed</em> :: give this Symbol if the graph is directed
-  #           <em>:linkcount</em> :: the dotfile should show the link count
-  #           <em>:nolinkcount</em> :: the dotfile should show the link count
+  #           <i>:directed</i> :: give this Symbol if the graph is directed
+  #           <i>:linkcount</i> :: the dotfile should show the link count
+  #           <i>:nolinkcount</i> :: the dotfile should show the link count
+  # <i>&lproc</i> :: 
+  #   if a block is given it is called for each node to generate the node 
+  #   labels on output.
   def initialize(nodes, *attrs, &lproc)
     @nodes = nodes.to_a
     @lproc = lproc || lambda { |n| n.node_id }
@@ -39,14 +42,38 @@ class DotGraph
     end
   end
 
-  # add a link to this graph. Any list of attributes may be given to be used 
-  # as additional link label.
-  def link(src, dest, *attrs)
+  # add a link to this graph.
+  #
+  # _src_, _dest_ ::
+  #   source and destination of this link. If the graph is undirected
+  #   they are sorted in canonical order (using #object_id).
+  # _w_ :: weight of this link
+  # _add_ :: 
+  #   * if _true_ and the link (same _src_ and _dest_) already exists,
+  #     _w_ is added to the link weight.
+  #   * if _false_, the maximum of the old link weight and _w_ is used.
+  def link(src, dest, w=1, add=true)
     src, dest = dest, src  if !@directed && (src.object_id > dest.object_id)
-    # the following line is not very efficient: 
+    # the following lines are not very efficient: 
     # a lot of Link objects may be generated which are never used again later.
     # 
-    @links[Link.new(self, src, dest, *attrs)] += 1
+    if add
+      @links[Link.new(self, src, dest)] += w
+    else
+      l = Link.new(self, src, dest)
+      @links[l] = w if w>@links[l]
+    end
+  end
+
+  # remove all links from this graph.
+  #
+  # if _w_ is given, only links with weight smaller _w_ are deleted.
+  #
+  # For convenience this method returns self (i.e. the DotGraph object).
+  def del_links(w=nil)
+    w = w || (1.0/0)
+    @links.delete_if { |k,v| v<w }
+    self
   end
   
   # Computes in- and out-degrees of all nodes. Returns a hash with the

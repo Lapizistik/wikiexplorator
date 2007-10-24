@@ -262,4 +262,118 @@ module Mediawiki
       }.join("\n")
     end
   end
+
+  class Page
+    # We say an User _v_ (respond-)communicates to another User _u_ if one 
+    # or more revisions of _v_ follow a revision of _u_ 
+    # (similar but not equal to to Wiki#groupcommunicationgraph).
+    #
+    # If two or more revisions of _v_ follow a revision of _u_ this counts
+    # as one communication. But if a revision of _v_ follows a _new_ revision 
+    # of _u_ this counts as _new_ communication.
+    #
+    # For a revision history of
+    #  0 1 2 3 4 5 6 7 8 9 
+    #  u x u v u u x u v x
+    # we have (this excludes self-communications for simplification)
+    #  x1 -> u0,   u2 -> x1,   v3 -> x1,   v3 -> u2,   u4 -> v3,
+    #  x6 -> v3,   x6 -> u5,   u7 -> x6,   v8 -> x6,   v8 -> u7, 
+    #  x9 -> u7,   x9 -> v8.
+    #
+    # So we get (including self-communications): 
+    #  u -> u  =  4    u -> v  =  1    u -> x  =  2
+    #  v -> u  =  2    v -> v  =  1    v -> x  =  2
+    #  x -> u  =  3    x -> v  =  2    x -> x  =  2
+    #
+    # If a block is given it is called with each user and the result
+    # used as key. E.g.:
+    #  page.respondcommunications { |u| u.name }
+    def respondcommunications(filter=@wiki.filter) # :yields: user
+      if block_given?
+        us = revisions(filter).collect { |r| yield(r.user) }
+      else
+        us = revisions(filter).collect { |r| r.user }
+      end
+      latest_users = Hash.new
+      usersh = Hash.new { |h,k| h[k]=Hash.new }
+      
+      us.each_with_index { |u,i|
+        latest_users.each_pair { |lu,j| usersh[u][j] = lu }
+        latest_users[u] = i
+      }
+      uhs = Hash.new { |h,k| h[k]=Hash.new(0) }
+      usersh.each_pair { |u,h|
+        uh = uhs[u]
+        h.each_value { |v| uh[v] += 1 }
+      }
+      uhs
+    end
+
+    # :call-seq:
+    # groupcommunications(filter=@filter, compatible=true)
+    # groupcommunications(filter=@filter)
+    # groupcommunications(compatible=true)
+    # groupcommunications()
+    #
+    # We say an User _v_ (group-)communicates another User _u_ if any
+    # revision of _v_ follows any revision of _u_ 
+    # (similar to Wiki#groupcommunicationgraph).
+    #
+    # By definition each user-user-combination may occour at most once.
+    # To be compatible to #directcommunications and #respondcommunications 
+    # this method by default nevertheless returns a Hash of Hashes. 
+    # This can be changes by setting the parameter _compatible_ to _false_.
+    #
+    # If a block is given it is called with each user and the result
+    # used as key. E.g.:
+    #  page.groupcommunications { |u| u.name }
+    def groupcommunications(*params) # :yields: user
+      filter = @wiki.filter
+      compatible=true
+      params.each { |par|
+        if Filter===par
+          filter = par
+        else
+          compatible = par
+        end
+      }
+      if block_given?
+        us = revisions(filter).collect { |r| yield(r.user) }
+      else
+        us = revisions(filter).collect { |r| r.user }
+      end
+      s = Set.new
+      while b = us.pop
+        us.each { |a| s << [b,a] }
+      end
+      if compatible
+        usersh = Hash.new { |h,k| h[k]=Hash.new(0) }
+        s.each { |a,b| usersh[a][b]=1 }
+        return usersh
+      else
+        return s
+      end
+    end
+
+    # We say an User _v_ (direct-)communicates to another User _u_ if a 
+    # revision of _v_ directly follows a revision of _u_ 
+    # (similar to Wiki#communicationgraph).
+    #
+    # If a block is given it is called with each user and the result
+    # used as key. E.g.:
+    #  page.directcommunications { |u| u.name }
+    def directcommunications(filter=@wiki.filter) # :yields: user
+      if block_given?
+        us = revisions(filter).collect { |r| yield(r.user) }
+      else
+        us = revisions(filter).collect { |r| r.user }
+      end
+      usersh = Hash.new { |h,k| h[k]=Hash.new(0) }
+      us.inject do |a,b|
+        usersh[b][a] += 1
+        b
+      end
+      usersh
+    end
+  end
 end
