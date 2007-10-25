@@ -75,7 +75,20 @@ class DotGraph
     @links.delete_if { |k,v| v<w }
     self
   end
-  
+
+  # remove nodes which have _no_ (incoming or outgoing) links.
+  #
+  # For convenience this method returns self (i.e. the DotGraph object).
+  def remove_lonely_nodes
+    ns = Set.new
+    @links.each { |l,c|
+      ns << l.src
+      ns << l.dest
+    }
+    @nodes.delete_if { |n| !ns.include?(n) }
+    self
+  end
+
   # Computes in- and out-degrees of all nodes. Returns a hash with the
   # nodes as keys and arrays _a_ with outdegree (<i>a[0]</i>) and
   # indegree (<i>a[1]</i>) as values.
@@ -170,7 +183,7 @@ class DotGraph
     d << attrs.collect { |a| "  #{a};\n"}.join
     @nodes.each { |n| 
       d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).to_s.tr('"',"'")}\"];\n"}
-    @links.each { |l,count| d << l.to_dot(count) }
+    @links.sort.each { |l,count| d << l.to_dot(count) }
     d << "}\n"
   end
   
@@ -178,6 +191,14 @@ class DotGraph
   def to_dotfile(filename, *attrs)
     File.open(filename,'w') { |file| file << to_dot(*attrs) }
   end
+
+  # Writes graph to image file.
+  # _filename_:: the file to be written. If no suffix is given _fmt_ is
+  #              used as suffix
+  # _alg_:: the algorithm 
+#  def to_imagefile(filename, alg='dot', fmt='svg', *attrs)
+#    
+#  end
   
   def DotGraph::nid(o) # :nodoc:
     if o.respond_to?(:node_id)
@@ -225,6 +246,14 @@ class DotGraph
     
     def weightlabel(count)
       "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
+    end
+
+    def <=>(l)
+      if (s=(nid(src)<=>nid(l.src)))==0
+        nid(dest)<=>nid(l.dest)
+      else
+        s
+      end
     end
     
     def eql?(other)
