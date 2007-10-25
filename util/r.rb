@@ -52,8 +52,7 @@ else
     #     or
     #       g.betweenness(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
-    def betweenness(*params)
-      params = params.first || {}
+    def betweenness(params={})
       r = RSRuby.instance
       params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
       params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
@@ -73,8 +72,7 @@ else
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
     # #pp_key_value (see there), all other params are passed to 
     # #betweenness (see there).
-    def pp_betweenness(*params, &block)
-      params = params.first || {}
+    def pp_betweenness(params={}, &block)
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
       puts "%-30s: %20s" % ["Node","betweenness"]
@@ -90,8 +88,7 @@ else
     #     or
     #       g.closeness(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
-    def closeness(*params)
-      params = params.first || {}
+    def closeness(params={})
       r = RSRuby.instance
       params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
       params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
@@ -111,8 +108,7 @@ else
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
     # #pp_key_value (see there), all other params are passed to 
     # #closeness (see there).
-    def pp_closeness(*params, &block)
-      params = params.first || {}
+    def pp_closeness(params={}, &block)
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
       puts "%-30s: %20s" % ["Node","closeness"]
@@ -128,8 +124,7 @@ else
     #     or
     #       g.stresscent(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
-    def stresscent(*params)
-      params = params.first || {}
+    def stresscent(params={})
       r = RSRuby.instance
       params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
       params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
@@ -149,8 +144,7 @@ else
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
     # #pp_key_value (see there), all other params are passed to 
     # #stresscent (see there).
-    def pp_stresscent(*params, &block)
-      params = params.first || {}
+    def pp_stresscent(params={}, &block)
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
       puts "%-30s: %20s" % ["Node","stresscent"]
@@ -168,8 +162,7 @@ else
     #     or
     #       g.prestige(:cmode => 'indegree', :rescale => true)
     #     By default <i>:gmode</i> is set automatically.
-    def prestige(*params)
-      params = params.first || {}
+    def prestige(params={})
       r = RSRuby.instance
       params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
       b = r.prestige(to_r_matrix, params)
@@ -188,8 +181,7 @@ else
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
     # #pp_key_value (see there), all other params are passed to 
     # #prestige (see there).
-    def pp_prestige(*params, &block)
-      params = params.first || {}
+    def pp_prestige(params={}, &block)
       sortby = params.delete(:sortby) || 0
       up = params.delete(:up) || true
       puts "%-30s: %20s" % ["Node","prestige"]

@@ -76,6 +76,14 @@ class DotGraph
     self
   end
 
+  # remove all links from this graph, where source and destination are equal.
+  #
+  # For convenience this method returns self (i.e. the DotGraph object).
+  def remove_self_links
+    @links.delete_if { |l,c| l.src==l.dest }
+    self
+  end
+
   # remove nodes which have _no_ (incoming or outgoing) links.
   #
   # For convenience this method returns self (i.e. the DotGraph object).
@@ -195,10 +203,11 @@ class DotGraph
   # Writes graph to image file.
   # _filename_:: the file to be written. If no suffix is given _fmt_ is
   #              used as suffix
-  # _alg_:: the algorithm 
-#  def to_imagefile(filename, alg='dot', fmt='svg', *attrs)
-#    
-#  end
+  #     _alg_, _fmt_, _attrs_
+  #def to_imagefile(filename, params={})
+  #  params = { :alg => 'dot', :fmt => 'svg', :attrs => [] }.merge(params)
+  #  
+  #end
   
   def DotGraph::nid(o) # :nodoc:
     if o.respond_to?(:node_id)
