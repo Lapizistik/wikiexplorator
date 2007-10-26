@@ -41,6 +41,13 @@ class DotGraph
       end
     end
   end
+  
+  # sets the block to be used to generate note labels for each node.
+  # If no block is given it just returns the current block.
+  def nodeblock(&nodeblock)
+    @lproc = nodeblock    if nodeblock
+    @lproc
+  end
 
   # add a link to this graph.
   #
