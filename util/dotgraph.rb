@@ -285,9 +285,9 @@ class DotGraph
     tex << "#{cmd}\n".gsub(/^/,'% ')
     tex << "#{params[:comment]}\n".gsub(/^/,'% ')
     tex << "%\n% You may need the following packages:\n"
-    tex << "% \usepackage[x11names, rgb]{xcolor}\n"
-    tex << "% \usepackage{tikz}\n"
-    tex << "% \usetikzlibrary{snakes,arrows,shapes}\n"
+    tex << "% \\usepackage[x11names, rgb]{xcolor}\n"
+    tex << "% \\usepackage{tikz}\n"
+    tex << "% \\usetikzlibrary{snakes,arrows,shapes}\n"
     tex << IO.popen(cmd,'r+') do |dot2tex|
       dot2tex << srcdot
       dot2tex.close_write
