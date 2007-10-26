@@ -184,14 +184,18 @@ class DotGraph
   # returns a String representing the whole graph in +dot+-Syntax 
   # (see GraphViz http://www.graphviz.org/ for description).
   #
-  # Any attributes given are included as graph attributes 
-  # (e.g. <tt>"overflow=scale"</tt>).
-  def to_dot(*attrs)
+  # Any strings given as attributes are included as graph attributes 
+  # (e.g. <tt>"overflow=scale"</tt> or 
+  # <tt>"node [shape=circle,fixedsize=true,width=0.1"</tt>).
+  #
+  # if a block is given it is called with the link count of each link 
+  # and the return value is used as link attribute (don't forget the []).
+  def to_dot(*attrs,&block)
     d = "#{'di' if @directed}graph G {\n"
     d << attrs.collect { |a| "  #{a};\n"}.join
     @nodes.each { |n| 
       d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).to_s.tr('"',"'")}\"];\n"}
-    @links.sort.each { |l,count| d << l.to_dot(count) }
+    @links.sort_by { |l,c| c }.each { |l,count| d << l.to_dot(count,&block) }
     d << "}\n"
   end
   
@@ -200,15 +204,97 @@ class DotGraph
     File.open(filename,'w') { |file| file << to_dot(*attrs) }
   end
 
-  # Writes graph to image file.
-  # _filename_:: the file to be written. If no suffix is given _fmt_ is
-  #              used as suffix
-  #     _alg_, _fmt_, _attrs_
-  #def to_imagefile(filename, params={})
-  #  params = { :alg => 'dot', :fmt => 'svg', :attrs => [] }.merge(params)
-  #  
-  #end
+  # Creates a LaTeX String representing   
+  #
+  # The following named parameters can be given 
+  # (see <tt>dot2tex</tt>-documentation, pgfmanual and GraphViz-documentation
+  # for details):
+  # :alg:: the graphviz algorithm to be used (Strings and Symbols allowed): 
+  #        "dot" (default), "neato", "twopi", "circo", "fdp".
+  # :fmt:: the output format: "pgf" (default), "pst", "tikz".
+  # :figpreamble:: any LaTeX-code to be included at picture start. Try e.g.
+  #                <i>:figpreamble => '\scriptsize'</i> for smaller font.
+  # :graphstyle:: any parameter to the corresponding picture-environment
+  #               (+tikzpicture+ or +pspicture+, respectively). Try e.g. 
+  #               <i>:graphstyle => 'scale=0.5'</i> to scale down the graph
+  #               to 50%.
+  # :texmode:: dot2tex text mode: 
+  #            "raw":: (default) any string is subject to LaTeX interpretation
+  #            "math":: as above but in TeX math mode
+  #            "verbatim":: all special characters escaped, no interpretation.
+  # :exp:: if no block is given the (Float) value of this parameter is used
+  #        to darken/lighten the link color (default is 0.2).
+  # :comment:: this parameter is added as a TeX comment at the beginning of 
+  #            TeX output. So if you look in the TeX file later you may be
+  #            to find out what kind of graph it contains.
+  # :dtpars:: a String directly passed to the <tt>dot2tex</tt> command
+  #           line to be able to use more exotic switches like <tt>-w</tt>.
+  # :attrs:: a String or an array of Strings which's values are passed as 
+  #          parameters to #to_dot. (defaults to []). 
+  #
+  # Try
+  #  g.to_tex(:alg => :neato, attrs => 'overlap=scale')
+  #
+  # or
+  #  wiki.coauthorgraph { |u| 
+  #    "#{(u.role||'')[0..0]}_{#{u.uid}}"  # role with uid as index
+  #  }.to_texfile('coauthorrolegraph.tex', 
+  #    :alg=>:neato,                  # neato algorithm
+  #    :graphstyle=>'scale=0.3',      # downscale to fit on paper
+  #    :texmode=>"math",              # the nodes need math mode 
+  #    :figpreamble=>'\scriptsize',   # smaller font needed
+  #    :comment=>'Example',           # so we see what this is
+  #    :attrs=>['overlap=scale',      # looks best
+  #             'sep=0.01',           # nodes may be set close
+  #             'node [style="ball color=gray!5, semitransparent"]'])
+  #                                   # and a nice 3d-style
+  #
+  # This method depends on 
+  # <tt>dot2tex</tt> (http://www.fauskes.net/code/dot2tex/),
+  # (pdf)latex (with package pgf) and certainly graphviz to be installed.
+  def to_tex(params={})
+    params = { :alg => 'dot', :fmt => 'pgf', :figonly => true,
+      :exp => 0.2, :texmode => 'raw',
+      :attrs => [] }.merge(params)
+    exp = params[:exp]
+    maxc = @links.values.max
+    if block_given?
+      srcdot = to_dot(*params[:attrs])
+    else
+      srcdot = to_dot(*params[:attrs]) { |c|
+        "[style=\"color=black!#{(c.to_f/maxc)**exp*100}\"]" }
+    end
+    return srcdot if params[:dotonly] # for debugging
+    p=""
+    cmd = "dot2tex --prog=#{params[:alg]} "
+    cmd << '--figonly ' if params[:figonly]
+    cmd << "--graphstyle=\"#{p}\" " if (p = params[:graphstyle])
+    cmd << "--figpreamble=\"#{p}\" " if (p = params[:figpreamble])
+    cmd << "-t#{p}" if p = params[:texmode]
+    cmd << "#{params[:dtpars]}"
+    tex = "% Graph generated from dotgraph.rb with heavy help from dot2tex.\n"
+    tex << "DotGraph#to_tex(#{params.inspect[1..-2]})\n".gsub(/^/,'% ')
+    tex << "% This called:\n"
+    tex << "#{cmd}\n".gsub(/^/,'% ')
+    tex << "#{params[:comment]}\n".gsub(/^/,'% ')
+    tex << "%\n% You may need the following packages:\n"
+    tex << "% \usepackage[x11names, rgb]{xcolor}\n"
+    tex << "% \usepackage{tikz}\n"
+    tex << "% \usetikzlibrary{snakes,arrows,shapes}\n"
+    tex << IO.popen(cmd,'r+') do |dot2tex|
+      dot2tex << srcdot
+      dot2tex.close_write
+      dot2tex.read
+    end
+    tex
+  end
   
+  # Writes graph to dotfile. See #to_tex.
+  def to_texfile(filename, params={})
+    File.open(filename,'w') { |file| file << to_tex(params) }
+  end
+
+
   def DotGraph::nid(o) # :nodoc:
     if o.respond_to?(:node_id)
       o.node_id
@@ -229,10 +315,15 @@ class DotGraph
       @dest = dest
       @attrs = attrs
     end
+
     def to_dot(count)
       s = "  \"#{nid(@src)}\" #{edgesymbol} \"#{nid(@dest)}\" "
       s << "[#{@attrs.join(',')}]" unless @attrs.empty?
-      s << weightlabel(count) if linkcount
+      if block_given?
+        s << yield(count)
+      else
+        s << weightlabel(count) if linkcount
+      end
       s << ";\n"
       s
     end
@@ -254,7 +345,7 @@ class DotGraph
     end
     
     def weightlabel(count)
-      "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
+    "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
     end
 
     def <=>(l)

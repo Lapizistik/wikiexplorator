@@ -261,6 +261,7 @@ module Mediawiki
     # See <tt>mediawiki/db.rb</tt> for how to use this.
     attr_reader :roles
 
+
     # The parameters do not correspond exactly to the user table fields as we
     # do not want to read the user_password, user_newpassword, user_token and
     # user_email_token fields (as these may contain sensible data).
@@ -325,6 +326,12 @@ module Mediawiki
       when String : @roles.include?(r)
       when Regexp : @roles.find { |s| s =~ r }
       end
+    end
+
+    # Returns the first role of an user which is not the +DEFAULT+ role.
+    # For an user with more than one role a random role is returned
+    def role
+      @roles.find { |r| r!='DEFAULT' }
     end
 
     # id string for dotfile creation

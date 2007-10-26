@@ -54,8 +54,8 @@ else
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
     def betweenness(params={})
       r = RSRuby.instance
-      params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
-      params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
+      params[:gmode] ||= (@directed ? 'digraph' : 'graph')
+      params[:cmode] ||= (@directed ? 'directed' : 'undirected')
       b = r.betweenness(to_r_matrix, params) 
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
@@ -90,8 +90,8 @@ else
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
     def closeness(params={})
       r = RSRuby.instance
-      params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
-      params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
+      params[:gmode] ||= (@directed ? 'digraph' : 'graph')
+      params[:cmode] ||= (@directed ? 'directed' : 'undirected') 
       b = r.closeness(to_r_matrix, params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
@@ -126,8 +126,8 @@ else
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
     def stresscent(params={})
       r = RSRuby.instance
-      params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
-      params[:cmode] = (@directed ? 'directed' : 'undirected') unless params[:cmode]
+      params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
+      params[:cmode] ||= (@directed ? 'directed' : 'undirected')
       b = r.stresscent(to_r_matrix, params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
@@ -164,7 +164,7 @@ else
     #     By default <i>:gmode</i> is set automatically.
     def prestige(params={})
       r = RSRuby.instance
-      params[:gmode] = (@directed ? 'digraph' : 'graph') unless params[:gmode]
+      params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
       b = r.prestige(to_r_matrix, params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
