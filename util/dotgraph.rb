@@ -113,10 +113,14 @@ class DotGraph
   #
   # Take care: if the graph is _indirected_, it is random whether a link
   # counts as in- or outlink so only the sum of both is valid.
-  def degrees
+  #
+  # If _weight_ is true, not the number of links are counted but the 
+  # sum of the link weights is used.
+  def degrees(weight=false)
     h = Hash.new { |h,k| h[k] = [0,0] }
     @nodes.each { |n| h[n] = [0,0] }   # prefill
     @links.each { |l,c|
+      c = 1 unless weight
       h[l.src][0]  += c
       h[l.dest][1] += c
     }
@@ -325,7 +329,7 @@ class DotGraph
   end
   
   class Link # :nodoc:
-    attr_reader :src, :dest, :attr
+    attr_reader :src, :dest, :attrs
     def initialize(graph, src, dest, *attrs)
       @graph = graph
       @src = src
@@ -374,7 +378,7 @@ class DotGraph
     end
     
     def eql?(other)
-      (@src==other.src) && (@dest==other.dest) && (@attr==other.attr)
+      (@src==other.src) && (@dest==other.dest) && (@attrs==other.attrs)
     end
     def hash
       @src.hash ^ @dest.hash
