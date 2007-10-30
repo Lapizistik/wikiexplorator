@@ -27,7 +27,10 @@ class DotGraph
   #           <i>:nolinkcount</i> :: the dotfile should show the link count
   # <i>&lproc</i> :: 
   #   if a block is given it is called for each node to generate the node 
-  #   labels on output.
+  #   labels on output. If the block returns a string it is used as the
+  #   label. Otherwise it should return an Enumerable whose elements are
+  #   used as node parameters. E.g.:
+  #    DotGraph.new(nodes) { |n| ["label=#{n.name}", 'style=filled', "fillcolor=#{n.size}"] }
   def initialize(nodes, *attrs, &lproc)
     @nodes = nodes.to_a
     @lproc = lproc || lambda { |n| n.node_id }
@@ -201,7 +204,7 @@ class DotGraph
     d = "#{'di' if @directed}graph G {\n"
     d << attrs.collect { |a| "  #{a};\n"}.join
     @nodes.each { |n| 
-      d << "  \"#{nid(n)}\" [label=\"#{@lproc.call(n).to_s.tr('"',"'")}\"];\n"}
+      d << "  \"#{nid(n)}\" [#{nodeparams(n)}];\n"}
     @links.sort_by { |l,c| c }.each { |l,count| d << l.to_dot(count,&block) }
     d << "}\n"
   end
@@ -301,6 +304,13 @@ class DotGraph
     File.open(filename,'w') { |file| file << to_tex(params) }
   end
 
+  def nodeparams(node) # :nodoc:
+    np = @lproc.call(node)
+    case np
+    when String, Symbol : "label=\"#{np.tr('"',"'")}\""
+    when Enumerable : np.join(', ')
+    end
+  end
 
   def DotGraph::nid(o) # :nodoc:
     if o.respond_to?(:node_id)
