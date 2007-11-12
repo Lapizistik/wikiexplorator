@@ -264,31 +264,31 @@ module Mediawiki
   end
 
   class Page
-    # We say an User _v_ (respond-)communicates to another User _u_ if one 
+    # We say an User _v_ (interlocking-)responds to another User _u_ if one 
     # or more revisions of _v_ follow a revision of _u_ 
-    # (similar but not equal to to Wiki#groupcommunicationgraph).
+    # (similar but not equal to to Wiki#groupresponsegraph).
     #
     # If two or more revisions of _v_ follow a revision of _u_ this counts
-    # as one communication. But if a revision of _v_ follows a _new_ revision 
-    # of _u_ this counts as _new_ communication.
+    # as one response. But if a revision of _v_ follows a _new_ revision 
+    # of _u_ this counts as _new_ response.
     #
     # For a revision history of
     #  0 1 2 3 4 5 6 7 8 9 
     #  u x u v u u x u v x
-    # we have (this excludes self-communications for simplification)
+    # we have (this excludes self-responsess for simplification)
     #  x1 -> u0,   u2 -> x1,   v3 -> x1,   v3 -> u2,   u4 -> v3,
     #  x6 -> v3,   x6 -> u5,   u7 -> x6,   v8 -> x6,   v8 -> u7, 
     #  x9 -> u7,   x9 -> v8.
     #
-    # So we get (including self-communications): 
+    # So we get (including self-responses): 
     #  u -> u  =  4    u -> v  =  1    u -> x  =  2
     #  v -> u  =  2    v -> v  =  1    v -> x  =  2
     #  x -> u  =  3    x -> v  =  2    x -> x  =  2
     #
     # If a block is given it is called with each user and the result
     # used as key. E.g.:
-    #  page.respondcommunications { |u| u.name }
-    def respondcommunications(filter=@wiki.filter) # :yields: user
+    #  page.interlockingresponses { |u| u.name }
+    def interlockingresponses(filter=@wiki.filter) # :yields: user
       if block_given?
         us = revisions(filter).collect { |r| yield(r.user) }
       else
@@ -310,24 +310,24 @@ module Mediawiki
     end
 
     # :call-seq:
-    # groupcommunications(filter=@filter, compatible=true)
-    # groupcommunications(filter=@filter)
-    # groupcommunications(compatible=true)
-    # groupcommunications()
+    # groupresponses(filter=@filter, compatible=true)
+    # groupresponses(filter=@filter)
+    # groupresponses(compatible=true)
+    # groupresponses()
     #
-    # We say an User _v_ (group-)communicates another User _u_ if any
+    # We say an User _v_ (group-)responses another User _u_ if any
     # revision of _v_ follows any revision of _u_ 
-    # (similar to Wiki#groupcommunicationgraph).
+    # (similar to Wiki#groupresponsegraph).
     #
     # By definition each user-user-combination may occour at most once.
-    # To be compatible to #directcommunications and #respondcommunications 
+    # To be compatible to #directcommunications and #interlockingresponses 
     # this method by default nevertheless returns a Hash of Hashes. 
     # This can be changes by setting the parameter _compatible_ to _false_.
     #
     # If a block is given it is called with each user and the result
     # used as key. E.g.:
-    #  page.groupcommunications { |u| u.name }
-    def groupcommunications(*params) # :yields: user
+    #  page.groupresponses { |u| u.name }
+    def groupresponses(*params) # :yields: user
       filter = @wiki.filter
       compatible=true
       params.each { |par|
@@ -355,14 +355,14 @@ module Mediawiki
       end
     end
 
-    # We say an User _v_ (direct-)communicates to another User _u_ if a 
+    # We say an User _v_ (direct-)responses to another User _u_ if a 
     # revision of _v_ directly follows a revision of _u_ 
     # (similar to Wiki#communicationgraph).
     #
     # If a block is given it is called with each user and the result
     # used as key. E.g.:
-    #  page.directcommunications { |u| u.name }
-    def directcommunications(filter=@wiki.filter) # :yields: user
+    #  page.directresponses { |u| u.name }
+    def directresponses(filter=@wiki.filter) # :yields: user
       if block_given?
         us = revisions(filter).collect { |r| yield(r.user) }
       else

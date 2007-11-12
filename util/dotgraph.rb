@@ -226,6 +226,9 @@ class DotGraph
   # :alg:: the graphviz algorithm to be used (Strings and Symbols allowed): 
   #        "dot" (default), "neato", "twopi", "circo", "fdp".
   # :fmt:: the output format: "pgf" (default), "pst", "tikz".
+  # :figonly:: if true (default) only the LaTeX/tikz-code for the graph iself
+  #            is generated, for inclusion in a larger LaTeX-file. If false
+  #            a stand-alone LaTeX-document is generated.
   # :figpreamble:: any LaTeX-code to be included at picture start. Try e.g.
   #                <i>:figpreamble => '\scriptsize'</i> for smaller font.
   # :graphstyle:: any parameter to the corresponding picture-environment
@@ -260,8 +263,7 @@ class DotGraph
   #    :comment=>'Example',           # so we see what this is
   #    :attrs=>['overlap=scale',      # looks best
   #             'sep=0.01',           # nodes may be set close
-  #             'node [style="ball color=gray!5, semitransparent"]'])
-  #                                   # and a nice 3d-style
+  #             'node [style="fill=white"]']) # and filled white
   #
   # This method depends on 
   # <tt>dot2tex</tt> (http://www.fauskes.net/code/dot2tex/),
