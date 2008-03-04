@@ -8,6 +8,7 @@
 
 require 'set'         # the Set class
 require 'mediawiki/db'
+require 'parsedate'
 
 # = The Mediawiki Namespace
 module Mediawiki
@@ -35,11 +36,13 @@ module Mediawiki
       @version = options[:version] || 1.8
       @uid_aliases = options[:uid_aliases] || {}
       @name = wikidb.to_s
-      @filter = Filter.new(self)
       
       if (err=read_db(wikidb))
         warn err # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error handling!
       end
+
+      @filter = Filter.new(self) # must be last
+
       puts "Done." if DEBUG
     end
     
@@ -194,6 +197,7 @@ module Mediawiki
             @timeline << revision.timestamp
           end
           @timeline.sort!
+          @timeline.uniq!
           @time = @timeline.last
           
           @pages_id.each_value do |page|
@@ -746,6 +750,10 @@ module Mediawiki
     # If revisions with minor edits are included (default: true).
     attr_accessor :minor_edits
 
+    # Timespan of revisions included (please note that this filter is
+    # _not_ applied for PagesView).
+    attr_accessor :revision_timespan
+
     # All Pages/Revisions with one or more genres matching this Regex are
     # included/excluded (dependent on _genreinclude_).
     #
@@ -772,6 +780,7 @@ module Mediawiki
     # +true+ by default.
     attr_accessor :roleinclude
 
+
     # Creates a new filter for the _wiki_.
     #
     # By default the time is newest and the namespaces are #<Set: {0}>.
@@ -781,6 +790,7 @@ module Mediawiki
       @namespaces << 0
       @redirects = :keep
       @minor_edits = true
+      full_timespan
       @genregexp = // # matches on everything
       @genreinclude = true
       @roleregexp = // # matches on everything
@@ -839,6 +849,33 @@ module Mediawiki
       include_namespace(*@wiki.namespaces)
     end
 
+    # sets the revision_timespan to include the whole wiki timeline
+    def full_timespan
+      @revision_timespan = (@wiki.timeline.first..@wiki.timeline.last)      
+    end
+
+    # Gives the begin of the revision timespan
+    def starttime
+      @revision_timespan.begin
+    end
+
+    # Gives the end of the revision timespan
+    def endtime
+      @revision_timespan.end
+    end
+
+    # Sets the begin of the revision timespan
+    def starttime=(time)
+      time = convert_to_time(time)
+      @revision_timespan = (time..@revision_timespan.end)
+    end
+
+    # Sets the end of the revision timespan
+    def endtime=(time)
+      time = convert_to_time(time)
+      @revision_timespan = (@revision_timespan.begin..time)
+    end
+
     # gives a deep copy of this filter.
     def clone
       cl = super
@@ -849,7 +886,17 @@ module Mediawiki
     def clone_attrs
       @namespaces = @namespaces.clone
       @denied_users = @denied_users.clone
+      # @revision_timespan = @revision_timespan.clone
       self
+    end
+
+    private
+    def convert_to_time(time)
+      unless time.kind_of?(Time)
+        ta = ParseDate.parsedate(time)
+        time = Time.local(*ta)
+      end
+      time
     end
 
   end
@@ -957,6 +1004,7 @@ module Mediawiki
     def allowed?(revision)
       !@filter.denied_users.include?(revision.user) &&
         @filter.namespaces.include?(revision.namespace) &&
+        @filter.revision_timespan.include?(revision.timestamp) &&
         (@filter.minor_edits || !revision.minor_edit?) &&
         !(@filter.genreinclude ^ revision.has_genre?(@filter.genregexp))
     end
