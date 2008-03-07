@@ -33,6 +33,7 @@
 #    containing all roles found.  
 
 require 'dbi'      # generic database engine
+require 'set'
 
 # Asks for user input with echo off at console
 def IO.getpw(question="Password: ")
@@ -46,6 +47,7 @@ end
 
 
 module Mediawiki
+
   class DB
 
     def initialize(db, host, user, pw, dbengine='Mysql', version=1.8)
@@ -70,47 +72,79 @@ module Mediawiki
     class MWDBI
       def initialize(dbh)
         @dbh = dbh
+        @tables = @dbh.tables.to_set # What tables are there?
       end
       
-      def users(&block) # TODO: cope with different mediawiki versions
-        @dbh.select_all("select user_id, user_name, user_real_name, user_email, user_options, user_touched, user_email_authenticated, user_email_token_expires, user_registration, user_newpass_time, user_editcount from user", &block)
+      def users(&block)
+        select_all(if @tables.include?('wio_user') # a special view for us!
+                     'wio_user'
+                   else
+                     'user'
+                   end,
+                   %w{user_id user_name user_real_name user_email 
+                      user_options user_touched user_email_authenticated 
+                      user_email_token_expires user_registration 
+                      user_newpass_time user_editcount}, 
+                   &block)
       end
       
       def usergroups(&block)
-        @dbh.select_all("select * from user_groups", &block)
+        select_all("user_groups", %w{ug_user ug_group}, &block)
       end
       
       def texts(&block)
-        @dbh.select_all("select * from text", &block)
+        select_all("text", %w{old_id old_text old_flags}, &block)
       end
       
       def pages(&block)
-        @dbh.select_all("select * from page", &block)
+        select_all("page", 
+                   %w{page_id page_namespace page_title page_restrictions 
+                      page_counter page_is_redirect page_is_new page_random 
+                      page_touched page_latest page_len}, 
+                   &block)
       end
       
       def revisions(&block)
-        @dbh.select_all("select * from revision", &block)
+        select_all("revision", 
+                   %w{rev_id rev_page rev_text_id rev_comment rev_user 
+                      rev_user_text rev_timestamp rev_minor_edit rev_deleted},
+                   &block)
       end
       
-      # TODO: should work regardless of the table existing in the database.
       def genres(&block) 
-        @dbh.select_all("select * from wio_genres", &block)
+        select_all("wio_genres", %w{page_id genres}, &block)
       end
       
-      # TODO: should work regardless of the table existing in the database.
       def roles(&block) 
-        @dbh.select_all("select * from wio_roles", &block)
+        select_all("wio_roles", %w{user_id roles}, &block)
       end
             
-      
-      # Fallback, not to be used.
+      # Select a set of columns from table _table_. 
+      #
+      # As we have to cope with very different Mediawiki database layouts
+      # we do our very best in ignoring missing columns and tables.
       def select_all(table, fields=nil, &block)
-        if fields
-          f = fields.join(', ')
+        # Let's see if our table exists in the DB:
+        if @tables.include?(table) # is it there?
+          if fields
+            # Ok, what columns are provided?
+            cols = @dbh.columns(table).collect { |c| c.name }.to_set
+            fstring = fields.collect { |f|
+              if cols.include?(f) # ok, col is there
+                f
+              else # Damn, it's missing, we will return nils here.
+                puts "Column #{f}.#{table} not found! Using NULL." if DEBUG
+                'NULL'
+              end
+            }.join(', ')
+          else
+            fstring = '*'
+          end
+          @dbh.select_all("select #{fstring} from #{table}", &block)
         else
-          f = '*'
+          puts "Table #{table} in DB not found" if DEBUG
+          return []
         end
-        @dbh.select_all("select #{f} from #{table}", &block)
       end
     end
   end

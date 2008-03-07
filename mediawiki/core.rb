@@ -167,6 +167,8 @@ module Mediawiki
           # Read all the raw text data
           @texts_id = {}
           dbh.texts do |tid, t, flags|
+#            puts("»%s« (%s); »%s« (%s); »%s« (%s)" % 
+#                 [tid, tid.class, t, t.class, flags, flags.class])
             @texts_id[tid] = Text.new(self, tid, t, flags)
           end
           
