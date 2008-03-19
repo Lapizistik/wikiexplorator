@@ -114,34 +114,51 @@ class DotGraph
   # Take care: if the graph is _indirected_, it is random whether a link
   # counts as in- or outlink so only the sum of both is valid.
   #
-  # If _weight_ is true, not the number of links are counted but the 
-  # sum of the link weights is used.
+  # _weight_:: indicates how the degree is counted:
+  #            _true_, <i>:add</i>:: sum of link weights
+  #            _false_, <i>:count</i>:: number of links
+  #            <i>:log</i>:: sum of log(link weight)
   def degrees(weight=false)
     h = Hash.new { |h,k| h[k] = [0,0] }
     @nodes.each { |n| h[n] = [0,0] }   # prefill
-    @links.each { |l,c|
-      c = 1 unless weight
+    @links.each do |l,v|
+      c = 1
+      case weight
+      when true, :add
+        c = v
+      when false, nil, :count
+        c = 1
+      when :log
+        c = Math.log(v)
+      end
       h[l.src][0]  += c
-      h[l.dest][1] += c
-    }
+      h[l.dest][1] += c  
+    end
     h
   end
 
   DEGREESSORTNR = { :node=>0, :degree=>1, :out=>2, :in=>3} # :nodoc:
+  # :call-seq:
+  # pp_degrees(:sortby => 0, :up => true, ...)
+  # pp_degrees(:sortby => 0, :up => true, ...) { |n| ... }
   # Pretty print the degrees of all nodes.
-  # _sortnr_:: 
+  # <i>:sortnr</i>:: 
   #    by which column the output should be sorted
   #    0 or :node   :: by node
   #    1 or :degree :: by degree
   #    2 or :out    :: by outdegree
   #    3 or :in     :: by indegree
-  # _up_:: _true_ for ascending, _false_ for descending sort.
+  # <i>:up</i>:: _true_ for ascending, _false_ for descending sort.
+  # <i>:weight</i>:: see degrees.
   # <i>&block</i>:: 
   #   if a block is given it is called with each node and its 
   #   return value (preferable a String) is used for printing the node.
   #   Otherwise the block given while creating the graph or the default
   #   block is used, respectively.
-  def pp_degrees(sortnr=0, up=true, &block)
+  def pp_degrees(params={}, &block)
+    sortnr = params[:sortby] || 0
+    up = params[:up] || true
+    weight = params[:weight] || :count
     sortnr = DEGREESSORTNR[sortnr] if sortnr.kind_of?(Symbol)
     lproc = block || @lproc
     if @directed
@@ -150,7 +167,7 @@ class DotGraph
       fmt = "%-30s: %4s"
     end
     puts fmt % ["Node","deg","out","in"]
-    d = degrees.collect { |n,a|
+    d = degrees(weight).collect { |n,a|
       [lproc.call(n), a[0]+a[1]]+a
     }
     d = if up

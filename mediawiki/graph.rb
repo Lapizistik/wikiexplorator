@@ -40,6 +40,24 @@ module Mediawiki
       g
     end
 
+    def copagesgraph(filter=@filter, &block)
+      ps = pages(filter)
+      if block
+        g = DotGraph.new(ps, :undirected, &block)
+      else
+        g = DotGraph.new(ps, :undirected) { |n| n.pid }
+      end
+      users(filter).each do |u| 
+        nodes = u.pages(filter)
+        nodes.each do |n| 
+          nodes.each do |m| 
+            g.link(n,m) if n.pid < m.pid
+          end
+        end
+      end
+      g
+    end
+
     # :call-seq:
     # interlockingresponsegraph(filter=@filter, counts=:add) { |n| ... }
     # interlockingresponsegraph(filter=@filter) { |n| ... }
@@ -56,6 +74,10 @@ module Mediawiki
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the sum of all Page#interlockingresponses between
     #     _a_ and _b_ for each page.
+    #   <i>:log</i>::
+    #     for any pair of users _a_, _b_ the link weight of the link from
+    #     _a_ to _b_ is the logarithm of the product of all 
+    #     Page#interlockingresponses between _a_ to _b_ for each page.
     #   <i>:max</i>::
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the maximum of all Page#interlockingresponses between
@@ -87,6 +109,12 @@ module Mediawiki
         pages(filter).each do |p| 
           p.interlockingresponses(filter).each_pair { |u,to|
             to.each_pair { |v,n| g.link(u,v,n) }
+          }
+        end
+      when :log
+        pages(filter).each do |p| 
+          p.interlockingresponses(filter).each_pair { |u,to|
+            to.each_pair { |v,n| g.link(u,v,Math.log(n)) }
           }
         end
       when :max

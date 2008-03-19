@@ -9,6 +9,10 @@
 # The following tables are read: 
 # +user+, <tt>user_groups</tt>, +text+, +page+, +revision+.
 #
+# If a table/view <tt>wio_user</tt> exists it is read instead of table +user+.
+# This allows creating a view <tt>wio_user</tt> which does not include the
+# password fields.
+#
 # Additionally the tables <tt>wio_genres</tt> and <tt>wio_roles</tt> are
 # read (TODO: if existent):
 #
