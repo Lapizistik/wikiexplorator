@@ -1,0 +1,335 @@
+#!/usr/bin/ruby -w
+
+class Gnuplot
+  CMD = ENV['RB_GNUPLOT'] || 'gnuplot'
+  
+  # A collection of all datasets to be plottet 
+  attr_reader :datasets
+
+  # Create a new Gnuplot object. 
+  #
+  # This does _not_ start a gnuplot process.
+  #
+  # The gnuplot process is started when calling #plot, #splot or #command!
+  #
+  # At this time all settings collected within this object are piped to
+  # the gnuplot process (in given order). By default the encoding is latin1
+  # and the terminal is X11.
+  #
+  # You may give a block to do neat things, e.g.:
+  #  Gnuplot.new do |gp|
+  #    gp << [2,3,1,4,5]
+  #    gp << 'sin(x)'
+  #    gp.add([3,2,3,2,3], :with => 'lines', :title => 'aha')
+  #    gp << [1,4,3,1,4]
+  #    gp.add([[2,2],[2,1],[1,1],[1,3],[3,3],[3,0]], :with => 'lines')
+  #    gp.title = "example"
+  #    gp.plot(:range => '[0:6]')
+  #  end
+  #
+  # Please refer to the gnuplot documentation for a very comprehensive
+  # description of all parameters. Online availible by starting
+  # gnuplot and typing 'help'.
+  #
+  # For plotting the contents of only one enumerable see Enumerable#gp_plot().
+  def initialize
+    @sets = [['encoding', 'iso_8859_15'],
+             ['terminal', 'X11 enhanced']]
+    @datasets = []
+    yield(self) if block_given?
+  end
+
+  # returns the (last) value var was set to.
+  def [] (var)
+    @sets.reverse.assoc(var.to_s)
+  end
+
+  # Sets the gnuplot variable var to value.
+  #
+  # All settings and commands will be executed in chronological
+  # order when plot/splot is called.
+  def set(var, value)
+    @sets << [var.to_s, value]
+  end
+
+  alias []= set
+
+  # Sets the title of the plot.
+  # 
+  # The title is automatically quoted.
+  # 
+  # To set a title with parameters, use e.g.
+  #  gp[:title] = '"This is it" 2,1'
+  # or
+  #  gp.set(:title, '"This is it" 2,1')
+  def title=(text)
+    @sets << ['title', "\"#{text}\""]
+  end
+
+  # Sets the terminal for the plot.
+  #
+  # You also have to set the output file/device.
+  #
+  # It is recommended to set the terminal before the output.
+  def terminal=(t)
+    @sets << ['terminal', "#{t}"]
+  end
+
+  # Sets the output file/device for the plot.
+  #
+  # Out is automatically quoted.
+  #
+  # Take care! You have to specify the according terminal (#terminal=())
+  # (see gnuplot documentation). It is recommended to set the terminal
+  # before the output.
+  def output=(out)
+    @sets << ['output', "\"#{out}\""]
+  end
+
+  # Sets the xlabel of the plot.
+  # 
+  # The label is automatically quoted.
+  # 
+  # To set the xlabel with parameters, use e.g.
+  #  gp[:xlabel] = '"X Axis" font "Verdana"'
+  def xlabel=(text)
+    @sets << ['xlabel', "\"#{text}\""]
+  end
+
+  # Sets the ylabel of the plot.
+  # 
+  # The label is automatically quoted.
+  # 
+  # To set the ylabel with parameters, use e.g.
+  #  gp[:ylabel] = '"Y Axis" font "Verdana"'
+  def ylabel=(text)
+    @sets << ['ylabel', "\"#{text}\""]
+  end
+
+  # Sets the x2label of the plot.
+  # 
+  # The label is automatically quoted.
+  # 
+  # To set the x2label with parameters, use e.g.
+  #  gp[:x2label] = '"X Axis" font "Verdana"'
+  def x2label=(text)
+    @sets << ['x2label', "\"#{text}\""]
+  end
+
+  # Sets the y2label of the plot.
+  # 
+  # The label is automatically quoted.
+  # 
+  # To set the y2label with parameters, use e.g.
+  #  gp[:y2label] = '"Y Axis" font "Verdana"'
+  def y2label=(text)
+    @sets << ['y2label', "\"#{text}\""]
+  end
+
+  # Add cmd to the sequence of commands to be passed to gnuplot. E.g.
+  #  gp.command('print "testing..."')  
+  def command(cmd)
+    @sets << cmd
+  end
+
+  # Add cmd to the sequence of commands to be passed to gnuplot and
+  # call gnuplot with the whole chain.
+  def command!(cmd)
+    @sets << cmd
+    Gnuplot.open { |io|
+      io << sets_to_s(params)
+    }
+  end
+
+  # Adds _data_ to the datasets to be plotted by the next #plot or #splot 
+  # command. _data_ either _is_ a Gnuplot::DataSet object or is converted 
+  # to one. 
+  #
+  # See also #add().
+  def << (data)
+    data = data.gp_data unless data.kind_of?(DataSet)
+    @datasets << data
+    self
+  end
+
+  # Adds _data_ to the datasets to be plotted by the next #plot or #splot 
+  # command. _data_ either _is_ a Gnuplot::DataSet object or is converted 
+  # to one. Any _params_ are set for this dataset.
+  #
+  # See also #<<, Enumerable#gp_data().
+  def add(data, params={})
+    if data.kind_of?(DataSet)
+      data.update(params)
+    else
+      data = data.gp_data(params)
+    end
+    @datasets << data
+    data
+  end
+  
+  # Starts the gnuplot process, pipes all settings to it, including
+  # those given in _params_ and calls the gnuplot +plot+ command with
+  # all datasets (2d plotting).
+  #
+  # See #xplot_to_s for details.
+  def plot(params={})
+    Gnuplot.open { |io| 
+      io << xplot_to_s('plot', params)
+    }
+  end
+
+  # Starts the gnuplot process, pipes all settings to it, including
+  # those given in _params_ and calls the gnuplot +splot+ command with
+  # all datasets (3d plotting).
+  #
+  # See #xplot_to_s for details.
+  def splot(params={})
+    Gnuplot.open { |io| 
+      io << xplot_to_s('splot', params)
+    }
+  end
+
+  # Creates a string representation of this Gnuplot object in +gnuplot+
+  # format with a +plot+ or +splot+ command plotting all datasets as last
+  # command. Saving the resulting string to a file and starting gnuplot 
+  # with this file should give the according plot.
+  #
+  # You normally do not call this method directly but use #plot or
+  # #splot.
+  #
+  # _plotcmd_ has to be <tt>"plot"</tt> or <tt>"splot"</tt>.
+  #
+  # _params_ is a Hash of shortcuts for the output format and filename.
+  #
+  # Examples:
+  #  gp.plot(:ranges => '[1:10][0:5]') # with explicit ranges
+  #  gp.plot(:png => 'test.png', :size => '640,400') # a nice bitmap.
+  #  gp.plot(:svg => 'test.svg', :size => '640 400') # a nice SVG.
+  #  gp.plot(:pdf => 'test.pdf') # a nice PDF.
+  def xplot_to_s(plotcmd, params={})
+    set_params(params)
+    s = sets_to_s 
+    s << "#{plotcmd} #{params[:ranges] || params[:range]} "
+    s << @datasets.collect { |d| d.params_to_s }.join(', ') << "\n"
+    s << @datasets.collect { |d| d.data_to_s }.compact.join
+  end
+
+  def sets_to_s
+    @sets.collect { |set|
+      if set.instance_of?(Array)
+        "set #{set[0]} #{set[1]}"
+      else
+        set
+      end
+    }.join(";\n") + "\n"
+  end
+
+  def set_params(p)
+    if file = p[:png]
+      size = p[:size] || '900,675'
+      @sets << ['terminal', "png enhanced size #{size}"]
+      @sets << ['output', file]
+    elsif file = p[:pdf]
+      @sets << ['terminal', "pdf"]
+      @sets << ['output', file]
+    elsif file = p[:svg]
+      size = p[:size] || 'dynamic'
+      @sets << ['terminal', "svg enhanced size #{size}"]
+      @sets << ['output', file]
+    end
+  end
+
+  # Start the +gnuplot+ process and connect IO to it.
+  #
+  # if a block is given, the IO is passed as parameter to the block and
+  # is closed at the end of the block.
+  def Gnuplot.open(persist=true, &block)
+    cmd = CMD
+    cmd += " -persist" if persist
+    IO::popen(cmd, "w", &block)
+  end
+
+  # This class holds a String representing a function or an Enumerable
+  # to be plotted.
+  class DataSet
+    attr_accessor :plotable
+    attr_accessor :title, :with, :using
+
+    # _plotable_ may be a string (representing a gnuplot function),
+    # or an Enumerable of values or Enumerables
+    # representing a gnuplot dataset.
+    # 
+    # Params is a Hash of parameters associated with this dataset:
+    # :title, :with, :using, :axes.
+    def initialize(plotable, params={})
+      if plotable.kind_of?(String) # we take this as a function!
+        @cmd = plotable
+        @data = nil
+      else
+        @cmd = '"-"'
+        @data = plotable
+      end
+      update(params)
+    end
+
+    def update(params)
+      @title = params[:title] if params.key?(:title)
+      @with  = params[:with]  if params.key?(:with)
+      @using = params[:using] if params.key?(:using)
+      @axes  = params[:axes]  if params.key?(:axes)
+    end
+    
+    def params_to_s
+      s="#{@cmd} "
+      s << "title \"#{@title}\" " if @title
+      s << "with #{@with} "   if @with
+      s << "using #{@using} " if @using
+      s << "axes #{@axes} "   if @axes
+      s
+    end
+    def data_to_s
+      return nil unless @data # shortcut. Nothing to do.
+      @data.collect { |a|
+        if a.respond_to?(:join)
+          a.join(' ')
+        else
+          a
+        end
+      }.join("\n") + "\ne\n"
+    end
+
+  end
+end
+
+# GP = Gnuplot
+
+module Enumerable
+
+  # Plot this enumerable using gnuplot +plot+.
+  #
+  # For _params_ see Gnuplot#plot and Gnuplot::DataSet#new.
+  def gp_plot(params={})
+    Gnuplot.new do |gp|
+      gp << gp_data(params)
+      gp.plot(params)
+    end
+  end
+
+  # Plot this enumerable using gnuplot +splot+.
+  #
+  # For _params_ see Gnuplot#splot and Gnuplot::DataSet#new.
+  def gp_splot(params={})
+    Gnuplot.new do |gp|
+      gp << gp_data(params)
+      gp.splot(params)
+    end
+  end
+
+  # Return a new Gnuplot::DataSet for this Enumerable.
+  # 
+  # For _params_ see Gnuplot::DataSet#new.
+  def gp_data(params={})
+    Gnuplot::DataSet.new(self,params)
+  end
+end
+
