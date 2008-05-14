@@ -27,6 +27,15 @@ class Gnuplot
   #    gp.plot(:range => '[0:6]')
   #  end
   #
+  #  Gnuplot.new do |gp|
+  #    gp.set('hidden3d')
+  #    gp.set('surface')
+  #    gp.set('contour base')
+  #    gp.add([[2, 2, 1, 1, 2, 2], [4, 3, 2, 1, 2, 1], [3, 3, 1, 2, 1, 1], [4, 5, 4, 5, 3, 2], [6, 7, 6, 7, 6, 7], [7, 6, 7, 6, 7, 6]],
+  #           :with => 'lines', :matrix => true)
+  #    gp.splot
+  #  end
+  #
   # Please refer to the gnuplot documentation for a very comprehensive
   # description of all parameters. Online availible by starting
   # gnuplot and typing 'help'.
@@ -48,7 +57,7 @@ class Gnuplot
   #
   # All settings and commands will be executed in chronological
   # order when plot/splot is called.
-  def set(var, value)
+  def set(var, value='')
     @sets << [var.to_s, value]
   end
 
@@ -228,14 +237,14 @@ class Gnuplot
     if file = p[:png]
       size = p[:size] || '900,675'
       @sets << ['terminal', "png enhanced size #{size}"]
-      @sets << ['output', file]
+      @sets << ['output', "'#{file}'"]
     elsif file = p[:pdf]
       @sets << ['terminal', "pdf"]
-      @sets << ['output', file]
+      @sets << ['output', "'#{file}'"]
     elsif file = p[:svg]
       size = p[:size] || 'dynamic'
       @sets << ['terminal', "svg enhanced size #{size}"]
-      @sets << ['output', file]
+      @sets << ['output', "'#{file}'"]
     end
   end
 
@@ -260,7 +269,7 @@ class Gnuplot
     # representing a gnuplot dataset.
     # 
     # Params is a Hash of parameters associated with this dataset:
-    # :title, :with, :using, :axes.
+    # :title, :with, :using, :axes, :matrix.
     def initialize(plotable, params={})
       if plotable.kind_of?(String) # we take this as a function!
         @cmd = plotable
@@ -273,14 +282,16 @@ class Gnuplot
     end
 
     def update(params)
-      @title = params[:title] if params.key?(:title)
-      @with  = params[:with]  if params.key?(:with)
-      @using = params[:using] if params.key?(:using)
-      @axes  = params[:axes]  if params.key?(:axes)
+      @title  = params[:title]  if params.key?(:title)
+      @with   = params[:with]   if params.key?(:with)
+      @using  = params[:using]  if params.key?(:using)
+      @axes   = params[:axes]   if params.key?(:axes)
+      @matrix = params[:matrix] if params.key?(:matrix)
     end
     
     def params_to_s
       s="#{@cmd} "
+      s << "matrix " if @matrix
       s << "title \"#{@title}\" " if @title
       s << "with #{@with} "   if @with
       s << "using #{@using} " if @using
@@ -307,7 +318,15 @@ module Enumerable
 
   # Plot this enumerable using gnuplot +plot+.
   #
+  # Try e.g.
+  #  [2,1,3,2,2].gp_plot(:ranges => '[0:5][0:4]', :with => 'lines')
+  #  [0,2,1,3,2,2,4].gp_plot(:with => 'points pointsize 3 pointtype 7')
+  #  [[1,1],[2,2],[4,3],[3,4]].gp_plot(:with => 'lines')
+  #  [[1,1],[2,2],[4,3],[3,4]].gp_plot(:with => 'lines', :png => "test.png")
+  #  "sin(x)".gp_plot
+  #
   # For _params_ see Gnuplot#plot and Gnuplot::DataSet#new.
+  #
   def gp_plot(params={})
     Gnuplot.new do |gp|
       gp << gp_data(params)
@@ -317,6 +336,10 @@ module Enumerable
 
   # Plot this enumerable using gnuplot +splot+.
   #
+  # Try e.g.
+  #  [[1,1,2],[2,2,2],[4,3,1],[3,4,2]].gp_splot(:with => 'line palette')
+  #  [[2,2,1,1],[4,3,2,1],[3,3,1,2],[4,5,4,5]].gp_splot(:matrix => true, :with => 'lines fill')
+  #  
   # For _params_ see Gnuplot#splot and Gnuplot::DataSet#new.
   def gp_splot(params={})
     Gnuplot.new do |gp|
