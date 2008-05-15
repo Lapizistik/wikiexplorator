@@ -410,19 +410,15 @@ module Mediawiki
       @len = len
 
       @revisions = []  # will be filled soon
-      @current_revision = latest # will get replaced by a link to a Revision
-                                 # object in #update_current
+
+      @latest_revision = latest # will get replaced by a link to a Revision
+                                # object in #sort_revisions
 
       @genres = ['DEFAULT'].to_set  # each page is at least in the DEFAULT 
                                     # genre. May be updated in 
                                     # #set_genres_from_string
     end
     
-    # The plain text of the current revision of the page
-    def content
-      @current_revision.content
-    end
-
     # page is redirected?
     #
     # ToDo: this should be determined from the current revision!
@@ -438,8 +434,8 @@ module Mediawiki
     end
 
     # adds a revision to the page
-    def <<(revision)
-      @revisions << revision
+    def <<(rev)
+      @revisions << rev
     end
 
     # view on revisions through _filter_
@@ -447,9 +443,16 @@ module Mediawiki
       RevisionsView.new(@revisions, filter) # Reuse views?
     end
 
-    # current revision (may get changed while implementing history)
-    def revision
-      @current_revision
+    # current revision
+    def revision(filter=@wiki.filter)
+      #      @current_revision
+      RevisionsView.new(@revisions, filter).last
+    end
+
+    # The plain text of the current revision of the page
+    def content(filter=@wiki.filter)
+      #      @latest_revision.content
+      revision(filter).content
     end
 
     # whether this Page has the given genre _g_. _g_ may be given as String 
@@ -463,9 +466,9 @@ module Mediawiki
       end
     end
 
-    # links of current revision (may get changed while implementing history)
+    # links of current revision
     def links(filter=@filter)
-      revision.links(filter)
+      revision(filter).links(filter)
     end
 
     # view on users through _filter_
@@ -477,7 +480,7 @@ module Mediawiki
 
     # The timestamp of the oldest revision of this page.
     def creationtime
-      @revisions.first.timestamp # this works past calling #update_current
+      @revisions.first.timestamp # this works past calling #sort_revisions
     end
 
     # returns a hash where the key is a user and the value is the
@@ -517,8 +520,11 @@ module Mediawiki
 
 
     def sort_revisions     #:nodoc:
-      @current_revision = @wiki.revision_by_id(@current_revision)
+      @latest_revision = @wiki.revision_by_id(@latest_revision)
       @revisions = @revisions.sort_by { |r| r.timestamp }
+      if (l = @revisions.last) != @latest_revision
+        warn "Page does not point to latest revision: #{l.rid} != #{@latest_revision.rid}"
+      end
     end
 
     def set_genres_from_string(genres) # :nodoc:
@@ -752,8 +758,7 @@ module Mediawiki
     # If revisions with minor edits are included (default: true).
     attr_accessor :minor_edits
 
-    # Timespan of revisions included (please note that this filter is
-    # _not_ applied for PagesView).
+    # Timespan of revisions included
     attr_accessor :revision_timespan
 
     # All Pages/Revisions with one or more genres matching this Regex are
@@ -941,11 +946,37 @@ module Mediawiki
       @list.each_value { |i| block.call(i) if allowed?(i) }
     end
 
-    # whether a given object is seen through this filter. To be
+    # whether a given object is seen through this view. To be
     # overwritten in subclasses.
     def allowed?(i)
       true
     end
+
+    # returns the first object in this view. 
+    #
+    # Equal to but much more efficient than #to_a.first
+    #
+    # Please note that this gives no predictable results on Views of
+    # Hashes, Set and other non-ordered Enumerables
+    def first
+      find { |i| allowed?(i)}
+    end
+
+    # returns the last object in this view. 
+    #
+    # Equal to but much more efficient than #to_a.last 
+    # (for ordered Enumerables)
+    #
+    # Please note that this gives no predictable results on Views of
+    # Hashes, Set and other non-ordered Enumerables
+    def last
+      if @list.respond_to?(:reverse_each)
+        @list.reverse_each { |i| return i if allowed?(i) }
+      else
+        first
+      end
+    end
+
     
     private
     # care for the differences between Arrays and Hashes
@@ -985,10 +1016,12 @@ module Mediawiki
     # Pages are filtered by 
     # namespace :: Filter#namespaces,
     # redirection :: Filter#redirects,
+    # creation time of page :: Filter#revision_timespan,
     # genre :: Filter#genregexp and Filter#genreinclude
     def allowed?(page)
       @filter.namespaces.include?(page.namespace) &&
         (!(@filter.redirects==:filter) || !page.is_redirect?) &&
+        @filter.revision_timespan.include?(page.creationtime) &&
         !(@filter.genreinclude ^ page.has_genre?(@filter.genregexp))
     end
   end
@@ -1000,6 +1033,7 @@ module Mediawiki
     # Revisions are filtered by
     # users :: Filter#denied_users
     # namespace of the corresponding page :: Filter#namespaces,
+    # timestamp of the revision :: Filter#revision_timespan,
     # minor_edits :: Filter#minor_edits,
     # genre of the corresponding page :: 
     #   Filter#genregexp and Filter#genreinclude

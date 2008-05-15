@@ -37,8 +37,14 @@ class Gnuplot
   #  end
   #
   # Please refer to the gnuplot documentation for a very comprehensive
-  # description of all parameters. Online availible by starting
+  # description of all parameters. Interactively availible by starting
   # gnuplot and typing 'help'.
+  #
+  # Online resources (partly in german): 
+  # * http://www.gnuplot.info/
+  # * http://userpage.fu-berlin.de/~voelker/gnuplotkurs/gnuplotkurs.html
+  # * http://de.wikipedia.org/wiki/Gnuplot
+  # * http://www.wikischool.de/wiki/WikiSchool:Plot
   #
   # For plotting the contents of only one enumerable see Enumerable#gp_plot().
   def initialize
@@ -88,7 +94,7 @@ class Gnuplot
   #
   # Out is automatically quoted.
   #
-  # Take care! You have to specify the according terminal (#terminal=())
+  # Take care! You have to specify the according terminal
   # (see gnuplot documentation). It is recommended to set the terminal
   # before the output.
   def output=(out)
@@ -338,7 +344,7 @@ module Enumerable
   #
   # Try e.g.
   #  [[1,1,2],[2,2,2],[4,3,1],[3,4,2]].gp_splot(:with => 'line palette')
-  #  [[2,2,1,1],[4,3,2,1],[3,3,1,2],[4,5,4,5]].gp_splot(:matrix => true, :with => 'lines fill')
+  #  [[2,2,1,1],[4,3,2,1],[3,3,1,2],[4,5,4,5]].gp_splot(:matrix => true, :with => 'lines')
   #  
   # For _params_ see Gnuplot#splot and Gnuplot::DataSet#new.
   def gp_splot(params={})
