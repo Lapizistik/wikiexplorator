@@ -82,7 +82,7 @@ module Mediawiki
     def page_by_title(t, ns=0)
       @pages_title[page_tns(t,ns)]
     end
-
+    
     # gives the Page object with pid _i_
     def page_by_id(i)
       @pages_id[i]
@@ -96,6 +96,41 @@ module Mediawiki
     # gives the User object with uid _i_
     def user_by_id(i)
       @users_id[i]
+    end
+
+    # Gives the user corresponding to the ip-address (given as String).
+    # The normal uid-aliasing applies (perhaps we should implement some
+    # Regexp-based special ip-aliasing to be able to alias whole ranges
+    # of ip-adresses to one uid).
+    # If the corresponding User does not exist, it is created if create=true,
+    # otherwise nil is returned.
+    def user_for_ip(ip, create=false)
+      uid = ip2id(ip)
+      uid = @uid_aliases[uid] || uid # aliasing
+      user = @users_id[uid]
+      if !user && create
+        user = User.new(self, uid, ip, "IP User: #{ip}", nil, nil, 
+                        '19700101000000', nil, nil, nil, nil, nil);
+        @users_id[uid] = user
+
+
+
+
+
+
+
+TODO: All IP to one UID! (should be default?)
+
+
+
+
+
+
+
+
+
+      end
+      return user
     end
 
     # gives the User object with name _n_
@@ -121,6 +156,47 @@ module Mediawiki
     # view on revisions through _filter_
     def revisions(filter=@filter)
       RevisionsView.new(@revisions_id, filter) # Reuse views?
+    end
+
+    # Updates the username in the user reference hash from oldname to newname.
+    # This does _not_ touch the user object itself.
+    # If you want to change an username use User#name= instead, which
+    # will do the right thing.
+    def update_username(oldname, newname) # :nodoc:
+      @users_name[newname] = @users_name.delete(oldname)
+    end
+
+    # Updates the page title in the page title reference hash from oldtitle
+    # to newtitle. This does _not_ touch the page object itself.
+    # If you want to change a page title use Page#title= instead, which will
+    # do the right thing.
+    def update_pagetitle(oldtitle, newtitle, ns=0) # :nodoc:
+      @pages_title[page_tns(t,ns)] = @pages_title.delete(page_tns(t,ns))
+    end
+
+
+    # Obliteration of the Wiki, blackens out Wiki contents, anonymizes Wiki
+    # Users and only keeps structural information. 
+    # 
+    # The optional Hash parameter keeps tells which parts to keep. If a
+    # Symbol is set to _true_ the corresponding value is kept, otherwise
+    # it is deleted. In the following list the Symbols are given with their
+    # default values. See User#obliterate, Page#obliterate, 
+    # 
+    # <tt>:name</tt>      => _false_ :: User name
+    # <tt>:real_name</tt> => _false_ :: User real name
+    # <tt>:email</tt>     => _false_ :: User mail address
+    # <tt>:title</tt>     => _false_ :: Page title
+    # <tt>:ip</tt>        => _true_  :: IP address of anonymous User
+    # <tt>:comment</tt>   => _false_ :: Edit comments
+    # <tt>:links</tt>     => _false_ :: Links in text form
+    # <tt>:text</tt>      => _false_ :: Text contents
+    def obliterate(keeps={})
+      keeps = {:ip => true}.merge(keeps)
+      @users_id.each { |u| u.obliterate(keeps) }
+      @pages_id.each { |p| p.obliterate(keeps) }
+      @revisions_id.each { |r| r.obliterate(keeps) }
+      @texts_id.each { |t| t.obliterate(keeps) }
     end
 
     #
@@ -366,6 +442,30 @@ module Mediawiki
       @revisions = @revisions.sort_by { |r| r.timestamp }
     end
 
+    # set a new user name. This also updates the users list in the
+    # wiki.
+    #
+    # Mainly used for anonymization.
+    def change_name(lname)
+      wiki.update_username(@name, lname)
+      @name = lname
+    end
+
+    alias name= change_name
+
+    # User anonymization.
+    # 
+    # Sets the following instance_variables to obliterated values unless
+    # the corresponding keeps are set to true:
+    # <i>name</i>      :: unless <tt>:name</tt> => _true_
+    # <i>real_name</i> :: unless <tt>:real_name</tt> => _true_
+    # <i>email</i>     :: unless <tt>:email</tt> => _true_
+    def obliterate(keeps={})
+      change_name(node_id)         unless keeps[:name]
+      @real_name = "#{@name} Anon" unless keeps[:real_name]
+      @email = ""                  unless keeps[:email]
+    end
+
   end
   
   # One page with all revisions
@@ -530,6 +630,25 @@ module Mediawiki
     def set_genres_from_string(genres) # :nodoc:
       @genres.merge((genres || '').split(/,\s*/))
     end
+
+    # set a new page title. This also updates the pages list in the
+    # wiki.
+    #
+    # Mainly used for anonymization.
+    def change_title(ltitle)
+      wiki.update_pagetitle(@title, ltitle)
+      @title = ltitle
+    end
+
+    alias title= change_title
+
+    # Page anonymization.
+    # 
+    # Sets the _title_ to an obliterated value unless <tt>:title</tt> => _true_
+    def obliterate(keeps={})
+      change_title(node_id)         unless keeps[:title]
+    end
+
   end
   
   
@@ -547,6 +666,11 @@ module Mediawiki
     attr_reader :page
     # the User who made the edit
     attr_reader :user
+    # the login name or ip-address of the user who made the edit.
+    # We will use this to distinguish anonymous edits by ip-adress as
+    # in office scenarios ip-adresses may be sufficient to distinguish
+    # users (TODO).
+    attr_reader :user_text
     # the time of edit (I don't bother whether this is GMT or MET)
     attr_reader :timestamp
     # length of revision in bytes (since 1.10). This is the length 
@@ -577,6 +701,7 @@ module Mediawiki
       else
         warn "Revision #{@rid}: User #{user_id} does not exist!"
       end
+      @user_text = user_text # let's see how to cope with anonymous edits.
       @page = @wiki.page_by_id(page_id)
       if @page
         @page << self
@@ -635,6 +760,26 @@ module Mediawiki
     # id string for dotfile creation
     def node_id
       "r#{rid}"
+    end
+
+    # Revision anonymization.
+    # 
+    # Sets the following instance_variables to obliterated values unless
+    # the corresponding keeps are set to true:
+    # <i>user_text</i> :: unless <tt>:name</tt> => _true_ (if the user was logged in) or  <tt>:ip</tt> => _true_ (if the user was anonymous)
+    # <i>comment</i>   :: unless <tt>:comment</tt> => _true_
+    # <i>:full_dangling</i>  :: unless <tt>:links</tt> => _true_
+    def obliterate(keeps={})
+      unless keeps[:name] && keeps[:ip] # we want to keep both
+        if Mediawiki.is_ip?(@user_text)
+          @user_text = "0.0.0.0" unless keeps[:ip]
+        else
+          # Hm, here we could use the obliterated name of the user?
+          @user_text = "N.N." unless keeps[:name]
+        end
+      end
+      @comment &&= '' unless keeps[:comment]
+      @full_dangling.collect! { |l| 'danglink' } unless keeps[:links]
     end
 
     private
@@ -720,6 +865,18 @@ module Mediawiki
     end
 
     alias length size
+
+    # Text obliteration.
+    # 
+    # Sets the following instance_variables to obliterated values unless
+    # the corresponding keeps are set to true:
+    # <i>text</i>      :: unless <tt>:text</tt> => _true_
+    # <i>links</i>     :: unless <tt>:links</tt> => _true_
+    def obliterate(keeps={})
+      @text = ''      unless keeps[:text]
+      @internal_links.collect! { |l| 'link' } unless keeps[:links]
+    end
+
 
     private
     def parse_text
@@ -1045,10 +1202,10 @@ module Mediawiki
         !(@filter.genreinclude ^ revision.has_genre?(@filter.genregexp))
     end
   end
-
+  
   private
   # Utility funtions
-
+  
   # If _s_ is a Time object it is left untouched.
   #
   # Otherwise it is assumed to be a string formed <tt>"yyyymmddhhmmss"</tt>
@@ -1059,20 +1216,18 @@ module Mediawiki
     return s if s.kind_of?(Time)
     return Time.gm(s[0..3], s[4..5], s[6..7], 
                    s[8..9], s[10..11], s[12..13])
-
   end
-  
-end
 
-if __FILE__ == $0
-  wio = Mediawiki.wio(IO.getpw)
-
-  ## Beispiele:
-
-  # Anzahl Nutzer pro Seite:
-  nusers = wio.pages.collect { |p| p.users.length }
-  puts "Avg. # of users: #{nusers.inject(0.0) { |s,i| s+i }/nusers.length}"
-  l = (nusers.select { |i| i>1 }).length
-  puts "# of pages with more than one user: %d/%d (%.2f%%)" % 
-    [l, nusers.length, l.to_f/nusers.length*100]
+  # Test whether a string looks like an IP address.
+  #
+  # We use the same test as the Mediawiki php functions
+  # User::isIP and User::isIPv6
+  def Mediawiki.is_ip?(s)
+    # The following regexp matches IPv4 lookalikes
+    (s =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.(?:xxx|\d{1,3})$/) ||
+      # and now IPv6 lookalikes
+      ( !( s =~ /[^:a-fA-F0-9]/ ) &&
+        ((ss = s.split(':')).length>=3) &&
+        (ss.all? { |p| p.length<=4 }))
+  end
 end
