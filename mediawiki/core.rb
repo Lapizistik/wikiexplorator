@@ -28,14 +28,24 @@ module Mediawiki
     attr_accessor :filter
     # a list of namespaces found in this wiki
     attr_reader :namespaces
+    # a boolean indicating whether all IP-adresses of anonymous edits
+    # are mapped to one default User (ips=false) or different IP-adresses
+    # are represented by different Users (ips=true).
+    attr_reader :ips
     
     # Creates a new Wiki object from database connection _wikidb_.
     #
     # For description of _options_ see Wiki.open
     def initialize(wikidb, options)
       @version = options[:version] || 1.8
-      @uid_aliases = options[:uid_aliases] || {}
       @name = wikidb.to_s
+      @ips = options[:ips]
+      @uid_aliases = {}
+      if ua = options[:uid_aliases] # converting IPs to UIDs
+        ua.each do |k,v|
+          @uid_aliases[Mediawiki.ip2uid(k)] = Mediawiki.ip2uid(v)
+        end
+      end
       
       if (err=read_db(wikidb))
         warn err # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error handling!
@@ -58,12 +68,24 @@ module Mediawiki
     #     used, if reading the database is different in different Mediawiki 
     #     versions. Not really implemented until now!
     #   <i>:uid_aliases=>{}</i>:: 
-    #     hash of uids to be aliased. E.g. if the user with uid=15 was 
+    #     hash of uids to be aliased. E.g. if the user with uid=17 was 
     #     registered by mistake (e.g. with the wrong user name) and the user 
     #     reregistered with uid=22, use:
     #       :uid_aliases => {17 => 22}
     #     and all appearances of uid=17 will be mapped to 22. No user
-    #     with uid 17 will show up in the Wiki object.
+    #     with uid 17 will show up in the Wiki object. An user with uid=22
+    #     has to exist in the Wiki, otherwise the mapping will be ignored
+    #     and the User will keep its id.
+    #     You may give IP-Adresses (as String) instead of uids (as source and
+    #     target). Mapping an IP-Adress to an non-existing uid will work, 
+    #     mapping an existing User to an IP-Adress will not work (this is 
+    #     due to implementation purposes and not important enough to change).
+    #   <i>:ips=>false</i>::
+    #     by default all anonymous edits are mapped to one default ip-user.
+    #     If option <i>:ips</i> is set, a dedicated user is created for each
+    #     IP-adress. In both cases uid-aliases mapping is applied.
+    #     (We may later enhance this by mapping address ranges to uids?)
+    #     For all created users uid<0.
     def Wiki.open(db, host, user, pw, *options)
       options = options.first || {}
       Wiki.new(DB.new(db, host, user, pw, options[:engine] || "Mysql", 
@@ -104,31 +126,18 @@ module Mediawiki
     # of ip-adresses to one uid).
     # If the corresponding User does not exist, it is created if create=true,
     # otherwise nil is returned.
-    def user_for_ip(ip, create=false)
-      uid = ip2id(ip)
+    def user4ip(ip, create=false)
+      uid = Mediawiki.ip2uid(ip)
       uid = @uid_aliases[uid] || uid # aliasing
+      if !@ips && (uid<0)    # all IPs (anonymous edits) to one user
+        uid = Default_IP_UID
+      end
       user = @users_id[uid]
       if !user && create
         user = User.new(self, uid, ip, "IP User: #{ip}", nil, nil, 
                         '19700101000000', nil, nil, nil, nil, nil);
         @users_id[uid] = user
-
-
-
-
-
-
-
-TODO: All IP to one UID! (should be default?)
-
-
-
-
-
-
-
-
-
+        @users_name[ip] = user
       end
       return user
     end
@@ -228,7 +237,12 @@ TODO: All IP to one UID! (should be default?)
 
           # Merging aliased Users:
           users_aliased.each do |uid, auser|
-            @users_id[uid].merge_user(auser)
+            if user = @users_id[uid] # aliazing possible
+              user.merge_user(auser)
+            else # target user does not exist, no aliazing!
+              @users_id[auser.uid] = auser
+              @users_name[auser.name] = auser
+            end
           end
           
           # Assign groups to them
@@ -695,13 +709,17 @@ TODO: All IP to one UID! (should be default?)
       @len = len
       @parent_id = parent_id
 
-      @user = @wiki.user_by_id(user_id)
+      @user_text = user_text
+      if (user_id==0) && Mediawiki.is_ip?(@user_text) # anonymous
+        @user = @wiki.user4ip(@user_text, true)
+      else
+        @user = @wiki.user_by_id(user_id)
+      end
       if @user
         @user << self
       else
         warn "Revision #{@rid}: User #{user_id} does not exist!"
       end
-      @user_text = user_text # let's see how to cope with anonymous edits.
       @page = @wiki.page_by_id(page_id)
       if @page
         @page << self
@@ -1230,4 +1248,34 @@ TODO: All IP to one UID! (should be default?)
         ((ss = s.split(':')).length>=3) &&
         (ss.all? { |p| p.length<=4 }))
   end
+
+
+  # Default UID to map all anonymous Users to.
+  Default_IP_UID = -255
+  # Shifting ip-uids to get some spare places.
+  IPv4_UID_shift = -256      # :nodoc:
+  # Shifting ip-uids past the IPv4-range 
+  IPv6_UID_shift = (IPv4_UID_shift - (1 << 32))   # :nodoc:
+
+  # Map an IP-Address (v4 or v6) to an uniq uid.
+  def Mediawiki.ip2uid(ip)
+    return ip if Numeric === ip # nothing to do.
+    if ip =~ /^(\d+).(\d+).(\d+).(\d+)$/ # oh, IPv4
+      -(((((($1.to_i << 8) + $2.to_i) << 8) + $3.to_i) << 8) + $4.to_i) +
+        IPv4_UID_shift
+    else # IPv6
+      a = ip.split(':',-1)
+      if (3..8) === a.length
+        a[0]  = '0' if a[0].empty?
+        a[-1] = '0' if a[-1].empty?
+        if i = a.index('')
+          a = a[0..(i-1)] + ['0']*(8-a.length) +a[(i+1)..-1]
+        end
+        -a.inject(0) { |s,i| (s << 16) + i.hex } + IPv6_UID_shift
+      else
+        Default_IP_UID
+      end
+    end
+  end
+
 end
