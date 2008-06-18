@@ -18,7 +18,7 @@ import prefuse.visual.VisualTable;
 public class DataLoader 
 {
 	public static void loadTable(DataTable dt, AggregateTable at,
-			VisualTable vt, int pixelSize, int textSize) 
+			VisualTable vt, VisualTable label, int pixelSize, int textSize) 
     {
         // assumed: authors are on y-axis
         final int authors = dt.getYAxisCount();
@@ -99,12 +99,28 @@ public class DataLoader
         	mean = mean / numberValues;
         	at.getItem(author).set("mean", new Double(mean));
      	}
+    	
+    	 // create the labeling table
+    	 // (although for a data table this doesn't make
+    	 // any sense at all)
+	     label.addColumn("xCor", int.class);
+	     label.addColumn("yCor", int.class);
+	     label.addColumn("typ", String.class);
+	     label.addColumn("text", String.class);
+	     for (int i = 0; i < authors; i++)
+	     {
+	    	 VisualItem newItem = label.addItem();
+	         newItem.set("xCor", new Integer(0));
+	         newItem.set("yCor", new Integer(0));
+	         newItem.set("typ", "label");
+	         newItem.set("text", "");
+	     }
     }
 	
 	
 	
 	public static void loadCube(DataCube dc, AggregateTable at,
-			VisualTable vt, int pixelSize, int textSize) 
+			VisualTable vt, VisualTable label, int pixelSize, int textSize) 
     {
         // assumed: authors are on x- and y-axis
 		final int xCount = dc.getXAxisCount();
@@ -194,5 +210,32 @@ public class DataLoader
 	        	currentIndex++;
 	     	}// end of for y
         }// end of for x
+        
+         // create the labeling table
+	     label.addColumn("xCor", int.class);
+	     label.addColumn("yCor", int.class);
+	     label.addColumn("type", String.class);
+	     label.addColumn("text", String.class);
+	     label.addColumn("position", String.class);
+	     // create headers
+	     for (int i = 0; i < dc.getXAxisCount(); i++)
+	     {
+	    	 VisualItem newItem = label.addItem();
+	         newItem.set("xCor", new Integer(0));
+	         newItem.set("yCor", new Integer(0));
+	         newItem.set("type", "label");
+	         newItem.set("position", "header");
+	         newItem.set("text", dc.getXAxisNameAt(i));
+	     }
+	     // create labeling on left side
+	     for (int i = 0; i < dc.getYAxisCount(); i++)
+	     {
+	    	 VisualItem newItem = label.addItem();
+	         newItem.set("xCor", new Integer(0));
+	         newItem.set("yCor", new Integer(0));
+	         newItem.set("type", "label");
+	         newItem.set("position", "side");
+	         newItem.set("text", dc.getYAxisNameAt(i));
+	     }
     } // end of loadCube
 }

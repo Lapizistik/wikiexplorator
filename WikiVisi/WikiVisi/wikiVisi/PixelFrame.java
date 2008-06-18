@@ -9,6 +9,8 @@ import java.awt.Event;
 import java.awt.FlowLayout;
 import java.awt.TextArea;
 import java.awt.TextField;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -26,6 +28,13 @@ public class PixelFrame extends JFrame
 	public PixelFrame(String title)
 	{
 		super(title);
+		this.addWindowListener(new WindowAdapter()
+	    {
+	    	public void windowClosing(WindowEvent we)
+	    	{
+	    		System.exit(0);
+	    	}
+	    });
 	}
 	
 	public void init(Jigsaw j)
@@ -53,6 +62,8 @@ public class PixelFrame extends JFrame
 		cPixels.addItem("Simple Layout");
 		cPixels.addItem("Morton Z-Curve");
 		cPixels.addItem("Flexible Z-Curve");
+		cPixels.addItem("Hilbert Curve");
+		cPixels.addItem("Line Layout");
 		cPixels.select("Simple Layout");
 		cText.addItem("0");
 		cText.addItem("3");

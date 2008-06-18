@@ -30,11 +30,7 @@ public class PixelRenderer extends LabelRenderer
 {
 	protected int pixelSize = 1;
 	protected int textSize = 1;
-	
-	public PixelRenderer()
-	{
-		super();
-	}
+	protected boolean table = false;
 	
 	public PixelRenderer(String n, int ps, int ts)
 	{
@@ -61,7 +57,8 @@ public class PixelRenderer extends LabelRenderer
 	        {
 	        	int x = ((Integer)item.get("xCor")).intValue();
 	        	int y = ((Integer)item.get("yCor")).intValue();
-	        	if (item.canGetString("author") && textSize > 0)
+	        	if (item.canGetString("author") && textSize > 0 &&
+	        			!table)
 	        	{
 		        	String desc = (String)(item.get("author"));
 		        	if (desc.length() > 10)
@@ -71,6 +68,23 @@ public class PixelRenderer extends LabelRenderer
 		        	g.drawString(desc, x + 1, y + textSize - 1);
 	        	}
 	        }
+	        else if (item.get("type").equals("label") && table)
+	        {
+	        	int x = ((Integer)item.get("xCor")).intValue();
+	        	int y = ((Integer)item.get("yCor")).intValue();
+	        	String text = (String)(item.get("text"));
+		        if (!text.equals(""))
+		        {
+		        	g.setColor(Color.black);
+		        	g.setFont(new Font("Arial", Font.PLAIN, textSize));
+		        	g.drawString(text, x, y);
+		        }
+	        }
+	}
+	
+	public void setTableLabeling(boolean bol)
+	{
+		table = bol;
 	}
 	
 	public void drawPixel(Graphics2D gr, double v, int pX, int pY)
@@ -89,7 +103,7 @@ public class PixelRenderer extends LabelRenderer
 			blue = 0;
 		}
 		// Test
-		double a1, a2, a3;
+		/*double a1, a2, a3;
 		
 		if (v <= 0.333d)
 		{
@@ -111,7 +125,7 @@ public class PixelRenderer extends LabelRenderer
 		}
 		red = (int)(255 * a1);
 		green = (int)(255 * a2);
-		blue = (int)(255 * a3);
+		blue = (int)(255 * a3);*/
 		if (red < 0)
 			red = 0;
 		if (green < 0)

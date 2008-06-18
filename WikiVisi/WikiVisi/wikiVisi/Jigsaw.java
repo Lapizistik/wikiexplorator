@@ -21,6 +21,7 @@ import prefuse.action.layout.graph.FruchtermanReingoldLayout;
 import prefuse.activity.Activity;
 import prefuse.controls.DragControl;
 import prefuse.controls.PanControl;
+import prefuse.controls.WheelZoomControl;
 import prefuse.controls.ZoomControl;
 import prefuse.data.Graph;
 import prefuse.data.io.DataIOException;
@@ -40,13 +41,13 @@ public class Jigsaw
 {
 	 protected Visualization vis;
 	 protected AggregateTable glyphTable;
-	 protected VisualTable pixelTable;
+	 protected VisualTable pixelTable, labelTable;
 	 protected DataSet ds = new DataSet();
 	 protected Display dis;
 	 protected int textSize = 12;
-     protected int pixelSize = 3;
+     protected int pixelSize = 1;
      protected PixelRenderer r;
-     protected String currentPixelLayout;
+     protected String currentPixelLayout, currentGlyphLayout;
      
 	 public void init(DataSet data)
 	 {
@@ -54,17 +55,19 @@ public class Jigsaw
 		 vis = new Visualization();
 	     glyphTable = new AggregateTable(vis, "glyphTable");
 	     pixelTable = new VisualTable(vis, "pixelTable");
+	     labelTable = new VisualTable(vis, "labelTable");
 	     vis.add("glyphTable", glyphTable);
 	     vis.add("pixelTable", pixelTable);
-	    
-	     // load data
+	     vis.add("labelTable", labelTable);
+	     
+	     // load data and create the glyph and pixel tables
 	     ds = data;
 	     if (ds instanceof DataTable)
-	    	 DataLoader.loadTable((DataTable)ds, glyphTable, pixelTable, pixelSize, textSize);
+	    	 DataLoader.loadTable((DataTable)ds, glyphTable, pixelTable, labelTable, pixelSize, textSize);
 	     else if (ds instanceof DataCube)
-	    	 DataLoader.loadCube((DataCube)ds, glyphTable, pixelTable, pixelSize, textSize);
-	     	
-	     // draw the "name" label for NodeItems
+	    	 DataLoader.loadCube((DataCube)ds, glyphTable, pixelTable, labelTable, pixelSize, textSize);
+	        
+	     // setup renderer
 	     r = new PixelRenderer("label", pixelSize,
 	    		 textSize);
 	        
@@ -74,18 +77,18 @@ public class Jigsaw
 	      
 	     // setup display and controls
 	     dis = new Display(vis);
-	     dis.setSize(980, 720); 
+	     dis.setSize(960, 700); 
+	     //dis.setBackground(Color.blue);
 	     // drag individual items around
 	     dis.addControlListener(new DragControl());
 	     // pan with left-click drag on background
 	     dis.addControlListener(new PanControl()); 
-	     // zoom with right-click drag
-	     dis.addControlListener(new ZoomControl());
+	     // zoom with mousewheel
+	     dis.addControlListener(new WheelZoomControl());
 	        
 	     // create a new window to hold the visualization
 	     PixelFrame frame = new PixelFrame("PixelBased Data Visualization");
-	     // ensure application exits when window is closed
-	     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	     frame.setSize(frame.getMaximumSize());
 	     frame.init(this);
 	     frame.add(dis);
 	     frame.pack();           // layout components in window
@@ -93,7 +96,8 @@ public class Jigsaw
 	     
 	     // set start layout
 	     currentPixelLayout = "Simple Layout";
-	     updateGlyphLayout("Simple Layout", "author");
+	     currentGlyphLayout = "Simple Layout";
+	     updateGlyphLayout(currentGlyphLayout, "author");
 	     updatePixelLayout(currentPixelLayout);
 	}
 	 
@@ -121,6 +125,21 @@ public class Jigsaw
 	    	Layouts.createFlexibleZLayout(v, startX, startY, space);
 	    else if (layout.equals("Simple Layout"))
 	    	Layouts.createSimpleLayout(v, startX, startY, space);
+	    // update the labeling:
+	    // if data is ordered by author names and layout
+	    // is simple layout, we have got a table layout
+	    // which means we show the labeling!
+	    if (sort.equals("author") && layout.equals("Simple Layout"))
+	    {
+	    	Vector v2 = new Vector();
+	    	for (int i = 0; i < labelTable.getRowCount(); i++)
+		      	v2.add(labelTable.getItem(i));
+		    Sort.sort(v2, "author");
+		    Layouts.createLabelLayout(v2, v, space);
+		    r.setTableLabeling(true);
+	    }
+	    else
+	        r.setTableLabeling(false);
 	    // because the glyph layout has changed,
 	    // the pixel coordinates have to be updated
 	    updatePixelLayout(currentPixelLayout);
@@ -151,6 +170,18 @@ public class Jigsaw
 	       	else if (layout.equals("Simple Layout"))
 	       	{
 	       		Layouts.createSimpleLayout(pixels, 
+	       			((Integer)item.get("xCor")).intValue(), 
+	        		((Integer)item.get("yCor")).intValue() + textSize, 0);
+	       	}
+	    	else if (layout.equals("Line Layout"))
+	       	{
+	       		Layouts.createLineLayout(pixels, 
+	       			((Integer)item.get("xCor")).intValue(), 
+	        		((Integer)item.get("yCor")).intValue() + textSize, 0);
+	       	}
+	    	else if (layout.equals("Hilbert Curve"))
+	       	{
+	       		Layouts.createHilbertLayout(pixels, 
 	       			((Integer)item.get("xCor")).intValue(), 
 	        		((Integer)item.get("yCor")).intValue() + textSize, 0);
 	       	}

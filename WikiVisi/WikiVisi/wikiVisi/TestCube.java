@@ -21,7 +21,7 @@ public class TestCube extends DataCube
      */
 	public int getZAxisCount()
 	{
-		return 110;
+		return 600;
 	}
 	
 	public int getXAxisCount()
