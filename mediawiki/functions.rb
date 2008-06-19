@@ -262,9 +262,67 @@ module Mediawiki
       }.join("\n")
     end
 
-    # Returns an array of Time objects in the range _starttime_ to
-    # _endtime_ of a certain step width. The first time may be greater than
+    # Returns an array of Time objects in the range
+    # <i>starttime=timeline.first</i> to <i>endtime=timeline.last</i>
+    # of a certain step width. The first time may be greater than
     # _starttime_ (if demanded), last time greater than _endtime_.
+    #
+    # _attr_:: 
+    #   named attributes.
+    #   <i>:step</i>:: 
+    #     step width. Either a number of seconds or a symbol
+    #     (<i>:hour</i>=3600, <i>:day</i>=24*3600, <i>:week</i>=7*24*3600).
+    #     <i>:month</i> corresponds to a real month with varying length,
+    #     so the steps will be e.g. 2000-1-27 to  2000-2-27 to  2000-2-27.
+    #   <i>:zero</i>:: 
+    #     start time setting. _starttime_ may have some 
+    #     odd value, e.g. 2003-8-20 14:33, but when stepping daily we would 
+    #     prefer timespans from midnight to midnight, i.e. start with
+    #     2003-8- 20 0:00. <i>:zero</i> may have the following values:
+    #     <i>:hour</i>:: set minutes and seconds of _starttime_ to 0.
+    #     <i>:day</i>:: set hours, minutes and seconds of _starttime_ to 0.
+    #     <i>:week</i>:: 
+    #       sets hours, minutes and seconds of _starttime_ to 0
+    #       and the date to the closest day before or equal to _starttime_
+    #       with day of the week as given in <i>:wday</i>. 
+    #     <i>:month</i>:: 
+    #       set day to 1 and 
+    #       hours, minutes and seconds of _starttime_ to 0.
+    #     <i>:year</i>:: 
+    #       set month and day to 1 and 
+    #       hours, minutes and seconds of _starttime_ to 0.
+    #     <i>[y,m,d,h,min,s]</i>:: 
+    #       each entry may either be _nil_ or an Integer. 
+    #       If _nil_ the corresponding Time component of _starttime_
+    #       (from year to second) is left untouched, otherwise it is set
+    #       to the value given in the array. So to start the day at 5:00
+    #       use <i>[nil,nil,nil,5,0,0]</i>.
+    #   <i>:wday</i>:: 
+    #     The day of the week the timeraster will start, if
+    #     <i>:zero => :week</i>. Allowed values are 0 (sunday) 
+    #     to 6 (saturday). Defaults to 0 (sunday).
+    #
+    # Use this function e.g. for investigating wiki dynamics:
+    #  filter = wiki.filter
+    #  tr = wiki.timeraster(:step => :week, :zero => :week)
+    #  r1 = tr.collect { |t|
+    #    filter.endtime = t
+    #    [t1, wiki.revisions.length]
+    #  }
+    #  require 'enumerator'
+    #  r2 = tr.enum_cons(3).collect { |ta| 
+    #    filter.starttime = ta.first
+    #    filter.endtime = ta.last
+    #    [ta.first, ta_last, wiki.revisions.length]
+    #  }
+    # Now <i>r1</i> holds a table (array of arrays) with the time in the first
+    # column and the number of revisions in the wiki up to this time in the 
+    # second column.
+    #
+    # In <i>r2</i> the first and second column give start and end time of a two
+    # week time slice and the third column gives the number of revisions
+    # created within this timespan. The trick is here to use the enumerator
+    # package to get the right slices from timeraster.
     def timeraster(attr={})
       attr = { 
         :step => :day,
@@ -281,7 +339,9 @@ module Mediawiki
       ct = @timeline.first
       et = @timeline.last
 
-      case attr[:zero]
+      case z = attr[:zero]
+      when :hour
+        ct = Time.local(ct.year, ct.month, ct.day, ct.hour)
       when :day
         ct = Time.local(ct.year, ct.month, ct.day)
       when :week
@@ -293,6 +353,15 @@ module Mediawiki
         ct = Time.local(ct.year, ct.month, 1)
       when :year
         ct = Time.local(ct.year, 1, 1)
+      else
+        if z.kind_of?(Array)
+          ct = Time.local(z[0] || ct.year, 
+                          z[1] || ct.month, 
+                          z[2] || ct.day,
+                          z[3] || ct.hour,
+                          z[4] || ct.min,
+                          z[5] || ct.sec)
+        end
       end
 
       a = [ct]
