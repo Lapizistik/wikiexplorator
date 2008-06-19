@@ -31,19 +31,50 @@ else
   ENV['R_HOME']=r_home
   require 'rsruby'
   RSRuby.instance.library('sna')
+  RSRuby.instance.library('network')
+  RSRuby.instance.library('ergm')
   
   class DotGraph
+    R = RSRuby.instance
     # create an R matrix object representing the adjacency matrix of this graph
     def to_r_matrix
-      r = RSRuby.instance
-      c = r.array.conversion
-      r.array.conversion = RSRuby::NO_CONVERSION
-      m = r.array(adjacencymatrix.flatten,[@nodes.length]*2)
-      r.array.conversion = c
+      c = R.array.conversion
+      R.array.conversion = RSRuby::NO_CONVERSION
+      m = R.array(adjacencymatrix.flatten,[@nodes.length]*2)
+      R.array.conversion = c
       m
     end
 
-    # computes the betweenness for all nodes using R.
+    # create an R matrix object representing this graph
+    #
+    # r_attr is a Hash of attributes for R network generation.
+    def to_r_network(r_attr={})
+      r_attr = r_attr.dup # we use a copy, as we wanna modify it.
+      r_attr[:directed] = !!@directed  unless r_attr.has_key?(:directed)
+      r_attr[:loops] = false           unless r_attr.has_key?(:loops)
+      r_attr[:matrix_type] = 'edgelist'
+      c = R.array.conversion
+      R.array.conversion = RSRuby::NO_CONVERSION
+      nc = R.network.conversion
+      R.network.conversion = RSRuby::NO_CONVERSION
+      el = flat_edgelist
+#      n = R.network(to_r_matrix, :loops => true, :directed => !!@directed)
+      n = R.network(R.array(el, [el.length/3, 3]), r_attr)
+      R.add_vertices(n, @nodes.size-R.network_size(n)) # correct Nr of nodes.
+      R.network_vertex_names__(n, @nodes.collect { |k| nodelabel(k) })
+
+      # We believe in all nodes being the same class:
+      if (node = @nodes.first).respond_to?(:network_attributes)
+        node.network_attributes. each do |name, method|
+          R.set_vertex_attribute(n, name, @nodes.collect { |k| k.send(method)})
+        end
+      end
+      R.network.conversion = nc
+      R.array.conversion = c
+      n
+    end
+
+    # computes the betweenness for all nodes using R/sna.
     #
     # _params_:: 
     #     Hash with all named parameters for R::betweenness.
@@ -53,10 +84,9 @@ else
     #       g.betweenness(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
     def betweenness(params={})
-      r = RSRuby.instance
       params[:gmode] ||= (@directed ? 'digraph' : 'graph')
       params[:cmode] ||= (@directed ? 'directed' : 'undirected')
-      b = r.betweenness(to_r_matrix, params) 
+      b = R.betweenness(to_r_matrix, params) 
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -66,7 +96,7 @@ else
     # pp_betweenness(:sortby => 0, :up => true, ...)
     # pp_betweenness(:sortby => 0, :up => true, ...) { |n| ... }
     #
-    # Pretty print the betweenness of all nodes (using R).
+    # Pretty print the betweenness of all nodes (using R/sna).
     #
     # _params_ is a Hash of named parameters:
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
@@ -79,7 +109,7 @@ else
       pp_key_value(betweenness(params), sortby, up, &block)
     end
 
-    # computes the closeness for all nodes using R.
+    # computes the closeness for all nodes using R/sna.
     #
     # _params_:: 
     #     Hash with all named parameters for R::closeness.
@@ -89,10 +119,9 @@ else
     #       g.closeness(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
     def closeness(params={})
-      r = RSRuby.instance
       params[:gmode] ||= (@directed ? 'digraph' : 'graph')
       params[:cmode] ||= (@directed ? 'directed' : 'undirected') 
-      b = r.closeness(to_r_matrix, params)
+      b = R.closeness(to_r_matrix, params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -115,7 +144,7 @@ else
       pp_key_value(closeness(params), sortby, up, &block)
     end
 
-    # computes the stress centrality scores for all nodes using R.
+    # computes the stress centrality scores for all nodes using R/sna.
     #
     # _params_:: 
     #     Hash with all named parameters for R::stresscent.
@@ -125,10 +154,9 @@ else
     #       g.stresscent(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
     def stresscent(params={})
-      r = RSRuby.instance
       params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
       params[:cmode] ||= (@directed ? 'directed' : 'undirected')
-      b = r.stresscent(to_r_matrix, params)
+      b = R.stresscent(to_r_matrix, params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -138,7 +166,7 @@ else
     # pp_stresscent(:sortby => 0, :up => true, ...)
     # pp_stresscent(:sortby => 0, :up => true, ...) { |n| ... }
     #
-    # Pretty print the stress centrality scores of all nodes (using R).
+    # Pretty print the stress centrality scores of all nodes (using R/sna).
     #
     # _params_ is a Hash of named parameters:
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
@@ -153,7 +181,7 @@ else
 
 
 
-    # computes the prestige for all nodes using R.
+    # computes the prestige for all nodes using R/sna.
     #
     # _params_:: 
     #     Hash with all named parameters for R::prestige.
@@ -163,9 +191,8 @@ else
     #       g.prestige(:cmode => 'indegree', :rescale => true)
     #     By default <i>:gmode</i> is set automatically.
     def prestige(params={})
-      r = RSRuby.instance
       params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
-      b = r.prestige(to_r_matrix, params)
+      b = R.prestige(to_r_matrix, params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -175,7 +202,7 @@ else
     # pp_prestige(:sortby => 0, :up => true, ...)
     # pp_prestige(:sortby => 0, :up => true, ...) { |n| ... }
     #
-    # Pretty print the prestige of all nodes (using R).
+    # Pretty print the prestige of all nodes (using R/sna).
     #
     # _params_ is a Hash of named parameters:
     # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
@@ -188,6 +215,48 @@ else
       pp_key_value(prestige(params), sortby, up, '%20i', &block)
     end
 
+
+    # Use R to plot the DotGraph.
+    #
+    # If he attribute :filename is set to a filename with extension
+    # .ps, .pdf, .png we plot to this file in the corresponding mode.
+    # All other attributes are passed to the R plot and the R network
+    # command.
+    #
+    # If the plot device is not a file it stays open and its device
+    # number _i_ is returned. It can be savely closed using r_plot_close(_i_).
+    def r_plot(r_attr={})
+      in_file = true
+      fn = r_attr[:filename] || ''
+      case File.extname(fn)
+      when '.ps'  : R.postscript(fn)
+      when '.pdf' : R.pdf(fn)
+      when '.png' : R.png(fn)
+      else in_file = false;  R.eval_R('dev.new()')
+      end
+
+      R.plot_network(to_r_network(r_attr), r_attr)
+      
+      if in_file
+        R.eval_R('dev.off()') 
+      else
+        R.eval_R('dev.cur()').values.first # get the number of the device
+      end
+    end
+
+    # Close the R plot device number _i_.
+    def r_plot_close(i)
+      R.dev_off(i)
+    end
+
+    # Save R network representation of the graph to file _filename_.
+    # All attributes are passed to <i>to_r_network</i>.
+    #
+    # The R name of the saved object is set to _nw_.
+    def to_r_network_file(filename, r_attr={})
+      R.assign('nw', to_r_network(r_attr))
+      R.eval_R("save(nw, file='#{filename}')")
+    end
 
     SORTBY = { :node=>0, :value=>1} # :nodoc:
     # Pretty print a hash with nodes as keys.

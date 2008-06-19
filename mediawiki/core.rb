@@ -172,15 +172,19 @@ module Mediawiki
     # If you want to change an username use User#name= instead, which
     # will do the right thing.
     def update_username(oldname, newname) # :nodoc:
-      @users_name[newname] = @users_name.delete(oldname)
+      unless @users_name[newname] = @users_name.delete(oldname)
+        warn "User name #{oldname} not in user list. Something's broken!"
+      end
     end
 
     # Updates the page title in the page title reference hash from oldtitle
     # to newtitle. This does _not_ touch the page object itself.
     # If you want to change a page title use Page#title= instead, which will
     # do the right thing.
-    def update_pagetitle(oldtitle, newtitle, ns=0) # :nodoc:
-      @pages_title[page_tns(t,ns)] = @pages_title.delete(page_tns(t,ns))
+    def update_pagetitle(ot, nt, ns=0) # :nodoc:
+      unless @pages_title[page_tns(nt,ns)] = @pages_title.delete(page_tns(ot,ns))
+        warn "Page Title #{ot} (ns=#{ns}) not in pages list. Something's broken!"
+      end
     end
 
 
@@ -192,20 +196,22 @@ module Mediawiki
     # it is deleted. In the following list the Symbols are given with their
     # default values. See User#obliterate, Page#obliterate, 
     # 
-    # <tt>:name</tt>      => _false_ :: User name
-    # <tt>:real_name</tt> => _false_ :: User real name
-    # <tt>:email</tt>     => _false_ :: User mail address
-    # <tt>:title</tt>     => _false_ :: Page title
-    # <tt>:ip</tt>        => _true_  :: IP address of anonymous User
-    # <tt>:comment</tt>   => _false_ :: Edit comments
-    # <tt>:links</tt>     => _false_ :: Links in text form
-    # <tt>:text</tt>      => _false_ :: Text contents
+    # <tt>:name</tt>        => _false_ :: User name
+    # <tt>:real_name</tt>   => _false_ :: User real name
+    # <tt>:email</tt>       => _false_ :: User mail address
+    # <tt>:user_options</i> => _false_ :: User options
+    # <tt>:title</tt>       => _false_ :: Page title
+    # <tt>:ip</tt>          => _true_  :: IP address of anonymous User
+    # <tt>:comment</tt>     => _false_ :: Edit comments
+    # <tt>:links</tt>       => _false_ :: Links in text form
+    # <tt>:text</tt>        => _false_ :: Text contents
     def obliterate(keeps={})
       keeps = {:ip => true}.merge(keeps)
-      @users_id.each { |u| u.obliterate(keeps) }
-      @pages_id.each { |p| p.obliterate(keeps) }
-      @revisions_id.each { |r| r.obliterate(keeps) }
-      @texts_id.each { |t| t.obliterate(keeps) }
+      @users_id.each_value { |u| u.obliterate(keeps) }
+      @pages_id.each_value { |p| p.obliterate(keeps) }
+      @revisions_id.each_value { |r| r.obliterate(keeps) }
+      @texts_id.each_value { |t| t.obliterate(keeps) }
+      self
     end
 
     #
@@ -222,7 +228,7 @@ module Mediawiki
           # The uid=0 user:
           u0 = User.new(self, 0, 'system', 'System User', nil, nil, 
                         '19700101000000', nil, nil, nil, nil, nil);
-          @users_name = {}
+          @users_name = {u0.name => u0}
           @users_id = {0 => u0}
           users_aliased = {}
           dbh.users do |uid, *row|
@@ -253,6 +259,7 @@ module Mediawiki
             user.groups << g
             @usergroups[g] << user unless @uid_aliases[uid]
           end
+          @usergroups.default = nil # delete default proc (allows Marshalling)
           
           # Read all the raw text data
           @texts_id = {}
@@ -278,13 +285,13 @@ module Mediawiki
           # And now the revisions
           @revisions_id = {}
           @timeline = []
-          dbh.revisions do |rid, pid, tid, comment, uid, user, *row|
+          dbh.revisions do |rid, pid, tid, comment, uid, uname, *row|
             if alias_uid = @uid_aliases[uid] # user aliasing
               uid = alias_uid
-              user = @users_id[uid]
+              uname = @users_id[uid].name
             end
             revision = Revision.new(self, 
-                                    rid, pid, tid, comment, uid, user, *row)
+                                    rid, pid, tid, comment, uid, uname, *row)
             @revisions_id[revision.rid] = revision
             @timeline << revision.timestamp
           end
@@ -461,7 +468,7 @@ module Mediawiki
     #
     # Mainly used for anonymization.
     def change_name(lname)
-      wiki.update_username(@name, lname)
+      @wiki.update_username(@name, lname)
       @name = lname
     end
 
@@ -474,10 +481,21 @@ module Mediawiki
     # <i>name</i>      :: unless <tt>:name</tt> => _true_
     # <i>real_name</i> :: unless <tt>:real_name</tt> => _true_
     # <i>email</i>     :: unless <tt>:email</tt> => _true_
+    # <i>options</i>   :: unless <tt>:user_options</tt> => _true_
     def obliterate(keeps={})
       change_name(node_id)         unless keeps[:name]
       @real_name = "#{@name} Anon" unless keeps[:real_name]
       @email = ""                  unless keeps[:email]
+      @options = ""                unless keeps[:user_options]
+    end
+
+    # Hash of interesting User attributes and methods to fetch them.
+    #
+    # Used e.g. for creating network attributes in Dotnet#to_r_network
+    def network_attributes
+      { 'role' => :role,
+        'uid'  => :uid,
+        'name' => :name }
     end
 
   end
@@ -650,7 +668,7 @@ module Mediawiki
     #
     # Mainly used for anonymization.
     def change_title(ltitle)
-      wiki.update_pagetitle(@title, ltitle)
+      @wiki.update_pagetitle(@title, ltitle, @namespace)
       @title = ltitle
     end
 
@@ -661,6 +679,15 @@ module Mediawiki
     # Sets the _title_ to an obliterated value unless <tt>:title</tt> => _true_
     def obliterate(keeps={})
       change_title(node_id)         unless keeps[:title]
+    end
+
+    # Hash of interesting Page attributes and methods to fetch them.
+    #
+    # Used e.g. for creating network attributes in Dotnet#to_r_network
+    def network_attributes
+      { 'genre' => :genre,
+        'pid'   => :pid,
+        'title' => :title }
     end
 
   end

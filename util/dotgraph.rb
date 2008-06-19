@@ -179,21 +179,37 @@ class DotGraph
     nil
   end
 
+  # Compute the adjacency matrix (Array of Arrays) of this graph.
   def adjacencymatrix(inf=0)
     # prepare matrix
     ni = Hash.new
     @nodes.each_with_index { |n,i| ni[n]=i }
     matrix = Array.new(@nodes.length) { Array.new(@nodes.size, inf) }
     matrix.each_with_index { |a,i| a[i]=0 }
-    @links.each_key { |l| 
+    @links.each_key do |l| 
       i = ni[l.src]
       j = ni[l.dest]
       if i!=j
         matrix[i][j] = 1 
         matrix[j][i] = 1 unless @directed
       end
-    }
+    end
     matrix
+  end
+
+  # Compute a flat edge list representation of this graph (useful for R).
+  def flat_edgelist
+    ni = Hash.new
+    @nodes.each_with_index { |n,i| ni[n]=i+1 }
+    sa = []
+    da = []
+    va = []
+    @links.each do |l,v| 
+      sa << ni[l.src]
+      da << ni[l.dest]
+      va << v
+    end
+    sa + da + va
   end
 
   # compute distance matrix for all nodes
@@ -333,6 +349,15 @@ class DotGraph
     when String, Symbol : "label=\"#{np.tr('"',"'")}\""
     when Enumerable : np.join(', ')
     end
+  end
+
+  # maybe we can use this for R plots:
+  def nodelabel(node) # :nodoc:
+    np = @lproc.call(node)
+    case np
+    when String, Symbol : np.to_s
+    when Enumerable : (np.find { |s| s =~ /label="(.*?)"/ } && $1)
+    end    
   end
 
   def DotGraph::nid(o) # :nodoc:

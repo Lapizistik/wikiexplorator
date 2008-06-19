@@ -261,6 +261,58 @@ module Mediawiki
         "%-40s: %3i" % kv
       }.join("\n")
     end
+
+    # Returns an array of Time objects in the range _starttime_ to
+    # _endtime_ of a certain step width. The first time may be greater than
+    # _starttime_ (if demanded), last time greater than _endtime_.
+    def timeraster(attr={})
+      attr = { 
+        :step => :day,
+        :zero => :day
+      }.merge(attr)
+      
+      step = case attr[:step]
+             when :hour : 3600
+             when :day  : 24*3600
+             when :week : 7*24*3600
+             else attr[:step]
+             end
+      
+      ct = @timeline.first
+      et = @timeline.last
+
+      case attr[:zero]
+      when :day
+        ct = Time.local(ct.year, ct.month, ct.day)
+      when :week
+        wday = (attr[:wday] || 0)
+        d = ct.wday-wday
+        d = d + 7 if d < 0
+        ct = ct - (d*3600*24)
+      when :month
+        ct = Time.local(ct.year, ct.month, 1)
+      when :year
+        ct = Time.local(ct.year, 1, 1)
+      end
+
+      a = [ct]
+      if step == :month
+        while ct < et
+          if (m = ct.month) < 12
+            ct = Time.local(ct.year, m+1, ct.day, ct.hour, ct.min, ct.sec)
+          else
+            ct = Time.local(ct.year+1, 1, ct.day, ct.hour, ct.min, ct.sec)
+          end
+          a << ct
+        end
+      else
+        while ct < et
+          a << (ct += step)
+        end
+      end
+      a
+    end
+
   end
 
   class Page
