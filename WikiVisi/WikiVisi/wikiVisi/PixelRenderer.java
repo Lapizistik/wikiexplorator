@@ -22,6 +22,7 @@ import prefuse.util.FontLib;
 import prefuse.util.GraphicsLib;
 import prefuse.util.StringLib;
 import prefuse.visual.AggregateItem;
+import prefuse.visual.AggregateTable;
 import prefuse.visual.NodeItem;
 import prefuse.visual.VisualItem;
 import prefuse.visual.tuple.TableAggregateItem;
@@ -31,10 +32,12 @@ public class PixelRenderer extends LabelRenderer
 	protected int pixelSize = 1;
 	protected int textSize = 1;
 	protected boolean table = false;
+	protected AggregateTable at;
 	
-	public PixelRenderer(String n, int ps, int ts)
+	public PixelRenderer(String n, AggregateTable agg, int ps, int ts)
 	{
 		super(n);
+		at = agg;
 		pixelSize = ps;
 		textSize = ts;
 	}
@@ -48,10 +51,14 @@ public class PixelRenderer extends LabelRenderer
 	{
 		    if (item.get("type").equals("pixel"))
 	        {
-	        	int x = ((Integer)item.get("xCor")).intValue();
+		    	// get coordinates from the parent aggregate
+		    	VisualItem parent = at.getItem(((Integer)item.get("parentIndex")).intValue());
+		    	int startX = ((Integer)parent.get("xCor")).intValue();
+		    	int startY = ((Integer)parent.get("yCor")).intValue();
+		    	int x = ((Integer)item.get("xCor")).intValue();
 	        	int y = ((Integer)item.get("yCor")).intValue();
-		        double val = ((Double)item.get("color")).doubleValue();
-		        drawPixel(g, val, x, y);
+	        	double val = ((Double)item.get("color")).doubleValue();
+		        drawPixel(g, val, startX + x, startY + y);
 	        }
 	        else if (item.get("type").equals("glyph"))
 	        {
@@ -135,4 +142,30 @@ public class PixelRenderer extends LabelRenderer
 		gr.setColor(new Color(red, green, blue));
 		gr.fillRect(pX, pY, pixelSize, pixelSize);
 	}
+	
+	 protected Shape getRawShape(VisualItem item) 
+	 {
+		 int x, y, width = 0, height = 0;
+		 x = ((Integer)item.get("xCor")).intValue();
+		 y = ((Integer)item.get("yCor")).intValue();
+		 if (item.get("type").equals("pixel"))
+		 {
+			 VisualItem parent = at.getItem(((Integer)item.get("parentIndex")).intValue());
+		     int parentX = ((Integer)parent.get("xCor")).intValue();
+		     int parentY = ((Integer)parent.get("yCor")).intValue();
+		     x += parentX;
+		     y += parentY;
+			 width = 1;
+			 height = 1;
+		 }
+		 else if (item.get("type").equals("glyph"))
+		 {
+			 width = ((Integer)item.get("width")).intValue();
+			 height = ((Integer)item.get("height")).intValue();
+		 }
+		 // get bounding box dimensions
+	     m_bbox.setFrame(x, y, width, height);
+	     
+	     return m_bbox;
+	 }
 } // end of class LabelRenderer

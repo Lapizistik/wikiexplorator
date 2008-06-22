@@ -5,6 +5,8 @@ package wikiVisi;
 
 import java.awt.Button;
 import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.FlowLayout;
 import java.awt.TextArea;
@@ -13,7 +15,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
+
+import prefuse.Display;
+import prefuse.util.ui.JFastLabel;
 
 /**
  * @author rene
@@ -23,7 +33,8 @@ public class PixelFrame extends JFrame
 {
 	protected Button bPos, bVorlage, bLoad, bSave;
 	protected Choice cSort, cGlyphs, cPixels, cText;
-	protected Jigsaw jig;
+	protected VisuMain vis;
+	protected JLabel info;
 	
 	public PixelFrame(String title)
 	{
@@ -37,12 +48,14 @@ public class PixelFrame extends JFrame
 	    });
 	}
 	
-	public void init(Jigsaw j)
+	public void init(VisuMain v, Display dis)
 	{
-		jig = j;
+		vis = v;
 		// set layout and create the choices
-		FlowLayout layout = new FlowLayout();
+		FormLayout layout = new FormLayout("10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default:grow, 10px, left:default, 10px", 
+		"10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default:, 10px, center:default, 10px, center:default:grow, 10px");
 		setLayout(layout);
+		CellConstraints cc = new CellConstraints();
 		cSort = new Choice();
 		cSort.setName("cSort");
 		cGlyphs = new Choice();
@@ -51,6 +64,10 @@ public class PixelFrame extends JFrame
 		cPixels.setName("cPixels");
 		cText = new Choice();
 		cText.setName("cText");
+		// the label
+		info = new JLabel("nothing selected");
+		info.setForeground(Color.gray);
+		JLabel place = new JLabel("<<<<<<Platzhalter>>>>>>");
 		// add entries to the choices
 		cSort.addItem("author");
 		cSort.addItem("mean");
@@ -72,11 +89,18 @@ public class PixelFrame extends JFrame
 		cText.addItem("12");
 		cText.addItem("15");
 		cText.select("12");
+		// Panel that holds the display
+		JScrollPane panel = new JScrollPane();
+		panel.getViewport().add(dis);
 		// add all elements
-		add(cSort);
-		add(cGlyphs);
-		add(cPixels);
-		add(cText);
+		add(cSort, cc.xy(2, 2));
+		add(cGlyphs, cc.xy(4, 2));
+		add(cPixels, cc.xy(6, 2));
+		add(cText, cc.xy(8, 2));
+		add(info, cc.xyw(10, 2, 3));
+		add(panel, cc.xywh(2, 4, 9, 9));
+		add(place, cc.xy(12, 6));
+		info.setVisible(true);
 		pack();
 	}
 	
@@ -89,13 +113,36 @@ public class PixelFrame extends JFrame
 			String selection = c.getSelectedItem();
 			
 			if (name.equals("cGlyphs"))
-				jig.updateGlyphLayout(selection,
-						cSort.getSelectedItem());
+			{
+				vis.updateGlyphLayout(selection);
+				vis.updatePixelLayout(cPixels.getSelectedItem());
+				vis.updateVisu();
+			}
 			else if (name.equals("cPixels"))
-				jig.updatePixelLayout(selection);
+			{
+				vis.updatePixelLayout(selection);
+				vis.updateGlyphSize();
+				vis.updateGlyphLayout(cGlyphs.getSelectedItem());
+				vis.updateVisu();
+			}
+			else if (name.equals("cSort"))
+			{
+				vis.setSort(selection);
+				vis.updateGlyphLayout(cGlyphs.getSelectedItem());
+				vis.updatePixelLayout(cPixels.getSelectedItem());
+				vis.updateVisu();
+			}
 			else if (name.equals("cText"))
-				jig.setTextSize(Integer.parseInt(selection));		
+			{
+				vis.setTextSize(Integer.parseInt(selection));		
+				vis.updateVisu();
+			}
 		}
 		return true;
+	}
+	
+	public void setInfo(String s)
+	{
+		info.setText(s);
 	}
 }

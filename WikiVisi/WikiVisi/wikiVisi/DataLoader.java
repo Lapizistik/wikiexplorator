@@ -12,7 +12,7 @@ import prefuse.visual.VisualItem;
 import prefuse.visual.VisualTable;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
  */
 public class DataLoader 
@@ -59,8 +59,10 @@ public class DataLoader
     	vt.addColumn("type", String.class);
     	vt.addColumn("width", Integer.class);
     	vt.addColumn("height", Integer.class);
+    	vt.addColumn("parentIndex", Integer.class);
     	vt.addColumn("value", Double.class);
     	vt.addColumn("color", Double.class);
+    	vt.addColumn("desc", String.class);
     	// to create a value for the color that's between
     	// 0 and 1, we need to know the highest value
     	// of all pixels
@@ -83,6 +85,8 @@ public class DataLoader
 	        	newItem.set("height", new Integer(pixelSize));
 	        	newItem.set("xCor", new Integer(10));
 	        	newItem.set("yCor", new Integer(10));
+	        	newItem.set("parentIndex", new Integer(author));
+	        	newItem.set("desc", dt.getXAxisNameAt(time));
 	        	newItem.set("type", new String("pixel"));
 	        	at.addToAggregate(author, newItem);
 	        }
@@ -141,7 +145,7 @@ public class DataLoader
         at.addColumn("height", int.class);
         at.addColumn("mean", double.class);
         at.addColumn("type", String.class);
-        // columns for the pixelss
+        // columns for the pixels
         vt.addColumn("xCor", Integer.class);
     	vt.addColumn("yCor", Integer.class);
     	vt.addColumn("type", String.class);
@@ -149,6 +153,8 @@ public class DataLoader
     	vt.addColumn("height", Integer.class);
     	vt.addColumn("value", Double.class);
     	vt.addColumn("color", Double.class);
+    	vt.addColumn("desc", String.class);
+    	vt.addColumn("parentIndex", Integer.class);
     	
         // first create all Glyphs  
     	// to create a value for the color that's between
@@ -191,7 +197,9 @@ public class DataLoader
 		        	newPixel.set("height", new Integer(pixelSize));
 		        	newPixel.set("xCor", new Integer(0));
 		        	newPixel.set("yCor", new Integer(0));
+		        	newPixel.set("parentIndex", new Integer(currentIndex));
 		        	newPixel.set("type", new String("pixel"));
+		        	newPixel.set("desc", dc.getZAxisNameAt(z));
 		        	at.addToAggregate(currentIndex, newPixel);
 		        }
 	            // calculate mean value of the glyph

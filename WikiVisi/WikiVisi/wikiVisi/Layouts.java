@@ -18,8 +18,7 @@ public class Layouts extends SpecifiedLayout
 		pixelSize = ps;
 	}
 
-	public static void createSimpleLayout(Vector v, int startX, int startY,
-			int abstand)
+	public static void createSimpleLayout(Vector v, int startX, int startY, int abstand)
 	{
 		VisualItem item = (VisualItem)v.get(0);
 		int itemWidth = ((Integer)item.get("width")).intValue();

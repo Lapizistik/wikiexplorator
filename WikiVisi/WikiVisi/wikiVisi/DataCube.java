@@ -1,9 +1,16 @@
 package wikiVisi;
 /**
- * This class represents a three dimensional 
- * set of double values (think of it as a cube).
- * It extends the DataSet class by some methods 
- * specific for this kind of data set.
+ * This class represents a three dimensional set of 
+ * double values (think of it as a cube).
+ * It extends the DataSet class by some methods for the 
+ * z-axis and a method to retrieve the data values
+ * from the cube. You will have to overwrite the method
+ * getValueAt(x,y,z) so that it delivers the value at 
+ * position x/y/z in your cube. In addition you
+ * must overwrite getZAxisCount (and getZAxisNameAt(z)
+ * is recommended, too).
+ * Other methods to overwrite are explained in the
+ * superclass DataSet!
  * 
  * @author Rene Wegener
  */
@@ -21,7 +28,7 @@ public class DataCube extends DataSet
      */
 	public int getZAxisCount()
 	{
-		return getZAxisNames().length;
+		return 0;
 	}
 	
     /**
@@ -29,21 +36,7 @@ public class DataCube extends DataSet
      */
     public double getValueAt(int x, int y, int z)
 	{
-		return getZValuesAt(x, y)[z];
-	}
-	
-    /**
-     * get a double array with all values of the z-axis
-     * at a specific x and y index
-     */
-    public double[] getZValuesAt(int x, int y)
-	{
-    	double[] d = new double[getZAxisCount()]; 
-		
-    	for (int i = 0; i < getZAxisCount(); i++)
-    		d[i] = getValueAt(x, y, i);
-    		
-    	return d;
+		return 0;
 	}
 	
     /**
@@ -54,25 +47,11 @@ public class DataCube extends DataSet
 		return "No Z-Axis Title Yet";
 	}
 	
-    /**
-     * get an array with the names of all entries
-     * of the z-axis
-     */
-    public String[] getZAxisNames()
-	{
-    	String[] names = new String[getZAxisCount()];
-    	
-    	for (int i = 0; i < getZAxisCount(); i++)
-    		names[i] = getZAxisNameAt(i);
-    	
-    	return names;
-	}
-	
-    /**
-     * get the name of a specific entry of the z-axis
-     */
+   /**
+    * get the name of a specific entry of the z-axis
+    */
     public String getZAxisNameAt(int z)
 	{
-		return getZAxisNames()[z];
+		return "No z axis name at " + z;
 	}	
 }

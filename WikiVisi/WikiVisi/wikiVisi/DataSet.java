@@ -1,9 +1,15 @@
 package wikiVisi;
 /**
  * This is the superclass for the classes DataMatrix and 
- * DataCube. It contains methods for both types of data sets
- * like returning their title.
- * 
+ * DataCube. It doesn't contain the methods to actually get
+ * values from the data set so you will have to use the 
+ * extending classes DataTable and DataCube.
+ * If you use one of the classes DataTable or DataCube
+ * you will at least have to overwrite the methods
+ * getXAxisCount and getYAxisCount. Of course it is
+ * recommended to overwrite the methods for the titles of the
+ * table and the axis titles and antries as well.
+ *
  * @author Rene Wegener
  */
 public class DataSet 
@@ -31,26 +37,12 @@ public class DataSet
 		return "No X-Axis Title Yet";
 	}
 	
-    /**
-     * get an array with the names of all entries
-     * of the x-axis
-     */
-    public String[] getXAxisNames()
-	{
-    	String names[] = new String[getXAxisCount()];
-    	
-    	for (int i = 0; i < getXAxisCount(); i++)
-    		names[i] = getXAxisNameAt(i);
-		
-    	return names;
-	}
-	
-    /**
+   /**
      * get the name of a specific entry of the x-axis
      */
     public String getXAxisNameAt(int x)
 	{
-		return getXAxisNames()[x];
+		return "No x axis name at " + x;
 	}
 	
     /**
@@ -62,33 +54,19 @@ public class DataSet
 	}
 	
 	/**
-     * get an array with the names of all entries 
-     * of the y-axis
-     */
-    public String[] getYAxisNames()
-	{
-    	String names[] = new String[getYAxisCount()];
-    	
-    	for (int i = 0; i < getYAxisCount(); i++)
-    		names[i] = getYAxisNameAt(i);
-		
-    	return names;
-	}
-	
-	/**
     * get the name of a specific entry of the y-axis
     */
     public String getYAxisNameAt(int y)
 	{
-    	return getYAxisNames()[y];
+    	return "No y axis name at " + y;
     }	
 	
     /**
      * get the total number of entries of the x-axis
      */
-   public int getXAxisCount()
+    public int getXAxisCount()
 	{
-		return getXAxisNames().length;
+		return 0;
 	}
 	
    /**
@@ -96,6 +74,6 @@ public class DataSet
     */
     public int getYAxisCount()
 	{
-		return getYAxisNames().length;
+		return 0;
 	}	
 }
