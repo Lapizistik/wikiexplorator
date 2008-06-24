@@ -10,9 +10,9 @@ module Mediawiki
     def pagegraph(filter=@filter, &block)
       ps = pages(filter)
       if block
-        g = DotGraph.new(ps, :directed, &block)
+        g = DotGraph.new(ps, :directed => true, &block)
       else
-        g = DotGraph.new(ps, :directed) { |n| n.title }
+        g = DotGraph.new(ps, :directed => true) { |n| n.title }
       end
       ps.each do |p|
         p.links(filter).each do |q|
@@ -25,9 +25,9 @@ module Mediawiki
     def coauthorgraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = DotGraph.new(us, :undirected, &block)
+        g = DotGraph.new(us, :directed => false, &block)
       else
-        g = DotGraph.new(us, :undirected) { |n| n.name }
+        g = DotGraph.new(us, :directed => false) { |n| n.name }
       end
       pages(filter).each do |p| 
         nodes = p.users(filter)
@@ -43,9 +43,9 @@ module Mediawiki
     def copagesgraph(filter=@filter, &block)
       ps = pages(filter)
       if block
-        g = DotGraph.new(ps, :undirected, &block)
+        g = DotGraph.new(ps, :directed => false, &block)
       else
-        g = DotGraph.new(ps, :undirected) { |n| n.pid }
+        g = DotGraph.new(ps, :directed => false) { |n| n.pid }
       end
       users(filter).each do |u| 
         nodes = u.pages(filter)
@@ -100,9 +100,9 @@ module Mediawiki
         end }
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, &block)
+        g = DotGraph.new(us, :directed => true, &block)
       else
-        g = DotGraph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed => true) { |n| n.name }
       end
       case counts
       when :add
@@ -131,6 +131,23 @@ module Mediawiki
         end
       else
         warn "Unknown counts type '#{counts}'. No links set!"
+      end
+      g
+    end
+
+    def timedinterlockingresponsegraph(filter=@filter, &block)
+      us = users(filter)
+      if block
+        g = DotGraph.new(us, :directed => true, &block)
+      else
+        g = DotGraph.new(us, :directed => true) { |n| n.name }
+      end
+      pages(filter).each do |p| 
+        p.timedinterlockingresponses(filter).each_pair do |s,dt|
+          dt.each_pair do |t,d|
+            g.timelink(s,d,t)
+          end
+        end
       end
       g
     end
@@ -173,9 +190,9 @@ module Mediawiki
         end }
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, &block)
+        g = DotGraph.new(us, :directed => true, &block)
       else
-        g = DotGraph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed => true) { |n| n.name }
       end
       case counts
       when :add
@@ -209,9 +226,9 @@ module Mediawiki
     def communicationgraph_old(filter=@filter, &block) # :nodoc:
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, &block)
+        g = DotGraph.new(us, :directed => true, &block)
       else
-        g = DotGraph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed => true) { |n| n.name }
       end
       pages(filter).each do |p| 
         p.revisions(filter).inject do |a,b|
@@ -231,9 +248,9 @@ module Mediawiki
     def groupresponsegraph(filter=@filter, &block)
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, &block)
+        g = DotGraph.new(us, :directed => true, &block)
       else
-        g = DotGraph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed => true) { |n| n.name }
       end
       pages(filter).each do |p| 
         p.groupresponses(false).each { |a,b|
@@ -252,9 +269,9 @@ module Mediawiki
     def groupcommunicationgraph_old(filter=@filter, &block) # :nodoc:
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed, &block)
+        g = DotGraph.new(us, :directed => true, &block)
       else
-        g = DotGraph.new(us, :directed) { |n| n.name }
+        g = DotGraph.new(us, :directed => true) { |n| n.name }
       end
       s = Set.new
       pages(filter).each do |p| 

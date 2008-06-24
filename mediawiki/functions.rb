@@ -430,6 +430,26 @@ module Mediawiki
       uhs
     end
 
+    # Similar to #interlockingresponses, but with timestamps included
+    # (for use in DotGraph.to_son).
+    #
+    # Returns a nested Hash structure of user to user links with timestamps.
+    def timedinterlockingresponses(filter=@wiki.filter) # :yields: user
+      if block_given?
+        us = revisions(filter).collect { |r| [yield(r.user), r.timestamp] }
+      else
+        us = revisions(filter).collect { |r| [r.user, r.timestamp] }
+      end
+      latest_users = Hash.new
+      usersh = Hash.new { |h,k| h[k]=Hash.new }
+      
+      us.each { |u,t|
+        latest_users.each_pair { |lu,lt| usersh[u][lt] = lu }
+        latest_users[u] = t
+      }
+      usersh
+    end
+
     # :call-seq:
     # groupresponses(filter=@filter, compatible=true)
     # groupresponses(filter=@filter)

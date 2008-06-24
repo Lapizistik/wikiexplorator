@@ -21,28 +21,22 @@ class DotGraph
   attr_reader :directed
 
   # _nodes_:: any Enumerable object giving the nodes of the graph
-  # _attrs_:: any number of flags:
-  #           <i>:directed</i> :: give this Symbol if the graph is directed
-  #           <i>:linkcount</i> :: the dotfile should show the link count
-  #           <i>:nolinkcount</i> :: the dotfile should show the link count
+  # _attrs_:: 
+  #   additional parameters:
+  #   <i>:directed  => true</i> :: the graph is directed
+  #   <i>:linkcount => true</i> :: the dotfile should show the link count
   # <i>&lproc</i> :: 
   #   if a block is given it is called for each node to generate the node 
   #   labels on output. If the block returns a string it is used as the
   #   label. Otherwise it should return an Enumerable whose elements are
   #   used as node parameters. E.g.:
   #    DotGraph.new(nodes) { |n| ["label=#{n.name}", 'style=filled', "fillcolor=#{n.size}"] }
-  def initialize(nodes, *attrs, &lproc)
+  def initialize(nodes, attrs={}, &lproc)
     @nodes = nodes.to_a
     @lproc = lproc || lambda { |n| n.node_id }
-    @links = Hash.new(0)
-    @linkcount = true
-    attrs.each do |attr|
-      case attr
-      when :directed : @directed = true
-      when :linkcount : @linkcount = true
-      when :nolinkcount : @linkcount = false
-      end
-    end
+    @links = Hash.new
+    @directed = attrs[:directed]
+    @linkcount = attrs[:linkcount]
   end
   
   # sets the block to be used to generate note labels for each node.
@@ -63,16 +57,24 @@ class DotGraph
   #     _w_ is added to the link weight.
   #   * if _false_, the maximum of the old link weight and _w_ is used.
   def link(src, dest, w=1, add=true)
-    src, dest = dest, src  if !@directed && (src.object_id > dest.object_id)
+    src, dest = dest, src  if (!@directed) && (src.object_id > dest.object_id)
     # the following lines are not very efficient: 
     # a lot of Link objects may be generated which are never used again later.
     # 
+    key = [src,dest]
+    l = (@links[key] ||= Link.new(self, src, dest))
+
     if add
-      @links[Link.new(self, src, dest)] += w
+      l.addweight(w)
     else
-      l = Link.new(self, src, dest)
-      @links[l] = w if w>@links[l]
+      l.maxweight(w)
     end
+    l
+  end
+
+  def timelink(src, dest, time, w=1, add=true)
+    l = link(src, dest, w, add)
+    l << time
   end
 
   # remove all links from this graph.
@@ -82,7 +84,7 @@ class DotGraph
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_links(w=nil)
     w = w || (1.0/0)
-    @links.delete_if { |k,v| v<w }
+    @links.delete_if { |k,l| l.weight<w }
     self
   end
 
@@ -90,7 +92,7 @@ class DotGraph
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_self_links
-    @links.delete_if { |l,c| l.src==l.dest }
+    @links.delete_if { |k,l| l.src==l.dest }
     self
   end
 
@@ -99,9 +101,9 @@ class DotGraph
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_lonely_nodes
     ns = Set.new
-    @links.each { |l,c|
-      ns << l.src
-      ns << l.dest
+    @links.each_key { |s,d|
+      ns << s
+      ns << d
     }
     @nodes.delete_if { |n| !ns.include?(n) }
     self
@@ -121,18 +123,18 @@ class DotGraph
   def degrees(weight=false)
     h = Hash.new { |h,k| h[k] = [0,0] }
     @nodes.each { |n| h[n] = [0,0] }   # prefill
-    @links.each do |l,v|
+    @links.each_value do |l|
       c = 1
       case weight
       when true, :add
-        c = v
+        c = l.weight
       when false, nil, :count
         c = 1
       when :log
-        c = Math.log(v)
+        c = Math.log(l.weight)
       end
       h[l.src][0]  += c
-      h[l.dest][1] += c  
+      h[l.dest][1] += c
     end
     h
   end
@@ -186,9 +188,9 @@ class DotGraph
     @nodes.each_with_index { |n,i| ni[n]=i }
     matrix = Array.new(@nodes.length) { Array.new(@nodes.size, inf) }
     matrix.each_with_index { |a,i| a[i]=0 }
-    @links.each_key do |l| 
-      i = ni[l.src]
-      j = ni[l.dest]
+    @links.each_key do |s,d| 
+      i = ni[s]
+      j = ni[d]
       if i!=j
         matrix[i][j] = 1 
         matrix[j][i] = 1 unless @directed
@@ -204,10 +206,10 @@ class DotGraph
     sa = []
     da = []
     va = []
-    @links.each do |l,v| 
+    @links.each_value do |l| 
       sa << ni[l.src]
       da << ni[l.dest]
-      va << v
+      va << l.weight
     end
     sa + da + va
   end
@@ -237,12 +239,12 @@ class DotGraph
   #
   # if a block is given it is called with the link count of each link 
   # and the return value is used as link attribute (don't forget the []).
-  def to_dot(*attrs,&block)
+  def to_dot(*attrs, &block)
     d = "#{'di' if @directed}graph G {\n"
     d << attrs.collect { |a| "  #{a};\n"}.join
     @nodes.each { |n| 
       d << "  \"#{nid(n)}\" [#{nodeparams(n)}];\n"}
-    @links.sort_by { |l,c| c }.each { |l,count| d << l.to_dot(count,&block) }
+    @links.sort_by { |k,l| l.weight }.each { |k,l| d << l.to_dot(&block) }
     d << "}\n"
   end
   
@@ -306,7 +308,7 @@ class DotGraph
       :exp => 0.2, :texmode => 'raw',
       :attrs => [] }.merge(params)
     exp = params[:exp]
-    maxc = @links.values.max
+    maxc = @links.collect { |k,l| l.weight }.max
     if block_given?
       srcdot = to_dot(*params[:attrs])
     else
@@ -338,9 +340,49 @@ class DotGraph
     tex
   end
   
-  # Writes graph to dotfile. See #to_tex.
+  # Writes graph to texfile. See #to_tex.
   def to_texfile(filename, params={})
     File.open(filename,'w') { |file| file << to_tex(params) }
+  end
+
+  SONIA_DURATION = 7*24*60*60
+  SONIA_SPEEDUP = 24*60*60
+  # Creates a String representing the DotGraph in +son+ format as used
+  # by SONIA (http://www.stanford.edu/group/sonia/)
+  #
+  # _duration_ :: time (in seconds) a link should last.
+  # _speedup_ :: time (in seconds) is divided by this factor.
+  # If a block is given, it is used for node labeling.
+  def to_son(duration=SONIA_DURATION, speedup=SONIA_SPEEDUP, &block)
+    son = "// SONIA Graph File\n"
+    son << "// Created by DotNet/mediawikiparser\n"
+    lproc = block || @lproc
+    # First the links to get min and max time.
+    mintime = 1.0/0   # +Infinity
+    maxtime = -1.0/0  # -Infinity
+    sonlinks = "FromId\tToId\tStartTime\tEndTime\n"
+    @links.each_value do |l|
+      l.timeline.each do |t| 
+        t = t.to_f/speedup
+        sonlinks << "#{nid(l.src)}\t#{nid(l.dest)}\t#{t}\t#{t}\n"
+        mintime = t if t<mintime
+        maxtime = t if t>maxtime
+      end
+    end
+    # now the nodes
+    son << "AlphaId\tLabel\tStartTime\tEndTime\n"
+    @nodes.each do |n| 
+      son << "#{nid(n)}\t#{lproc.call(n)}\t#{mintime}\t#{maxtime}\n"
+    end
+    son << sonlinks # add the links
+    son
+  end
+
+  # Writes graph to sonfile. See #to_son.
+  #
+  # _filename_ :: name of the son file.
+  def to_sonfile(filename, duration=SONIA_DURATION, speedup=SONIA_SPEEDUP, &block)
+    File.open(filename,'w') { |file| file << to_son(speedup, &block) }
   end
 
   def nodeparams(node) # :nodoc:
@@ -373,21 +415,31 @@ class DotGraph
   end
   
   class Link # :nodoc:
-    attr_reader :src, :dest, :attrs
-    def initialize(graph, src, dest, *attrs)
+    attr_reader :src, :dest, :weight, :attrs, :timeline
+    def initialize(graph, src, dest, attrs={})
       @graph = graph
       @src = src
       @dest = dest
+      @weight = 0
       @attrs = attrs
+      @timeline = []
     end
 
-    def to_dot(count)
+    def addweight(w)
+      @weight += w
+    end
+
+    def maxweight(w)
+      @weight = w if w>@weight
+    end
+
+    def to_dot
       s = "  \"#{nid(@src)}\" #{edgesymbol} \"#{nid(@dest)}\" "
       s << "[#{@attrs.join(',')}]" unless @attrs.empty?
       if block_given?
-        s << yield(count)
+        s << yield(@weight)
       else
-        s << weightlabel(count) if linkcount
+        s << weightlabel(@weight) if linkcount
       end
       s << ";\n"
       s
@@ -413,19 +465,8 @@ class DotGraph
     "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
     end
 
-    def <=>(l)
-      if (s=(nid(src)<=>nid(l.src)))==0
-        nid(dest)<=>nid(l.dest)
-      else
-        s
-      end
-    end
-    
-    def eql?(other)
-      (@src==other.src) && (@dest==other.dest) && (@attrs==other.attrs)
-    end
-    def hash
-      @src.hash ^ @dest.hash
+    def <<(t)
+      @timeline << t
     end
   end
 end
