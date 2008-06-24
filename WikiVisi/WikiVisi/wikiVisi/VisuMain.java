@@ -93,7 +93,7 @@ public class VisuMain
 	     // create a new window to hold the visualization
 	     frame = new PixelFrame("PixelBased Data Visualization");
 	     // add a control listener
-	     dis.addControlListener(new PixelSelector(frame));
+	     dis.addControlListener(new PixelSelector(frame, glyphTable));
 	     
 	     frame.setSize(frame.getMaximumSize());
 	     frame.init(this, dis);
@@ -139,7 +139,7 @@ public class VisuMain
 	    	Layouts.createFlexibleZLayout(v, startX, startY, space);
 	    else if (layout.equals("Simple Layout"))
 	    	Layouts.createSimpleLayout(v, startX, startY, space);
-	    // update the labeling:
+		// update the labeling:
 	    // if data is ordered by author names and layout
 	    // is simple layout, we have got a table layout
 	    // which means we show the labeling!
@@ -149,7 +149,7 @@ public class VisuMain
 	    	for (int i = 0; i < labelTable.getRowCount(); i++)
 		      	v2.add(labelTable.getItem(i));
 		    Sort.sort(v2, "author");
-		    Layouts.createLabelLayout(v2, v, space);
+		    //Layouts.createLabelLayout(v2, v, space);
 		    r.setTableLabeling(true);
 	    }
 	    else
@@ -165,7 +165,18 @@ public class VisuMain
 	        Vector pixels = new Vector();
 	       	Iterator iter = glyphTable.aggregatedTuples(i);
 	       	while (iter.hasNext())
-	       		pixels.add(iter.next());
+	       	{
+	       		VisualItem pixel = (VisualItem)iter.next();
+	       		boolean invisible = ((Boolean)pixel.get("invisible")).booleanValue();
+	       		if (!invisible)
+	       			pixels.add(pixel);
+	       		// if the pixel is invisible but there
+	       		// are already pixels in the vector, this
+	       		// means the vector already contains ALL 
+	       		// pixels that should be drawn an we can stop
+	       		else if (invisible && pixels.size() > 0)
+	       			break;
+	       	}
 	       	if (layout.equals("Morton Z-Curve"))
 	       	{
 	       		Layouts.createZLayout(pixels, 0, textSize, 0);

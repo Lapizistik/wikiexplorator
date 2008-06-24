@@ -37,6 +37,7 @@ public class DataLoader
         at.addColumn("height", int.class);
         at.addColumn("mean", double.class);
         at.addColumn("type", String.class);
+        at.addColumn("invisible", boolean.class);
         // first create all Glyphs  
         int currentIndex = 0;
         for (int i = 0; i < authors; i++)
@@ -50,6 +51,7 @@ public class DataLoader
         	// the height is 12 pixels extra for writings
         	newItem.set("height", new Integer(squareWidth + textSize));
         	newItem.set("type", new String("glyph"));
+        	newItem.set("included", new Boolean(false));
         	currentIndex++;
         }
         
@@ -63,7 +65,9 @@ public class DataLoader
     	vt.addColumn("value", Double.class);
     	vt.addColumn("color", Double.class);
     	vt.addColumn("desc", String.class);
-    	// to create a value for the color that's between
+    	vt.addColumn("index", Integer.class);
+    	vt.addColumn("invisible", boolean.class);
+        // to create a value for the color that's between
     	// 0 and 1, we need to know the highest value
     	// of all pixels
     	double highest = 0;
@@ -88,6 +92,8 @@ public class DataLoader
 	        	newItem.set("parentIndex", new Integer(author));
 	        	newItem.set("desc", dt.getXAxisNameAt(time));
 	        	newItem.set("type", new String("pixel"));
+	        	newItem.set("index", new Integer(time));
+	        	newItem.set("invisible", new Boolean(false));
 	        	at.addToAggregate(author, newItem);
 	        }
             // calculate mean value of the glyph
@@ -145,6 +151,7 @@ public class DataLoader
         at.addColumn("height", int.class);
         at.addColumn("mean", double.class);
         at.addColumn("type", String.class);
+        at.addColumn("invisible", boolean.class);
         // columns for the pixels
         vt.addColumn("xCor", Integer.class);
     	vt.addColumn("yCor", Integer.class);
@@ -155,7 +162,9 @@ public class DataLoader
     	vt.addColumn("color", Double.class);
     	vt.addColumn("desc", String.class);
     	vt.addColumn("parentIndex", Integer.class);
-    	
+    	vt.addColumn("index", Integer.class);
+    	vt.addColumn("invisible", boolean.class);
+        
         // first create all Glyphs  
     	// to create a value for the color that's between
     	// 0 and 1, we need to know the highest value
@@ -184,7 +193,7 @@ public class DataLoader
 	        	newItem.set("width", new Integer(squareWidth));
 	        	newItem.set("height", new Integer(squareWidth + textSize));
 	        	newItem.set("type", new String("glyph"));
-	        	
+	        	newItem.set("invisible", new Boolean(false));
 	        	// create pixels for this glyph
 	        	// the values for the pixels are assumed to be stored
 	        	// in the z-axis
@@ -200,6 +209,8 @@ public class DataLoader
 		        	newPixel.set("parentIndex", new Integer(currentIndex));
 		        	newPixel.set("type", new String("pixel"));
 		        	newPixel.set("desc", dc.getZAxisNameAt(z));
+		        	newPixel.set("index", new Integer(z));
+		        	newPixel.set("invisible", new Boolean(false));
 		        	at.addToAggregate(currentIndex, newPixel);
 		        }
 	            // calculate mean value of the glyph

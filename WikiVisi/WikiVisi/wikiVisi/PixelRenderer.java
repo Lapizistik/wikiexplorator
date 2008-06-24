@@ -49,7 +49,7 @@ public class PixelRenderer extends LabelRenderer
 	
 	public void render(Graphics2D g, VisualItem item) 
 	{
-		    if (item.get("type").equals("pixel"))
+		    if (item.get("type").equals("pixel") && !((Boolean)(item.get("invisible"))).booleanValue())
 	        {
 		    	// get coordinates from the parent aggregate
 		    	VisualItem parent = at.getItem(((Integer)item.get("parentIndex")).intValue());
@@ -148,7 +148,7 @@ public class PixelRenderer extends LabelRenderer
 		 int x, y, width = 0, height = 0;
 		 x = ((Integer)item.get("xCor")).intValue();
 		 y = ((Integer)item.get("yCor")).intValue();
-		 if (item.get("type").equals("pixel"))
+		 if (item.get("type").equals("pixel") && !((Boolean)(item.get("invisible"))).booleanValue())
 		 {
 			 VisualItem parent = at.getItem(((Integer)item.get("parentIndex")).intValue());
 		     int parentX = ((Integer)parent.get("xCor")).intValue();

@@ -18,12 +18,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingConstants;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 import prefuse.Display;
 import prefuse.util.ui.JFastLabel;
+import prefuse.util.ui.JRangeSlider;
 
 /**
  * @author rene
@@ -35,6 +37,7 @@ public class PixelFrame extends JFrame
 	protected Choice cSort, cGlyphs, cPixels, cText;
 	protected VisuMain vis;
 	protected JLabel info;
+	protected JRangeSlider timeSlider;
 	
 	public PixelFrame(String title)
 	{
@@ -53,7 +56,7 @@ public class PixelFrame extends JFrame
 		vis = v;
 		// set layout and create the choices
 		FormLayout layout = new FormLayout("10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default:grow, 10px, left:default, 10px", 
-		"10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default:, 10px, center:default, 10px, center:default:grow, 10px");
+		"10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default:, 10px, center:default:grow, 10px, center:default, 10px, center:default, 10px");
 		setLayout(layout);
 		CellConstraints cc = new CellConstraints();
 		cSort = new Choice();
@@ -64,10 +67,12 @@ public class PixelFrame extends JFrame
 		cPixels.setName("cPixels");
 		cText = new Choice();
 		cText.setName("cText");
-		// the label
-		info = new JLabel("nothing selected");
+		// the labels
+		info = new JLabel("nothing");
 		info.setForeground(Color.gray);
 		JLabel place = new JLabel("<<<<<<Platzhalter>>>>>>");
+		// the slider
+		timeSlider = new JRangeSlider(1, 100, 1, 99, SwingConstants.VERTICAL);
 		// add entries to the choices
 		cSort.addItem("author");
 		cSort.addItem("mean");
@@ -98,8 +103,9 @@ public class PixelFrame extends JFrame
 		add(cPixels, cc.xy(6, 2));
 		add(cText, cc.xy(8, 2));
 		add(info, cc.xyw(10, 2, 3));
-		add(panel, cc.xywh(2, 4, 9, 9));
+		add(panel, cc.xywh(2, 4, 9, 8));
 		add(place, cc.xy(12, 6));
+		add(timeSlider, cc.xyw(2, 14, 9));
 		info.setVisible(true);
 		pack();
 	}
@@ -139,6 +145,11 @@ public class PixelFrame extends JFrame
 			}
 		}
 		return true;
+	}
+	
+	public void updateVisu()
+	{
+		vis.updateVisu();
 	}
 	
 	public void setInfo(String s)
