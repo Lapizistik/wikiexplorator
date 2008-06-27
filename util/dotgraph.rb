@@ -361,7 +361,7 @@ class DotGraph
   #     time (in seconds) a link should last.
   #   <i>:speedup=>SONIA_SPEEDUP</i>:: 
   #     time (in seconds) is divided by this factor.
-  #   <i>:node_colors=>['White','LightGray','DarkGray','LightGray','White']::
+  #   <i>:node_colors=>['White','LightGray','DarkGray','LightGray','White']</i>::
   #     the color of the node in its 5 phases (see description below for
   #     details). Instead of using named colors you may give an Array of
   #     three floats between 0 and 1 representing RGB:
@@ -406,10 +406,20 @@ class DotGraph
   # each phase (some of them are subject to change for we may use node size
   # later to present additional information).
   #
+  # SONIA understands the following color names: 
+  # <tt>Black DarkGray LightGray White Cyan Green Magenta Orange Pink 
+  # Red Yellow Blue</tt>.
+  #
   # Not all phases may be present for all nodes:
   # As e.g. users do not have a deletion time the values at position four
   # of the corresponding Arrays are not used, users without edits may
   # only show two phases at all and so on.
+  #
+  # We decided to keep each node for the whole timespan including the time
+  # before creation and after deletion, because the resulting SONIA layouts
+  # are less confusing if all nodes are present all the time. To hide them
+  # simply set their colors to white or there sizes to zero. We may add a 
+  # flag later changing this behaviour.
   #
   # If a block is given, it is used for node labeling.
   def to_son(options={}, &block)
