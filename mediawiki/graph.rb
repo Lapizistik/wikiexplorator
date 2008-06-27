@@ -135,6 +135,21 @@ module Mediawiki
       g
     end
 
+    # Luhmann communication graph. Any revision is considered as an answer
+    # to the last revisions of other users before.
+    #
+    # Similar to interlockingresponses, but instead of cumulating the
+    # interlocking from some Users _a_ to _b_ in one link, each "answer"
+    # is represented by a new link with a timestamp. 
+    #
+    # Use this method for creating a SONIA file from the resulting DotGraph:
+    #   wiki.timedinterlockingresponsegraph.to_sonfile('test.son')
+    #
+    # _filter_:: the Filter to use.
+    #
+    # See also Page#timedinterlockingresponses.
+    #
+    # If a block is given it is passed to DotGraph::new (see there)
     def timedinterlockingresponsegraph(filter=@filter, &block)
       us = users(filter)
       if block

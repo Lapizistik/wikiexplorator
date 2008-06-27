@@ -350,10 +350,85 @@ class DotGraph
   # Creates a String representing the DotGraph in +son+ format as used
   # by SONIA (http://www.stanford.edu/group/sonia/)
   #
-  # _duration_ :: time (in seconds) a link should last.
-  # _speedup_ :: time (in seconds) is divided by this factor.
+  # To get a useful SONIA file you need links with timestamps (e.g.
+  # created by timelink), as given by 
+  # Mediawiki::Wiki.timedinterlockingresponsegraph:
+  #   wiki.timedinterlockingresponsegraph.to_son
+  #
+  # _options_::
+  #   a hash with further options:
+  #   <i>:duration=>SONIA_DURATION</i>:: 
+  #     time (in seconds) a link should last.
+  #   <i>:speedup=>SONIA_SPEEDUP</i>:: 
+  #     time (in seconds) is divided by this factor.
+  #   <i>:node_colors=>['White','LightGray','DarkGray','LightGray','White']::
+  #     the color of the node in its 5 phases (see description below for
+  #     details). Instead of using named colors you may give an Array of
+  #     three floats between 0 and 1 representing RGB:
+  #       :node_colors => [[1,1,1], [0.6,0.4,0.4], ...]
+  #     Due to the restrictions of the SONIA file format you may not mix
+  #     RGB and named colors, sorry.
+  #   <i>:node_LabelColor</i>:: 
+  #     the color of the node label in its 5 phases (see description below
+  #     for details). Due to the restrictions of the SONIA file format only
+  #     named colors are allowed, sorry.
+  #   <i>:node_BorderColor</i>:: 
+  #     the color of the node border in its 5 phases (see description below
+  #     for details). Due to the restrictions of the SONIA file format only
+  #     named colors are allowed, sorry.
+  #   <i>:node_BorderWidth</i>:: 
+  #     the width of the node border in its 5 phases (see description below
+  #     for details) as float array.
+  #   <i>:node_Size</i>:: 
+  #     the size of the node in its 5 phases (see description below
+  #     for details) as float array.
+  #   <i>:node_Shape</i>:: 
+  #     the shape of the node in its 5 phases (see description below
+  #     for details) as String Array. 
+  #     SONIA only understands 'ellipse' or 'rect'.
+  #   <i>:node_IconURL</i>:: 
+  #     the icon of the node in its 5 phases (see description below
+  #     for details) as Array of URLS pointing to jpegs. 
+  #     SONIA only understands 'ellipse' or 'rect'.
+  #
+  # Each node may change through 5 phases:
+  # * Time before creation
+  # * Creation time to time of first event
+  # * Time from first to last event
+  # * Time from last event to deletion
+  # * Time past deletion
+  # These times are archieved by calling the methods 
+  # <tt>time_of_creation</tt>, <tt>time_of_first_event</tt>, 
+  # <tt>time_of_last_event</tt>, <tt>time_of_deletion</tt> on each node.
+  # If node does not respond to one of these methods, returns _nil_ or
+  # the resulting timespan is not greater 0, the timespan is skipped.
+  # You may give different colors, borders, shapes,sizes and even icons for 
+  # each phase (some of them are subject to change for we may use node size
+  # later to present additional information).
+  #
+  # Not all phases may be present for all nodes:
+  # As e.g. users do not have a deletion time the values at position four
+  # of the corresponding Arrays are not used, users without edits may
+  # only show two phases at all and so on.
+  #
   # If a block is given, it is used for node labeling.
-  def to_son(duration=SONIA_DURATION, speedup=SONIA_SPEEDUP, &block)
+  def to_son(options={}, &block)
+    duration = options[:duration] || SONIA_DURATION
+    spu = options[:speedup] || SONIA_SPEEDUP
+    nodeRGB = nil
+    nodecolornames = options[:node_colors] || 
+      ['White','LightGray','DarkGray','LightGray','White']
+    if nodecolornames.first.kind_of?(Array)
+      nodeRGB = nodecolornames
+      nodecolornames = nil
+    end
+    nodelabelcolors = options[:node_LabelColor]
+    nodebordercolors = options[:node_BorderColor]
+    nodeborderwidths = options[:node_BorderWidth]
+    nodesizes = options[:node_Size]
+    nodeshapes = options[:node_Shape]
+    nodeURLs = options[:node_IconURL]
+
     son = "// SONIA Graph File\n"
     son << "// Created by DotNet/mediawikiparser\n"
     lproc = block || @lproc
@@ -363,16 +438,66 @@ class DotGraph
     sonlinks = "FromId\tToId\tStartTime\tEndTime\n"
     @links.each_value do |l|
       l.timeline.each do |t| 
-        t = t.to_f/speedup
+        t = t.to_f/spu
         sonlinks << "#{nid(l.src)}\t#{nid(l.dest)}\t#{t}\t#{t}\n"
         mintime = t if t<mintime
         maxtime = t if t>maxtime
       end
     end
+    maxtime += (duration.to_f/spu)
     # now the nodes
-    son << "AlphaId\tLabel\tStartTime\tEndTime\n"
-    @nodes.each do |n| 
-      son << "#{nid(n)}\t#{lproc.call(n)}\t#{mintime}\t#{maxtime}\n"
+
+    puts mintime, maxtime
+    @nodes.each do |n|
+      next unless n.respond_to?(:time_of_first_event)
+      # We do not use time_of_creation here as this is not reliable.
+      # E.g. the system user has a default creation time.
+      # We could change this but it's not worth the efford.
+      puts "#{n.name}: #{n.time_of_first_event}"
+      if t = n.time_of_first_event
+        t = t.to_f/spu
+        mintime = t if t<mintime
+      end
+    end
+    son << "AlphaId\tLabel"
+    son << "\tColorName"                   if nodecolornames
+    son << "\tRedRGB\tGreenRGB\tBlueRGB"   if nodeRGB
+    son << "\tLabelColor"                  if nodelabelcolors
+    son << "\tBorderColor"                 if nodebordercolors
+    son << "\tBorderWidth"                 if nodeborderwidths
+    son << "\tNodeSize"                    if nodesizes
+    son << "\tNodeShape"                   if nodeshapes
+    son << "\tIconURL"                     if nodeURLs
+    son << "\tStartTime\tEndTime\n"
+    tt = [mintime, nil, nil, nil, nil, maxtime]
+    @nodes.each do |n|
+      tt[1] = tt[2] = tt[3] = tt[4] = nil
+      tt[1] = n.time_of_creation.to_f/spu if n.respond_to?(:time_of_creation)
+      tt[2] = n.time_of_first_event.to_f/spu if n.respond_to?(:time_of_first_event)
+      tt[3] = n.time_of_last_event.to_f/spu if n.respond_to?(:time_of_last_event)
+      tt[4] = n.time_of_deletion.to_f/spu if n.respond_to?(:time_of_deletion)
+## mintime -> creationtime -> first action -> last action -> deletion -> maxtime...
+      i=0
+      tt.inject do |ta, tb|
+        if tb && (ta<tb)
+          son << "#{nid(n)}\t#{lproc.call(n)}"
+          son << "\t#{nodecolornames[i]}"       if nodecolornames
+          son << "\t#{nodeRGB[i][0]}\t#{nodeRGB[i][1]}\t#{nodeRGB[i][1]}" if nodeRGB
+          son << "\t#{nodelabelcolors[i]}"      if nodelabelcolors
+          son << "\t#{nodebordercolors[i]}"     if nodebordercolors
+          son << "\t#{nodeborderwidths[i]}"     if nodeborderwidths
+          son << "\t#{nodesizes[i]}"            if nodesizes
+          son << "\t#{nodeshapes[i]}"           if nodeshapes
+          son << "\t#{nodeURLs[i]}"             if nodeURLs
+          son << "\t#{ta}\t#{tb}\n"
+          i += 1
+          tb
+        else
+          i +=1
+          ta
+        end         
+      end
+#      son << "#{nid(n)}\t#{lproc.call(n)}\t#{mintime}\t#{maxtime}\n"
     end
     son << sonlinks # add the links
     son
@@ -380,9 +505,12 @@ class DotGraph
 
   # Writes graph to sonfile. See #to_son.
   #
+  # Example usage:
+  #   wiki.timedinterlockingresponsegraph.to_sonfile('test.son')
+  #
   # _filename_ :: name of the son file.
-  def to_sonfile(filename, duration=SONIA_DURATION, speedup=SONIA_SPEEDUP, &block)
-    File.open(filename,'w') { |file| file << to_son(speedup, &block) }
+  def to_sonfile(filename, options={}, &block)
+    File.open(filename,'w') { |file| file << to_son(options, &block) }
   end
 
   def nodeparams(node) # :nodoc:

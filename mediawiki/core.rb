@@ -9,6 +9,7 @@
 require 'set'         # the Set class
 require 'mediawiki/db'
 require 'parsedate'
+require 'yaml'
 
 # = The Mediawiki Namespace
 module Mediawiki
@@ -32,14 +33,44 @@ module Mediawiki
     # are mapped to one default User (ips=false) or different IP-adresses
     # are represented by different Users (ips=true).
     attr_reader :ips
-    
+    # the official name of the wiki as given in 
+    # <tt>LocalSettings.php</tt> in the variable <tt>$wgSitename</tt>, 
+    # as this is used for the Project namespace.
+    attr_reader :name
+    # the language as given in <tt>LocalSettings.php</tt> in the variable 
+    # <tt>$wgLanguageCode</tt>. This is needed as namespace identifiers are
+    # language dependent.
+    attr_reader :language
+
     # Creates a new Wiki object from database connection _wikidb_.
     #
     # For description of _options_ see Wiki.open
     def initialize(wikidb, options)
       @version = options[:version] || 1.8
-      @name = wikidb.to_s
+      @dburl = wikidb.to_s
+      @name = options[:name] || 'wiki'
+      @language = options[:language] || 'en'
       @ips = options[:ips]
+
+      @ns_mapping = NS_Default_Mapping.dup
+      begin # let's get the language definitions...
+        require "mediawiki/languages/#{@language}" 
+      rescue LoadError # hm, not found!
+        # we can safely ignore this error as we will raise a warning below
+        # if language mappings are not found.
+      end
+      if nsm = NS_Mappings[@language]      # language mapping exists?
+        @ns_mapping.merge!(nsm)
+      else
+        warn "Warning: Namespace identifiers for language #{@language} unknown/not implemented! Skipping."
+      end
+      if nsm = options[:ns_mapping]
+        @ns_mapping.merge!(nsm)
+      end
+      p = @name.tr(' ','_')
+      @ns_mapping[@ns_mapping.delete(:project).gsub('%', p)] = NS_PROJECT
+      @ns_mapping[@ns_mapping.delete(:project_talk).gsub('%', p)] = NS_PROJECT_TALK
+
       @uid_aliases = {}
       if ua = options[:uid_aliases] # converting IPs to UIDs
         ua.each do |k,v|
@@ -85,19 +116,52 @@ module Mediawiki
     #     If option <i>:ips</i> is set, a dedicated user is created for each
     #     IP-adress. In both cases uid-aliases mapping is applied.
     #     (We may later enhance this by mapping address ranges to uids?)
-    #     For all created users uid<0.
-    def Wiki.open(db, host, user, pw, *options)
-      options = options.first || {}
+    #     For all created users: uid<0.
+    #   <i>:name=>'Wiki'</i>::
+    #     The official name of the wiki as given in <tt>LocalSettings.php</tt>
+    #     in the variable <tt>$wgSitename</tt>, as this is used for the Project
+    #     namespace.
+    #   <i>:language=>'en'</i>::
+    #     the language as given in <tt>LocalSettings.php</tt> in the variable 
+    #     <tt>$wgLanguageCode</tt>. This is needed as namespace identifiers 
+    #     are language dependent. Currently implemented: '+en+', '+de+'.
+    #   <i>:ns_mapping=>{}</i>::
+    #     a Hash with custom namespaces used in the wiki. So if you defined
+    #     additional namespaces Custom and Custom_talk with id 100 and 101 
+    #     in your wiki you use:
+    #       :ns_mapping=>{'Custom' => 100, 'Custom_talk' => 101}
+    def Wiki.open(db, host, user, pw, options={})
       Wiki.new(DB.new(db, host, user, pw, options[:engine] || "Mysql", 
                       options[:version] || 1.8), options)
     end
 
+    # Loads a Wiki from a YAML file created by Wiki#yaml_save.
+    def Wiki.yaml_load(filename)
+      puts 'YAML load...'
+      wiki = File.open(filename) { |f| YAML::load(f) }
+      puts 'postprocessing (attach links)...'
+      wiki.attach_internal_links
+      puts 'done'
+      wiki
+    end
+
+    # Loads a Wiki from a marshaled dump as created by Wiki#marshal_save.
+    # (to be fair: it simply loads any marshaled object)
+    def Wiki.marshal_load(filename)
+      puts 'MARSHAL load...'
+      wiki = File.open(filename) { |f| Marshal::load(f) }
+      warn 'Warning: loaded object is not a wiki!' unless self === wiki
+      puts 'done'
+      wiki
+    end
+
+
     def to_s
-      @name
+      "#{@name} (#{@dburl})"
     end
 
     def inspect
-      "#<Mediawiki::Wiki #{@name} #{@pages_id.length} pages, #{@revisions_id.length} revisions, #{@users_id.length} users>"
+      "#<Mediawiki::Wiki #{@name}: #{@dburl}, #{@pages_id.length} pages, #{@revisions_id.length} revisions, #{@users_id.length} users>"
     end
 
     # gives the Page object with title _t_ in namespace _ns_
@@ -156,6 +220,12 @@ module Mediawiki
     def users(filter=@filter)
       UsersView.new(@users_id, filter) # is this to heavyweighted? Reuse views?
     end
+    
+    # give the numeric namespace corresponding to String _s_ 
+    # (or _nil_ if there is no mapping).
+    def namespace_by_identifier(s)
+      @ns_mapping[s]
+    end
 
     # view on pages through _filter_
     def pages(filter=@filter)
@@ -212,6 +282,70 @@ module Mediawiki
       @revisions_id.each_value { |r| r.obliterate(keeps) }
       @texts_id.each_value { |t| t.obliterate(keeps) }
       self
+    end
+
+    # Save the whole Wiki as yaml dump to file _filename_.
+    #
+    # To help YAML the Wiki links are detached before saving
+    # (as there is a known YAML bug with deeply nested structures).
+    #
+    # Therefore you may not simply use YAML.load, as this returns 
+    # a Wiki with detached links. Use Mediawiki::Wiki.yaml_load instead.
+    #
+    # Please note that yaml is farely slow, so consider using marshal_save
+    # instead, if you do not need a readable text file as output.
+    def yaml_save(filename)
+      puts 'preprocessing (detach links)...'
+      detach_internal_links
+      # save:
+      puts 'YAML save (may take some time)...'
+      File.open(filename, 'w') { |f| YAML.dump(self, f) }
+      # and repair 
+      puts 'postprocessing (attach links)...'
+      attach_internal_links
+      puts 'done'
+      self
+    end
+
+    # Save the whole Wiki as serialized bytestream Marshal dump to file 
+    # _filename_.
+    #
+    # See the ruby Marshal documentation for details. 
+    #
+    # If you need a human readable plaintext dump, use yaml_save instead
+    # (which is much slower).
+    def marshal_save(filename)
+      File.open(filename,'w') {|f| Marshal.dump(self,f) }
+    end
+
+    # Untangle the internal Wiki linking.
+    def detach_internal_links # :nodoc:
+      if @untangled
+        warn('Wiki already untangled. Skipping!')
+      else
+        @users_id.each_value { |u| u.detach_links }
+        @pages_id.each_value { |p| p.detach_links }
+        @revisions_id.each_value { |r| r.detach_links }
+        @filter.detach_links
+        @pages_title.each_pair { |k,v| @pages_title[k] = v.pid }
+        @users_name.each_pair  { |k,v| @users_name[k] = v.uid }
+        @untangled = true
+      end
+    end
+
+    # Repair the internal Wiki linking. Call this _only_ on a untangled Wiki!
+    def attach_internal_links # :nodoc:
+      if @untangled
+        @pages_title.each_pair { |k,v| @pages_title[k] = @pages_id[v] }
+        @users_name.each_pair  { |k,v| @users_name[k] = @users_id[v] }
+        @users_id.each_value { |u| u.attach_links }
+        @pages_id.each_value { |p| p.attach_links }
+        @revisions_id.each_value { |r| r.attach_links }
+        @filter.attach_links
+        @untangled = false
+      else
+        warn('Wiki not untangled. Skipping!')        
+      end
     end
 
     #
@@ -458,6 +592,23 @@ module Mediawiki
       # we do not merge @groups. Think about!
       @revisions += other.all_revisions
     end
+
+    # returns registration timestamp
+    def time_of_creation
+      @registration
+    end
+
+    # returns timestamp of the first revision of this user or _nil_,
+    # if the user has no revisions. May be same as time_of_last_event.
+    def time_of_first_event
+      (r=@revisions.first) && r.timestamp
+    end
+
+    # returns timestamp of the last revision of this user or _nil_,
+    # if the user has no revisions. May be same as time_of_first_event.
+    def time_of_last_event
+      (r=@revisions.last) && r.timestamp
+    end
     
     def sort_revisions # :nodoc:
       @revisions = @revisions.sort_by { |r| r.timestamp }
@@ -498,6 +649,14 @@ module Mediawiki
         'name' => :name }
     end
 
+    # changes all links to Revision Objects into the corresponding rid.
+    def detach_links # :nodoc:
+      @revisions.collect! { |r| r && r.rid }
+    end
+    # reverts detach_links.
+    def attach_links # :nodoc:
+      @revisions.collect! { |r| r && @wiki.revision_by_id(r) }
+    end
   end
   
   # One page with all revisions
@@ -543,8 +702,8 @@ module Mediawiki
 
       @revisions = []  # will be filled soon
 
-      @latest_revision = latest # will get replaced by a link to a Revision
-                                # object in #sort_revisions
+      @latest_rid = latest          # rid of the latest revision.
+                                    # We use this only for consistency checks.
 
       @genres = ['DEFAULT'].to_set  # each page is at least in the DEFAULT 
                                     # genre. May be updated in 
@@ -583,7 +742,6 @@ module Mediawiki
 
     # The plain text of the current revision of the page
     def content(filter=@wiki.filter)
-      #      @latest_revision.content
       revision(filter).content
     end
 
@@ -652,10 +810,9 @@ module Mediawiki
 
 
     def sort_revisions     #:nodoc:
-      @latest_revision = @wiki.revision_by_id(@latest_revision)
       @revisions = @revisions.sort_by { |r| r.timestamp }
-      if (l = @revisions.last) != @latest_revision
-        warn "Page does not point to latest revision: #{l.rid} != #{@latest_revision.rid}"
+      if (l = @revisions.last) != @wiki.revision_by_id(@latest_rid)
+        warn "Page does not point to latest revision: #{l.rid} != #{@latest_rid}"
       end
     end
 
@@ -690,6 +847,14 @@ module Mediawiki
         'title' => :title }
     end
 
+    # changes all links to Revision Objects into the corresponding rid.
+    def detach_links # :nodoc:
+      @revisions.collect! { |r| r && r.rid }
+    end
+    # reverts detach_links.
+    def attach_links # :nodoc:
+      @revisions.collect! { |r| r && @wiki.revision_by_id(r) }
+    end
   end
   
   
@@ -827,12 +992,37 @@ module Mediawiki
       @full_dangling.collect! { |l| 'danglink' } unless keeps[:links]
     end
 
+    # changes the links to the User, Page, Text Objects into the 
+    # corresponding uid, pid, tid.
+    def detach_links # :nodoc:
+      @user &&= @user.uid
+      @page &&= @page.pid
+      @text &&= @text.tid
+      @links.collect! { |p| p && p.pid }
+    end
+    # reverts detach_links.
+    def attach_links # :nodoc:
+      @user &&= @wiki.user_by_id(@user)
+      @page &&= @wiki.page_by_id(@page)
+      @text &&= @wiki.text_by_id(@text)
+      @links.collect! { |p| p && @wiki.page_by_id(p) }
+    end
+
     private
     def set_links
       @links = []
       @full_dangling = []           # TODO: old versions my be different!
       @text.each_link do |l|
-        if (p = @wiki.page_by_title(l)) # TODO: namespaces other than 0.
+        # Ok, let's see what's going on:
+        if l =~ /^(.*?):(.*)$/ # maybe linking to some different namespace?
+          r1 = $1.tr(' ', '_')
+          r2 = $2      # we play save and make sure to save the value of $2
+                       # even if we know by now namespace_by_identifier
+                       # does not use Regexps.
+          l = r2 if ns = @wiki.namespace_by_identifier(r1)
+        end
+        ns = ns || 0
+        if (p = @wiki.page_by_title(l, ns)) # TODO: namespaces other than 0.
           @links << p
         else
           @full_dangling << l
@@ -853,7 +1043,7 @@ module Mediawiki
     # text flags: this could be 
     # gzip:: the text is compressed
     # utf8:: the text is encoded in utf8 
-    #        (but mayby the opposite depending on mediawiki software setup)
+    #        (but maybe the opposite depending on mediawiki software setup)
     # object:: we do not have text but a serialized PHP object 
     #          (I hope we will never ever see this)
     attr_reader :flags
@@ -1007,6 +1197,7 @@ module Mediawiki
       @denied_users = Set.new
       # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       # When adding new attributes do _not_ forget to adjust #clone_attrs
+      # and attach_links, detach_links
       # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end
 
@@ -1085,6 +1276,16 @@ module Mediawiki
       @revision_timespan = (@revision_timespan.begin..time)
     end
 
+    # changes all links into corresponding ids.
+    def detach_links # :nodoc:
+      @denied_users.collect! { |u| u && u.uid }
+    end
+    # reverts detach_links.
+    def attach_links # :nodoc:
+      @denied_users.collect! { |u| @wiki.user_by_id(u)}
+    end
+
+    
     # gives a deep copy of this filter.
     def clone
       cl = super
