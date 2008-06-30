@@ -406,34 +406,21 @@ module Mediawiki
     #  v -> u  =  2    v -> v  =  1    v -> x  =  2
     #  x -> u  =  3    x -> v  =  2    x -> x  =  2
     #
-    # If a block is given it is called with each user and the result
-    # used as key. E.g.:
-    #  page.interlockingresponses { |u| u.name }
-    def interlockingresponses(filter=@wiki.filter) # :yields: user
-      if block_given?
-        us = revisions(filter).collect { |r| yield(r.user) }
-      else
-        us = revisions(filter).collect { |r| r.user }
-      end
-      latest_users = Hash.new
-      usersh = Hash.new { |h,k| h[k]=Hash.new }
-      
-      us.each_with_index { |u,i|
-        latest_users.each_pair { |lu,j| usersh[u][j] = lu }
-        latest_users[u] = i
-      }
+    def interlockingresponses(filter=@wiki.filter)
       uhs = Hash.new { |h,k| h[k]=Hash.new(0) }
-      usersh.each_pair { |u,h|
+      timedinterlockingresponses(filter).each_pair { |u,h|
         uh = uhs[u]
-        h.each_value { |v| uh[v] += 1 }
+        h.each_key { |r| uh[r.user] += 1 }
       }
       uhs
     end
 
-    # Similar to #interlockingresponses, but with timestamps included
+    # Computes the timed interlocking response graph for the users
+    # on this page. See #interlockingresponses for a description.
     # (for use in DotGraph.to_son).
     #
-    # Returns a nested Hash structure of user to user links with timestamps.
+    # Returns a nested Hash structure of user to revision links with 
+    # timestamps.
     def timedinterlockingresponses(filter=@wiki.filter)
       latest_users = Hash.new
       usersh = Hash.new { |h,k| h[k]=Hash.new }

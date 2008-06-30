@@ -489,21 +489,23 @@ class DotGraph
 ## mintime -> creationtime -> first action -> last action -> deletion -> maxtime...
       i=0
       tt.inject do |ta, tb|
-        if tb && (ta<tb)
-          son << "#{nid(n)}\t#{lproc.call(n)}"
-          son << "\t#{nodecolornames[i]}"       if nodecolornames
-          son << "\t#{nodeRGB[i][0]}\t#{nodeRGB[i][1]}\t#{nodeRGB[i][1]}" if nodeRGB
-          son << "\t#{nodelabelcolors[i]}"      if nodelabelcolors
-          son << "\t#{nodebordercolors[i]}"     if nodebordercolors
-          son << "\t#{nodeborderwidths[i]}"     if nodeborderwidths
-          son << "\t#{nodesizes[i]}"            if nodesizes
-          son << "\t#{nodeshapes[i]}"           if nodeshapes
-          son << "\t#{nodeURLs[i]}"             if nodeURLs
-          son << "\t#{ta}\t#{tb}\n"
+        if tb
+          if (ta<tb)
+            son << "#{nid(n)}\t#{lproc.call(n)}"
+            son << "\t#{nodecolornames[i]}"       if nodecolornames
+            son << "\t#{nodeRGB[i][0]}\t#{nodeRGB[i][1]}\t#{nodeRGB[i][1]}" if nodeRGB
+            son << "\t#{nodelabelcolors[i]}"      if nodelabelcolors
+            son << "\t#{nodebordercolors[i]}"     if nodebordercolors
+            son << "\t#{nodeborderwidths[i]}"     if nodeborderwidths
+            son << "\t#{nodesizes[i]}"            if nodesizes
+            son << "\t#{nodeshapes[i]}"           if nodeshapes
+            son << "\t#{nodeURLs[i]}"             if nodeURLs
+            son << "\t#{ta}\t#{tb}\n"
+          end
           i += 1
           tb
         else
-          i +=1
+          i += 1
           ta
         end         
       end

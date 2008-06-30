@@ -269,7 +269,7 @@ module Mediawiki
     # <tt>:name</tt>        => _false_ :: User name
     # <tt>:real_name</tt>   => _false_ :: User real name
     # <tt>:email</tt>       => _false_ :: User mail address
-    # <tt>:user_options</i> => _false_ :: User options
+    # <tt>:user_options</tt> => _false_ :: User options
     # <tt>:title</tt>       => _false_ :: Page title
     # <tt>:ip</tt>          => _true_  :: IP address of anonymous User
     # <tt>:comment</tt>     => _false_ :: Edit comments
