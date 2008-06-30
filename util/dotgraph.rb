@@ -357,13 +357,15 @@ class DotGraph
   #
   # _options_::
   #   a hash with further options:
-  #   <i>:duration=>SONIA_DURATION</i>:: 
+  #   <i>:duration</i>=><tt>SONIA_DURATION</tt>:: 
   #     time (in seconds) a link should last.
-  #   <i>:speedup=>SONIA_SPEEDUP</i>:: 
+  #   <i>:speedup</i>=><tt>SONIA_SPEEDUP</tt>:: 
   #     time (in seconds) is divided by this factor.
-  #   <i>:node_colors=>['White','LightGray','DarkGray','LightGray','White']</i>::
+  #   <i>:node_colors</i>::
   #     the color of the node in its 5 phases (see description below for
-  #     details). Instead of using named colors you may give an Array of
+  #     details). Defaults to
+  #       :node_colors => ['White','LightGray','DarkGray','LightGray','White']
+  #     Instead of using named colors you may give an Array of
   #     three floats between 0 and 1 representing RGB:
   #       :node_colors => [[1,1,1], [0.6,0.4,0.4], ...]
   #     Due to the restrictions of the SONIA file format you may not mix
@@ -457,13 +459,11 @@ class DotGraph
     maxtime += (duration.to_f/spu)
     # now the nodes
 
-    puts mintime, maxtime
     @nodes.each do |n|
       next unless n.respond_to?(:time_of_first_event)
       # We do not use time_of_creation here as this is not reliable.
       # E.g. the system user has a default creation time.
       # We could change this but it's not worth the efford.
-      puts "#{n.name}: #{n.time_of_first_event}"
       if t = n.time_of_first_event
         t = t.to_f/spu
         mintime = t if t<mintime

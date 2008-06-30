@@ -159,8 +159,8 @@ module Mediawiki
       end
       pages(filter).each do |p| 
         p.timedinterlockingresponses(filter).each_pair do |s,dt|
-          dt.each_pair do |t,d|
-            g.timelink(s,d,t)
+          dt.each_pair do |r,t|
+            g.timelink(s, r.user, t)
           end
         end
       end

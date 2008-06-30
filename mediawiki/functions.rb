@@ -434,19 +434,16 @@ module Mediawiki
     # (for use in DotGraph.to_son).
     #
     # Returns a nested Hash structure of user to user links with timestamps.
-    def timedinterlockingresponses(filter=@wiki.filter) # :yields: user
-      if block_given?
-        us = revisions(filter).collect { |r| [yield(r.user), r.timestamp] }
-      else
-        us = revisions(filter).collect { |r| [r.user, r.timestamp] }
-      end
+    def timedinterlockingresponses(filter=@wiki.filter)
       latest_users = Hash.new
       usersh = Hash.new { |h,k| h[k]=Hash.new }
-      
-      us.each { |u,t|
-        latest_users.each_pair { |lu,lt| usersh[u][lt] = lu }
-        latest_users[u] = t
-      }
+
+      revisions(filter).each do |r|
+        u = r.user
+        latest_users.each_pair { |lu,lr| usersh[u][lr] = r.timestamp }
+        latest_users[u] = r
+      end
+
       usersh
     end
 
