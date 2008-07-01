@@ -36,7 +36,6 @@
 #    second.  If a User is in this table, User#roles is a Set 
 #    containing all roles found.  
 
-require 'dbi'      # generic database engine
 require 'set'
 
 # Asks for user input with echo off at console
@@ -64,6 +63,8 @@ module Mediawiki
     end
     
     def connect
+      require 'dbi'      # generic database engine
+
       DBI.connect("DBI:#{@dbengine}:#{@db}:#{@host}", 
                   @dbuser, @dbpassword) { |dbh| yield(MWDBI.new(dbh)) }
     end
