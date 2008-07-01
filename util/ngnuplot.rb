@@ -48,8 +48,7 @@ class Gnuplot
   #
   # For plotting the contents of only one enumerable see Enumerable#gp_plot().
   def initialize
-    @sets = [['encoding', 'iso_8859_15'],
-             ['terminal', 'X11 enhanced']]
+    @sets = [['encoding', 'iso_8859_15']]
     @datasets = []
     yield(self) if block_given?
   end
