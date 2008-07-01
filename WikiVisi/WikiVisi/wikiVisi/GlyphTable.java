@@ -14,6 +14,7 @@ import prefuse.visual.VisualTable;
  */
 public class GlyphTable extends VisualTable
 {
+	protected String data;
 	protected int[] x;
 	protected int[] y;
 	protected int width, height;
@@ -24,8 +25,9 @@ public class GlyphTable extends VisualTable
 		super(vis, str);
 	}
 	
-	public void init(int zAxisCount)
+	public void init(String dat, int zAxisCount)
 	{
+		data = dat;
 		x = new int[zAxisCount];
 		y = new int[zAxisCount];
 		zDesc = new String[zAxisCount];

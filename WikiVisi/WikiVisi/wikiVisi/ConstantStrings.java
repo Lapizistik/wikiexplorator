@@ -17,5 +17,8 @@ public class ConstantStrings
 		TableLayout = "Tabelle",
 		FatRowLayout = "Schlangenlinien",
 		GrayScale = "Grauwertskala",
-		HeatScale = "Hitzeskala";
+		HeatScale = "Hitzeskala",
+		GlyphBorders = "Glyphenumrandung",
+		Data2D = "Tabelle",
+		Data3D = "Wuerfel";
 }

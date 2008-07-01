@@ -6,6 +6,7 @@ package wikiVisi;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -45,9 +46,17 @@ public class MenuAction implements ActionListener
 		}
 		else if (source.equals("prefMenu"))
 		{
-			frame.setPref(selection);
-			frame.updateColors();
-			frame.updateVisu();
+			if (selection.equals(ConstantStrings.GlyphBorders))
+			{
+				frame.setBorders(((JCheckBoxMenuItem)e.getSource()).isSelected());
+				frame.updateVisu();
+			}
+			else
+			{
+				frame.setPref(selection);
+				frame.updateColors();
+				frame.updateVisu();
+			}
 		}
 	}
 }
