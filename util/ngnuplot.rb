@@ -13,8 +13,7 @@ class Gnuplot
   # The gnuplot process is started when calling #plot, #splot or #command!
   #
   # At this time all settings collected within this object are piped to
-  # the gnuplot process (in given order). By default the encoding is latin1
-  # and the terminal is X11.
+  # the gnuplot process (in given order). By default the encoding is latin1.
   #
   # You may give a block to do neat things, e.g.:
   #  Gnuplot.new do |gp|
@@ -220,6 +219,7 @@ class Gnuplot
   #  gp.plot(:png => 'test.png', :size => '640,400') # a nice bitmap.
   #  gp.plot(:svg => 'test.svg', :size => '640 400') # a nice SVG.
   #  gp.plot(:pdf => 'test.pdf') # a nice PDF.
+  #  gp.plot(:fig => 'test.fig') # a nice xfig.
   def xplot_to_s(plotcmd, params={})
     set_params(params)
     s = sets_to_s 
@@ -249,6 +249,9 @@ class Gnuplot
     elsif file = p[:svg]
       size = p[:size] || 'dynamic'
       @sets << ['terminal', "svg enhanced size #{size}"]
+      @sets << ['output', "'#{file}'"]
+    elsif file = p[:fig]
+      @sets << ['terminal', "fig"]
       @sets << ['output', "'#{file}'"]
     end
   end

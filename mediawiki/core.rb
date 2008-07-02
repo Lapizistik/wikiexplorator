@@ -571,6 +571,12 @@ module Mediawiki
       @roles.find { |r| r!='DEFAULT' }
     end
 
+    # Returns all roles of the user (excluding the +DEFAULT+ role!) as
+    # sorted Array.
+    def roles_to_a
+      @roles.find_all { |r| r!='DEFAULT' }.sort
+    end
+
     # id string for dotfile creation
     def node_id
       "u#{uid}"
@@ -644,9 +650,9 @@ module Mediawiki
     #
     # Used e.g. for creating network attributes in Dotnet#to_r_network
     def network_attributes
-      { 'role' => :role,
-        'uid'  => :uid,
-        'name' => :name }
+      { 'roles' => :roles_to_a,
+        'uid'   => :uid,
+        'name'  => :name }
     end
 
     # changes all links to Revision Objects into the corresponding rid.
@@ -816,6 +822,12 @@ module Mediawiki
       end
     end
 
+    # Returns all genres of the page (excluding the +DEFAULT+ genre!) as
+    # sorted Array.
+    def genres_to_a
+      @genres.find_all { |r| r!='DEFAULT' }.sort
+    end
+
     def set_genres_from_string(genres) # :nodoc:
       @genres.merge((genres || '').split(/,\s*/))
     end
@@ -842,9 +854,9 @@ module Mediawiki
     #
     # Used e.g. for creating network attributes in Dotnet#to_r_network
     def network_attributes
-      { 'genre' => :genre,
-        'pid'   => :pid,
-        'title' => :title }
+      { 'genres' => :genres_to_a,
+        'pid'    => :pid,
+        'title'  => :title }
     end
 
     # changes all links to Revision Objects into the corresponding rid.
