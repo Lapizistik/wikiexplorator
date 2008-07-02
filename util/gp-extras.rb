@@ -30,7 +30,7 @@ end
 
 module Enumerable
   
-  # Plot the CDF (Lorenz curve) of the Enumerable. See Gnuplot.plot_cdf
+  # Plot the Lorenz curve of the Enumerable. See Gnuplot.plot_lorenz
   # for details.
   def gp_plot_lorenz(params={})
     Gnuplot.plot_lorenz(self, params)
