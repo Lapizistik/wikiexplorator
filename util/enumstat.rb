@@ -28,14 +28,11 @@ module Enumerable
   # is used to compute the lorenz curve.
   #
   # So the following holds:
-  #   [[0, 0], [0.25, 0.1], [0.5, 0.3], [0.75, 0.6], [1.0, 1.0]].stat_gini == 
-  #     [1,3,2,4].stat_gini == 0.25
+  #    [1,3,2,4].stat_gini == [[0, 0], [0.25, 0.1], [0.5, 0.3], [0.75, 0.6], [1.0, 1.0]].stat_gini ==0.25
   # If the coordinate form is used it is _not_ checked whether the coordinates
   # are in the right order, the user is responsible for providing a correct
   # lorenz curve (but it is ok, if the curve is not scaled, so
-  #   [[0,0],[2,1],[4,4]].stat_gini == 
-  #     [[0,0],[0.5,0.25],[1,1]].stat_gini ==
-  #     [[0,0],[1,0.25],[2,1]].stat_gini == 0.25
+  #   [[0,0],[2,1],[4,4]].stat_gini == [[0,0],[0.5,0.25],[1,1]].stat_gini == [[0,0],[1,0.25],[2,1]].stat_gini == 0.25
   # holds). 
   def stat_gini
     if first.kind_of?(Array)
