@@ -25,7 +25,7 @@ import prefuse.visual.VisualItem;
 public class PixelSelector extends SubtreeDragControl
 {
 	protected PixelFrame frame;
-	protected String selection = "nothing";
+	protected String selection = ConstantStrings.Nothing;
 	protected GlyphTable at;
 	protected int select1, select2;
 	protected VisuMain vis;
@@ -47,14 +47,14 @@ public class PixelSelector extends SubtreeDragControl
 	{
 		if (e.getButton() >= 2) // right click
 		{
-			selection = "nothing";
+			selection = ConstantStrings.Nothing;
 			select1 = -1;
 			select2 = -1;
-			frame.setInfo(selection);
+			frame.setPixelDesc(selection);
 		}
 		else
 		{
-			// Test: Berechnung des Pixels anhand der
+			// Berechnung des Pixels anhand der
 			// Koordinaten
 			int clickX = e.getX();
 			int clickY = e.getY();
@@ -63,27 +63,24 @@ public class PixelSelector extends SubtreeDragControl
 			int absY = (int)p.getY();
 			absX -= ((Integer)item.get("xCor")).intValue();
 			absY -= ((Integer)item.get("yCor")).intValue();
-			int pixel = 0;
-			for (int i = 0; i < at.getZAxisCount(); i++)
+			int pixel = -1;
+			for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 			{
 				if (at.getXAt(i) == absX && at.getYAt(i) == absY)
 					pixel = i;
 			}
 			//frame.setInfo("Clicked pixel: " + pixel);//clickX + ", " + clickY + " - abs: " + p.getX() + ", " + p.getY());
-			if (selection.equals("nothing"))
+			if (selection.equals(ConstantStrings.Nothing) && pixel > -1)
 			{
-				if (pixel >= frame.getStartIndex() && pixel <= frame.getStopIndex())
-				{
-					frame.setInfo("from " + at.getZDescAt(pixel) + " to ");
-					selection = (at.getZDescAt(pixel));
-					select1 = pixel;
-				}
+				frame.setPixelDesc("Von " + at.getZDescAt(pixel) + " bis ");
+				selection = (at.getZDescAt(pixel));
+				select1 = pixel;
 			}
-			else if (pixel >= frame.getStartIndex() && pixel <= frame.getStopIndex())
+			else if (pixel > -1)
 	        {
 				// the user has selected two pixels and now
 				// all pixels that don't lie between them 
-				// should be removed from th visualization
+				// should be removed from the visualization
 				select2 = pixel;
 				int startIndex = select1;
 				int stopIndex = select2;
@@ -94,8 +91,8 @@ public class PixelSelector extends SubtreeDragControl
 					stopIndex = var;
 				}
 				
-				selection = "nothing";
-				frame.setInfo(selection);
+				selection = ConstantStrings.Nothing;
+				frame.setPixelDesc(selection);
 				select1 = -1;
 				select2 = -1;
 				frame.setRange(startIndex, stopIndex);
@@ -110,6 +107,7 @@ public class PixelSelector extends SubtreeDragControl
 		Display d = (Display)e.getSource();
         if (GlyphTable.isGlyph(item))
         {
+        	frame.setGlyphDesc((String)item.get("desc"));
         	d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
             int clickX = e.getX();
 			int clickY = e.getY();
@@ -118,22 +116,19 @@ public class PixelSelector extends SubtreeDragControl
 			int absY = (int)p.getY();
 			absX -= ((Integer)item.get("xCor")).intValue();
 			absY -= ((Integer)item.get("yCor")).intValue();
-			int pixel = 0;
-			for (int i = 0; i < at.getZAxisCount(); i++)
+			int pixel = -1;
+			for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 			{
 				if (at.getXAt(i) == absX && at.getYAt(i) == absY)
 					pixel = i;
 			}
-			
-        	if (selection.equals("nothing"))
+			if (selection.equals(ConstantStrings.Nothing) && pixel > -1)
         	{
-        		if (pixel >= frame.getStartIndex() && pixel <= frame.getStopIndex())
-        			frame.setInfo(at.getZDescAt(pixel));
+        		frame.setPixelDesc(at.getZDescAt(pixel));
         	}
-        	else
+        	else if (pixel > -1)
         	{
-        		if (pixel >= frame.getStartIndex() && pixel <= frame.getStopIndex())
-        			frame.setInfo("from " + selection + " to " + at.getZDescAt(pixel));
+        		frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
         	}
         }
     }
@@ -152,22 +147,20 @@ public class PixelSelector extends SubtreeDragControl
 			int absY = (int)p.getY();
 			absX -= ((Integer)item.get("xCor")).intValue();
 			absY -= ((Integer)item.get("yCor")).intValue();
-			int pixel = 0;
-			for (int i = 0; i < at.getZAxisCount(); i++)
+			int pixel = -1;
+			for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 			{
 				if (at.getXAt(i) == absX && at.getYAt(i) == absY)
 					pixel = i;
 			}
 			
-        	if (selection.equals("nothing"))
+        	if (selection.equals(ConstantStrings.Nothing) && pixel > -1)
         	{
-        		if (pixel >= frame.getStartIndex() && pixel <= frame.getStopIndex())
-        			frame.setInfo(at.getZDescAt(pixel));
+        		frame.setPixelDesc(at.getZDescAt(pixel));
         	}
-        	else
+        	else if (pixel > -1)
         	{
-        		if (pixel >= frame.getStartIndex() && pixel <= frame.getStopIndex())
-        			frame.setInfo("from " + selection + " to " + at.getZDescAt(pixel));
+        		frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
         	}
         }
     }
@@ -177,23 +170,25 @@ public class PixelSelector extends SubtreeDragControl
 	{
 		Display d = (Display)e.getSource();
 	    if (GlyphTable.isGlyph(item))
+	    {
 	    	d.setCursor(Cursor.getDefaultCursor());
-	    if (selection.equals("nothing"))
-        	frame.setInfo("nothing");
+	    	frame.setGlyphDesc(ConstantStrings.Nothing);
+	    }
+	    if (selection.equals(ConstantStrings.Nothing))
+        	frame.setPixelDesc(ConstantStrings.Nothing);
         else
-        	frame.setInfo("from " + selection + " to ");
+        	frame.setPixelDesc("Von " + selection + " bis ");
    }
 	
 	
-	public void mouseClicked(VisualItem item,
-            java.awt.event.MouseEvent e)
+	public void mouseClicked(java.awt.event.MouseEvent e)
 	{
 		if (e.getButton() >= 2) // right click
 		{
 			select1 = -1;
 			select2 = -1;
-			selection = "nothing";
-			frame.setInfo(selection);
+			selection = ConstantStrings.Nothing;
+			frame.setPixelDesc(selection);
 		}
 	}
 }

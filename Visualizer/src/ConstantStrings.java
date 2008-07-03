@@ -24,5 +24,6 @@ public class ConstantStrings
 		HeatScale = "Hitzeskala",
 		GlyphBorders = "Glyphenumrandung",
 		Data2D = "Tabelle",
-		Data3D = "Wuerfel";
+		Data3D = "Wuerfel",
+		Nothing = "Nichts gewaehlt";
 }

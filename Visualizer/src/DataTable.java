@@ -21,7 +21,11 @@ public class DataTable extends DataSet
 	}
 	
     /**
-     * get the value at a specific x and y index
+     * PLEASE OVERWRITE: Get the value at a specific x and y index.
+     * Recommended axis
+     * usage for working with wikis:
+     * x-axis: time
+     * y-axis: authors
      */
     public double getValueAt(int x, int y)
 	{

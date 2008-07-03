@@ -48,9 +48,9 @@ public class VisuMain
 	     
 	     // load data and create the glyph and pixel tables
 	     ds = data;
-	     //if (ds instanceof DataTable)
-	    //	 DataLoader.loadTable((DataTable)ds, glyphTable, labelTable, pixelSize, textSize);
-	     /*else*/ if (ds instanceof DataCube)
+	     if (ds instanceof DataTable)
+	    	 DataLoader.loadTable((DataTable)ds, glyphTable, labelTable, pixelSize, textSize);
+	     else if (ds instanceof DataCube)
 	    	 DataLoader.loadCube((DataCube)ds, glyphTable, labelTable, pixelSize, textSize);
 	        
 	     // setup renderer
@@ -216,7 +216,7 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain = new VisuMain();
-    	TestCube test = new TestCube();
+    	TestTable test = new TestTable();
     	visuMain.init(test);
     }
 }

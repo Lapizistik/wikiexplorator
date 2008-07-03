@@ -17,7 +17,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,6 +27,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
@@ -46,7 +49,8 @@ public class PixelFrame extends JFrame
 {
 	protected Button bPos, bVorlage, bLoad, bSave;
 	protected VisuMain vis;
-	protected JLabel info, startLabel, stopLabel;
+	protected JLabel pixelDescHeader, pixelDesc, glyphDescHeader,
+			glyphDesc, startLabel, stopLabel;
 	protected JRangeSlider timeSlider;
 	protected PixelRenderer render;
 	protected int startIndex, stopIndex;
@@ -81,6 +85,7 @@ public class PixelFrame extends JFrame
 		render = ren;
 		ma = new MenuAction(this);
 		gt = tab;
+		final Display display = dis;
 		// set layout and create the choices
 		//FormLayout layout = new FormLayout("10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default:grow, 10px, left:default, 10px", 
 		//"10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default:, 10px, center:default:grow, 10px, center:default, 10px, center:default, 10px");
@@ -89,8 +94,12 @@ public class PixelFrame extends JFrame
 		setLayout(layout);
 		CellConstraints cc = new CellConstraints();
 		// the labels
-		info = new JLabel("nothing");
-		info.setForeground(Color.gray);
+		pixelDesc = new JLabel(ConstantStrings.Nothing);
+		pixelDesc.setForeground(Color.gray);
+		pixelDescHeader = new JLabel("Zeit");
+		glyphDesc = new JLabel(ConstantStrings.Nothing);
+		glyphDesc.setForeground(Color.gray);
+		glyphDescHeader = new JLabel("Autor");
 		startLabel = new JLabel();
 		stopLabel = new JLabel();
 		setStartIndex(0);
@@ -112,7 +121,7 @@ public class PixelFrame extends JFrame
         		vis.updateGlyphSize();
         		vis.updateGlyphLayout(glyph);
         		vis.updateVisu();
-            }
+        	}
         });
 		timeSlider.addMouseMotionListener(new MouseAdapter() 
 		{
@@ -122,6 +131,17 @@ public class PixelFrame extends JFrame
             	setStopIndex(timeSlider.getHighValue());
             }
         });
+		// Button for zoom 100%
+		JButton zoomButton = new JButton("Darstellung 1:1");
+		zoomButton.addActionListener(new ActionListener() 
+		{
+			//Display d = dis;
+            public void actionPerformed(ActionEvent e) 
+            {
+            	display.zoomAbs(display.getLocation(), 1d/display.getScale());
+            	updateVisu();
+            }
+		});
 		// Panel that holds the display
 		JScrollPane panel = new JScrollPane();
 		panel.getViewport().add(dis);
@@ -131,7 +151,11 @@ public class PixelFrame extends JFrame
 		//add(cPixels, cc.xy(4, 2));
 		//add(cText, cc.xy(6, 2));
 		//add(cColor, cc.xy(8, 2));
-		add(info, cc.xy(6, 8));
+		add(glyphDescHeader, cc.xy(6, 8));
+		add(glyphDesc, cc.xy(6, 10));
+		add(pixelDescHeader, cc.xy(6, 12));
+		add(pixelDesc, cc.xy(6, 14));
+		add(zoomButton, cc.xy(2, 2));
 		add(panel, cc.xywh(2, 4, 3, 14));
 		add(place, cc.xy(6, 6));
 		add(timeSlider, cc.xyw(2, 20, 3));
@@ -153,16 +177,32 @@ public class PixelFrame extends JFrame
 		JMenuItem[] glyphItem = new JMenuItem[3];
 		JMenuItem[] pixelItem = new JMenuItem[5];
 		JMenuItem[] prefItem = new JMenuItem[3];
-		glyphItem[0] = new JMenuItem(ConstantStrings.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
-		glyphItem[1] = new JMenuItem(ConstantStrings.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
-		glyphItem[2] = new JMenuItem(ConstantStrings.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
-		pixelItem[0] = new JMenuItem(ConstantStrings.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
-		pixelItem[1] = new JMenuItem(ConstantStrings.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
-		pixelItem[2] = new JMenuItem(ConstantStrings.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
-		pixelItem[3] = new JMenuItem(ConstantStrings.HilbertLayout, new ImageIcon(getClass().getResource("/pics/hilbert.gif")));
-		pixelItem[4] = new JMenuItem(ConstantStrings.FatRowLayout, new ImageIcon(getClass().getResource("/pics/fatrow.gif")));
-		prefItem[0] = new JMenuItem(ConstantStrings.GrayScale, new ImageIcon(getClass().getResource("/pics/gray.gif")));
-		prefItem[1] = new JMenuItem(ConstantStrings.HeatScale, new ImageIcon(getClass().getResource("/pics/heat.gif")));
+		glyphItem[0] = new JRadioButtonMenuItem(ConstantStrings.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
+		glyphItem[1] = new JRadioButtonMenuItem(ConstantStrings.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
+		glyphItem[2] = new JRadioButtonMenuItem(ConstantStrings.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
+		ButtonGroup glyphGroup = new ButtonGroup();
+		glyphGroup.add(glyphItem[0]);
+		glyphGroup.add(glyphItem[1]);
+		glyphGroup.add(glyphItem[2]);
+		glyphItem[0].setSelected(true);
+		pixelItem[0] = new JRadioButtonMenuItem(ConstantStrings.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
+		pixelItem[1] = new JRadioButtonMenuItem(ConstantStrings.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
+		pixelItem[2] = new JRadioButtonMenuItem(ConstantStrings.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
+		pixelItem[3] = new JRadioButtonMenuItem(ConstantStrings.HilbertLayout, new ImageIcon(getClass().getResource("/pics/hilbert.gif")));
+		pixelItem[4] = new JRadioButtonMenuItem(ConstantStrings.FatRowLayout, new ImageIcon(getClass().getResource("/pics/fatrow.gif")));
+		ButtonGroup pixelGroup = new ButtonGroup();
+		pixelGroup.add(pixelItem[0]);
+		pixelGroup.add(pixelItem[1]);
+		pixelGroup.add(pixelItem[2]);
+		pixelGroup.add(pixelItem[3]);
+		pixelGroup.add(pixelItem[4]);
+		pixelItem[0].setSelected(true);
+		prefItem[0] = new JRadioButtonMenuItem(ConstantStrings.GrayScale, new ImageIcon(getClass().getResource("/pics/gray.gif")));
+		prefItem[1] = new JRadioButtonMenuItem(ConstantStrings.HeatScale, new ImageIcon(getClass().getResource("/pics/heat.gif")));
+		ButtonGroup colorGroup = new ButtonGroup();
+		colorGroup.add(prefItem[0]);
+		colorGroup.add(prefItem[1]);
+		prefItem[0].setSelected(true);
 		prefItem[2] = new JCheckBoxMenuItem(ConstantStrings.GlyphBorders);
 		prefItem[2].setSelected(true);
 		for (int i = 0; i < glyphItem.length; i++)
@@ -184,7 +224,8 @@ public class PixelFrame extends JFrame
 		pixel = ConstantStrings.RowLayout;
 		pref = ConstantStrings.GrayScale;
 		setJMenuBar(menuBar);
-		info.setVisible(true);
+		pixelDesc.setVisible(true);
+		glyphDesc.setVisible(true);
 		pack();
 	}
 	
@@ -256,11 +297,19 @@ public class PixelFrame extends JFrame
 	}
 	
 	/**
-	 * Set content of the info label.
+	 * Set content of the pixelDesc label.
 	 */
-	public void setInfo(String s)
+	public void setPixelDesc(String s)
 	{
-		info.setText(s);
+		pixelDesc.setText(s);
+	}
+	
+	/**
+	 * Set content of the glyphDesc label.
+	 */
+	public void setGlyphDesc(String s)
+	{
+		glyphDesc.setText(s);
 	}
 	
 	public void setGlyph(String s)

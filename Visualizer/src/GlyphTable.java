@@ -18,11 +18,11 @@ import prefuse.visual.VisualTable;
  */
 public class GlyphTable extends VisualTable
 {
-	protected String data;
+	protected String data, xAxisTitle, yAxisTitle, zAxisTitle;
 	protected int[] x;
 	protected int[] y;
 	protected int width, height;
-	protected String[] zDesc;
+	protected String[] pixelDesc;
 	
 	public GlyphTable(Visualization vis, String str)
 	{
@@ -34,12 +34,12 @@ public class GlyphTable extends VisualTable
 		data = dat;
 		x = new int[zAxisCount];
 		y = new int[zAxisCount];
-		zDesc = new String[zAxisCount];
+		pixelDesc = new String[zAxisCount];
 		for (int i = 0; i < zAxisCount; i++)
 		{
 			x[i] = 0;
 			y[i] = 0;
-			zDesc[i] = "";
+			pixelDesc[i] = "";
 		}
 		width = 0;
 		height = 0;
@@ -67,17 +67,17 @@ public class GlyphTable extends VisualTable
 	
 	public void setZDescAt(String desc, int index)
 	{
-		zDesc[index] = desc;
+		pixelDesc[index] = desc;
 	}
 	
 	public String getZDescAt(int index)
 	{
-		return zDesc[index];
+		return pixelDesc[index];
 	}
 	
 	public int getZAxisCount()
 	{
-		return zDesc.length;
+		return pixelDesc.length;
 	}
 	
 	public void setWidth(int w)
@@ -115,17 +115,14 @@ public class GlyphTable extends VisualTable
 		return height;
 	}
 	
+	public String getDataType()
+	{
+		return data;
+	}
+	
 	public static boolean isGlyph(VisualItem item)
 	{
 		if (item.getGroup().equals("glyphTable"))
-			return true;
-		else
-			return false;
-	}
-	
-	public static boolean isPixel(VisualItem item)
-	{
-		if (item.getGroup().equals("pixelTable"))
 			return true;
 		else
 			return false;

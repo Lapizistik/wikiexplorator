@@ -33,7 +33,11 @@ public class DataCube extends DataSet
 	
     /**
      * PLEASE OVERWRITE: Get the double value at a 
-     * specific position in the cube.
+     * specific position in the cube. Recommended axis
+     * usage for working with wikis:
+     * x-axis: authors
+     * y-axis: authors
+     * z-axis: time 
      */
     public double getValueAt(int x, int y, int z)
 	{
