@@ -1,3 +1,8 @@
+package visualizer.ruby;
+
+import visualizer.data.DataCube;
+
+
 public class FlatCube extends DataCube {
     String[] xs, ys, zs;
     int xl,yl,zl;

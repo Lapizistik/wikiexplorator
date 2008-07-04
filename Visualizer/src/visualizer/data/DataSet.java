@@ -1,3 +1,4 @@
+package visualizer.data;
 /**
  * This is the superclass for the classes DataMatrix and 
  * DataCube. It doesn't contain the methods to actually get

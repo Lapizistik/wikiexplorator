@@ -1,3 +1,7 @@
+package visualizer;
+
+import visualizer.data.DataTable;
+
 /**
  * 
  */

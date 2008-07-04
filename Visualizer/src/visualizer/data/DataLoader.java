@@ -1,6 +1,8 @@
+package visualizer.data;
 /**
  * 
  */
+
 
 import java.util.Iterator;
 
@@ -9,6 +11,9 @@ import prefuse.visual.AggregateItem;
 import prefuse.visual.AggregateTable;
 import prefuse.visual.VisualItem;
 import prefuse.visual.VisualTable;
+import visualizer.StringConstants;
+import visualizer.display.GlyphTable;
+import visualizer.display.Layouts;
 
 /**
  * DataLoader contains two methods to load data from a
@@ -83,7 +88,7 @@ public class DataLoader
 	     }
          
          // create z axis description
-	     gt.init(ConstantStrings.Data2D, dt.getXAxisCount());
+	     gt.init(StringConstants.Data2D, dt.getXAxisCount());
 	     for (int x = 0; x < dt.getXAxisCount(); x++)
 	     {
 	    	 gt.setZDescAt(dt.getXAxisNameAt(x), x);
@@ -132,8 +137,7 @@ public class DataLoader
         	{
 	        	VisualItem newItem = gt.addItem();
 	        	newItem.set("index", new Integer(currentIndex));
-	        	newItem.set("author1", dc.getXAxisNameAt(x));
-	        	newItem.set("author2", dc.getYAxisNameAt(y));
+	        	newItem.set("desc", dc.getXAxisNameAt(x) + ", " + dc.getYAxisNameAt(y));
 	        	newItem.set("xCor", new Integer(0));
 	        	newItem.set("yCor", new Integer(0));
 	        	// create pixels for this glyph
@@ -185,7 +189,7 @@ public class DataLoader
 	         newItem.set("text", dc.getYAxisNameAt(i));
 	     }*/
 	     // create z axis description
-	     gt.init(ConstantStrings.Data3D, dc.getZAxisCount());
+	     gt.init(StringConstants.Data3D, dc.getZAxisCount());
 	     for (int z = 0; z < dc.getZAxisCount(); z++)
 	     {
 	    	 gt.setZDescAt(dc.getZAxisNameAt(z), z);

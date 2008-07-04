@@ -1,3 +1,7 @@
+package visualizer;
+
+import visualizer.data.DataCube;
+
 /**
  * 
  */
@@ -22,17 +26,17 @@ public class TestCube extends DataCube
      */
 	public int getZAxisCount()
 	{
-		return 100;
+		return 300;
 	}
 	
 	public int getXAxisCount()
 	{
-		return 10;
+		return 60;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 10;
+		return 60;
 	}
 	
     /**
@@ -40,10 +44,7 @@ public class TestCube extends DataCube
      */
     public double getValueAt(int x, int y, int z)
 	{
-    	if (x < y)
-    		return z;
-    	else
-    		return (getZAxisCount() - z);
+    	return (x * y * z);
 	}
 	
    /**
@@ -52,5 +53,20 @@ public class TestCube extends DataCube
     public String getZAxisNameAt(int z)
 	{
 		return "Tag " + z;
-	}	
+	}
+    
+    public String getXAxisNameAt(int x)
+    {
+    	if (x < 5)
+    		return "Autor Nr. " + x;
+    	else if (x < 12)
+    		return "Autorin Nr. " + x;
+    	else
+    		return "MitarbeiterIn " + x;
+    }
+    
+    public String getYAxisNameAt(int y)
+    {
+    	return getXAxisNameAt(y);
+    }
 }

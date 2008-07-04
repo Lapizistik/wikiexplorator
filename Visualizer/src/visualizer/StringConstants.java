@@ -1,3 +1,4 @@
+package visualizer;
 /**
  * 
  */
@@ -11,7 +12,7 @@
  * @author Rene Wegener
  *
  */
-public class ConstantStrings 
+public class StringConstants 
 {
 	public static String RowLayout = "Zeilenweise Anordnung",
 		ColumnLayout = "Spaltenweise Anordnung",

@@ -1,3 +1,6 @@
+package visualizer.data;
+
+
 /**
  * This class represents a two dimensional table of 
  * double values. Methods like getting the title of the

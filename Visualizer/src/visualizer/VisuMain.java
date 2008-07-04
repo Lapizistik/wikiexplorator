@@ -1,6 +1,10 @@
+package visualizer;
+
 
 
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 import java.util.Vector;
 
 import prefuse.Display;
@@ -8,6 +12,16 @@ import prefuse.Visualization;
 import prefuse.controls.PanControl;
 import prefuse.render.DefaultRendererFactory;
 import prefuse.visual.VisualTable;
+import visualizer.data.DataCube;
+import visualizer.data.DataLoader;
+import visualizer.data.DataSet;
+import visualizer.data.DataTable;
+import visualizer.display.GlyphTable;
+import visualizer.display.Layouts;
+import visualizer.display.PixelRenderer;
+import visualizer.userInterface.PixelFrame;
+import visualizer.userInterface.PixelSelector;
+import visualizer.userInterface.ZoomControler;
 
 /**
  * The main class of the program. VisuMain creates all
@@ -80,13 +94,22 @@ public class VisuMain
 	     frame.setVisible(true); // show the window
 	     
 	     // set start layout
-	     pixelLayout = ConstantStrings.RowLayout;
-	     glyphLayout = ConstantStrings.RowLayout;
+	     pixelLayout = StringConstants.RowLayout;
+	     glyphLayout = StringConstants.RowLayout;
 	     glyphSorting = "author";
 	     updatePixelLayout(pixelLayout);
 	     updateGlyphSize();
 	     updateGlyphLayout(glyphLayout);
 	     updatePixelLayout(pixelLayout);
+	     // is the display big enough?
+	     Rectangle2D rect = vis.getBounds("glyphTable");
+	     double newWidth = dis.getWidth();
+	     double newHeight = dis.getHeight();
+	     if (rect.getWidth() > dis.getWidth())
+	    	 newWidth = rect.getWidth();
+	     if (rect.getHeight() > dis.getHeight())
+	    	 newHeight = rect.getHeight();
+	     dis.setSize((int)newWidth, (int)newHeight);
 	     //Iterator iter = glyphTable.tuples();
 	     //Rectangle2D rect = (DisplayLib.getBounds(iter, 10));
 	     //dis.setSize((int)rect.getWidth(), (int)rect.getHeight());
@@ -107,8 +130,8 @@ public class VisuMain
 	
 	public void updateGlyphLayout(String layout)
 	{
-		int startX = 10;
-		int startY = 10;
+		int startX = 0;
+		int startY = 0;
 		int space = 5;
 		glyphLayout = layout;
 		Vector v = new Vector();
@@ -118,11 +141,12 @@ public class VisuMain
 	    			((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
 	    }
 	    //Sort.sort(v, glyphSorting);
-	    if (layout.equals(ConstantStrings.ZLayout))
+	    if (layout.equals(StringConstants.ZLayout))
 	    	Layouts.createZLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
-	    else if (layout.equals(ConstantStrings.MyZLayout))
+	    else if (layout.equals(StringConstants.MyZLayout))
 	    	Layouts.createFlexibleZLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
-	    else if (layout.equals(ConstantStrings.RowLayout))
+	    else if (layout.equals(StringConstants.RowLayout) || 
+	    		layout.equals(StringConstants.TableLayout))
 	    	Layouts.createSimpleLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
 		
 	    for (int i = 0; i < v.size(); i++)
@@ -162,18 +186,18 @@ public class VisuMain
 		}
 		
 		// assign the layout
-		if (layout.equals(ConstantStrings.ZLayout))
+		if (layout.equals(StringConstants.ZLayout))
 	    	Layouts.createZLayout(pixels, 0, textSize, 1, 1);
-	    else if (layout.equals(ConstantStrings.MyZLayout))
+	    else if (layout.equals(StringConstants.MyZLayout))
 	    	Layouts.createFlexibleZLayout(pixels, 
 	    	0, textSize, 1, 1);
-	    else if (layout.equals(ConstantStrings.RowLayout))
+	    else if (layout.equals(StringConstants.RowLayout))
 	    	Layouts.createSimpleLayout(pixels, 
 	    	0, textSize, 1, 1);
-	    else if (layout.equals(ConstantStrings.FatRowLayout))
+	    else if (layout.equals(StringConstants.FatRowLayout))
 	    	Layouts.createLineLayout(pixels, 
 	    	0, textSize, 1, 1);
-	    else if (layout.equals(ConstantStrings.HilbertLayout))
+	    else if (layout.equals(StringConstants.HilbertLayout))
 	    	Layouts.createHilbertLayout(pixels, 
 	    	0, textSize, 1, 1);
 	    
@@ -216,7 +240,7 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain = new VisuMain();
-    	TestTable test = new TestTable();
+    	TestCube test = new TestCube();
     	visuMain.init(test);
     }
 }

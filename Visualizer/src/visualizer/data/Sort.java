@@ -1,3 +1,4 @@
+package visualizer.data;
 
 import java.util.Vector;
 

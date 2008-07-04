@@ -1,3 +1,6 @@
+package visualizer.data;
+
+
 /**
  * This class represents a three dimensional set of 
  * double values (think of it as a cube).
