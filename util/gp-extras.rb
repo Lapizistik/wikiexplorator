@@ -3,20 +3,48 @@
 require 'util/enumstat'
 
 class Gnuplot
-  # plots the Lorenz curve of an Enumerable a.
-  def Gnuplot.plot_lorenz(a, params={})
+  # :call-seq:
+  # Gnuplot.plot_lorenz(a1, ..., an, :title => 'Lorenz Curve', :xlabel => 'items', :ylabel => 'cumulative values', ...)
+  # Gnuplot.plot_lorenz(a)
+  #
+  # plots the Lorenz curve of any number of Enumerables.
+  #
+  # <i>a1</i> to <i>an</i> is any number of enumerables, followed by any number of
+  # named parameters including:
+  # <tt>:title</tt>:: the plot title
+  # <tt>:xlabel</tt>:: x axis label
+  # <tt>:ylabel</tt>:: y axis label
+  # <tt>:key</tt>:: 
+  #   key position. You can use <tt>:key => 'off'</tt> for no key.
+  # <tt>:titles</tt>:: 
+  #   an Array of title Strings for the given plots. The String is used
+  #   as a format specification and applied to the Gini coefficient of the
+  #   curve. Defaults to <tt>'G_i=%.2f'</tt>
+  #   
+  # All parameters are forwarded to Gnuplot#plot.
+  def Gnuplot.plot_lorenz(*args)
     params = {
-      :title => "Cummulative Distribution Function",
+      :title => "Lorenz Curve",
       :xlabel => "items",
-      :ylabel => "cumulative values"
-    }.merge(params)
+      :ylabel => "cumulative values",
+      :key => "top left box"
+    }
+    if ps=args.last.kind_of?(Hash)
+      params.merge(ps)
+      args.pop
+    end
     
-    data = a.stat_lorenz
-
+    titles = (params[:titles] ||
+              (1..args.length).collect { |i| "G_#{i}=%.2f" })
     Gnuplot.new do |gp|
-      gp.add(data, :with => "lines")
-      gp.add([[0,0],[1,1]], :with => "lines")
-      gp.set('nokey')
+      gp.add([[0,0],[1,1]], :with => "lines", :title => "equality")
+      args.each_with_index do |a,i|
+        al=a.stat_lorenz
+        gp.add(al,
+               :with => "lines", 
+               :title => (titles[i] % al.stat_gini))
+      end
+      gp.set('key', params[:key])
       gp.set("title \"#{params[:title]}\"")
       gp.set("xlabel \"#{params[:xlabel]}\"")
       gp.set('xtics 0.1')
