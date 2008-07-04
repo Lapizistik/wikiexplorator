@@ -15,11 +15,11 @@ class Gnuplot
   # <tt>:xlabel</tt>:: x axis label
   # <tt>:ylabel</tt>:: y axis label
   # <tt>:key</tt>:: 
-  #   key position. You can use <tt>:key => 'off'</tt> for no key.
+  #   key position. You can use <tt>:key => "off"</tt> for no key.
   # <tt>:titles</tt>:: 
   #   an Array of title Strings for the given plots. The String is used
   #   as a format specification and applied to the Gini coefficient of the
-  #   curve. Defaults to <tt>'G_i=%.2f'</tt>
+  #   curve. Defaults to <tt>"G_i=%.2f"</tt>
   #   
   # All parameters are forwarded to Gnuplot#plot.
   def Gnuplot.plot_lorenz(*args)
@@ -29,13 +29,14 @@ class Gnuplot
       :ylabel => "cumulative values",
       :key => "top left box"
     }
-    if ps=args.last.kind_of?(Hash)
-      params.merge(ps)
+
+    if (ps=args.last).kind_of?(Hash)
+      params.merge!(ps)
       args.pop
     end
-    
+
     titles = (params[:titles] ||
-              (1..args.length).collect { |i| "G_#{i}=%.2f" })
+              (1..args.length).collect { |i| "G_#{i} = %.2f" })
     Gnuplot.new do |gp|
       gp.add([[0,0],[1,1]], :with => "lines", :title => "equality")
       args.each_with_index do |a,i|
