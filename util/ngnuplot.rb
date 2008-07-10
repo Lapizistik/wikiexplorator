@@ -236,16 +236,19 @@ class Gnuplot
   # (unless you know what you are doing).
   # 
   # _params_ is a Hash of options:
-  # <tt>:function => 'f(x)=a*x+b'</tt>:: the function to be fitted.
+  # <tt>:function => "f(x)=a*x+b"</tt>:: the function to be fitted.
   # <tt>:data => -1</tt>:: 
   #   the index of the plotable to be used for fitting. Defaults to -1,
   #   which is the last plotable added (see #add).
-  # <tt>:via => 'a,b'</tt>:: the names of the variables to be fitted
+  # <tt>:via => "a,b"</tt>:: the names of the variables to be fitted
   # <tt>:ranges</tt>:: ranges to be used for the fitting
+  # <tt>:using</tt>:: 
+  #   the columns to be used (and how). Defauls to the :using parameter
+  #   of the corresponding plotable.
   # <tt>:prepare</tt>:: 
   #   a String passed to gnuplot before doing the fitting.
   #   Use this to set initial values to variables, e.g. 
-  #   <tt>:prepare => 'a=3; b=7'</tt>
+  #   <tt>:prepare => "a=3; b=7"</tt>
   # <tt>:FIT_LIMIT</tt>:: convergence epsilon (see gnuplot documentation)
   # <tt>:FIT_MAXITER => 100</tt>:: 
   #   max number of iterations (see gnuplot documentation)
@@ -277,12 +280,13 @@ class Gnuplot
     fdef = params.delete(:function)
     fdef =~ /^(.*?)=/
     fkt = $1
+    using = params.delete(:using) || dataset.using
     raise ArgumentError.new("invalid function definition: #{fdef}") unless fkt
     command(prepare) if prepare   # initialize parameters
     command("FIT_LIMIT = #{fitlimit}") if fitlimit
     command("FIT_MAXITER = #{fitmaxiter}") if fitmaxiter
     command(fdef)                 # define the function
-    command("fit #{params[:ranges]} #{fkt} '-' #{dataset.using} via #{params.delete(:via)}")
+    command("fit #{params[:ranges]} #{fkt} '-' #{using} via #{params.delete(:via)}")
     command(dataset.data_to_s)
     add(fkt, params)           if params.delete(:add)
   end

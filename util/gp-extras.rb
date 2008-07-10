@@ -69,6 +69,9 @@ class Gnuplot
       gp.set('xtics', '0.1')
       gp.set('ylabel', params[:ylabel], true)
       gp.set('ytics', '0.1')
+      gp.set('xrange','[0:1]')
+      gp.set('yrange','[0:1]')
+      gp.set('size', 'ratio -1')
       gp.plot(params) if params[:plot]
     end
   end
