@@ -158,5 +158,22 @@ module Enumerable
   def stat_sum
     inject(0) { |a,b| a+b }
   end
+
+  # computes the average of all values.
+  def stat_avg
+    stat_sum.to_f/length
+  end
+
+  # computes the variance of the values. Please note that this uses
+  # 1/n and not 1/(n-1) 
+  def stat_variance
+    (inject(0.0) { |s,x| s+x*x })/length - stat_avg**2
+  end
+
+  # computes the standard deviation of the values. Please note that this uses
+  # 1/n and not 1/(n-1) 
+  def stat_standard_deviation
+    stat_variance**0.5
+  end
 end
 

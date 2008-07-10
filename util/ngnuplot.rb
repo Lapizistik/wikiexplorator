@@ -13,7 +13,7 @@ class Gnuplot
   # The gnuplot process is started when calling #plot, #splot or #command!
   #
   # At this time all settings collected within this object are piped to
-  # the gnuplot process (in given order). By default the encoding is latin1.
+  # the gnuplot process (in given order).
   #
   # You may give a block to do neat things, e.g.:
   #  Gnuplot.new do |gp|
@@ -47,7 +47,7 @@ class Gnuplot
   #
   # For plotting the contents of only one enumerable see Enumerable#gp_plot().
   def initialize
-    @sets = [['encoding', 'iso_8859_15']]
+    @sets = []
     @datasets = []
     yield(self) if block_given?
   end
@@ -58,10 +58,12 @@ class Gnuplot
   end
 
   # Sets the gnuplot variable var to value.
+  # If _quote_ is true, the value is quoted.
   #
   # All settings and commands will be executed in chronological
   # order when plot/splot is called.
-  def set(var, value='')
+  def set(var, value='', quote=false)
+    value = "\"#{value}\"" if quote
     @sets << [var.to_s, value]
   end
 

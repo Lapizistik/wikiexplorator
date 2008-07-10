@@ -66,6 +66,8 @@ module Mediawiki
     end
 
     # Descriptive statistics on the values of Enumerable _a_.
+    # 
+    # Utility dunction for userstats etc.
     def descstats(a)
       ll = a.length
       a = a.reject { |i| i.respond_to?(:nan?) && i.nan? }
