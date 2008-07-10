@@ -1,0 +1,9 @@
+A simple report for wiki <%= @wiki.to_s %>.
+
+Global user statistics :     avg   stddev  med   min   max
+==========================================================
+<% @wiki.global_userstats.collect do |a| 
+%><%= '%-23s: %7.2f %7.2f %5i %5i %5i' % a %>
+<% end %>
+
+

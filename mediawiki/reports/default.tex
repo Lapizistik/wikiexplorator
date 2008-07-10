@@ -1,0 +1,48 @@
+<%# some convenience definitions %>
+<% wiki = @wiki %>
+<% full = wiki.filter.clone; full.include_all_namespaces %>
+<% wiki.filter.namespace=0 %>
+<% users = @wiki.users %>
+<% pages = @wiki.pages %>
+<% revisions = @wiki.revisions %>
+\documentclass{scrartcl}
+
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tabularx}
+
+\title{Mediawiki Report -- <%= wiki.to_s %>
+}
+\author{mediawikiparser (<\texttt{klaus.stein@uni-bamberg.de}>)}
+
+
+\begin{document}
+\maketitle
+
+\section{Some general data}
+
+We have <%=@wiki.pages(full).length%> pages with 
+<%=@wiki.revisions(full).length%>  revisions from <%=users.length%> 
+users (<%=pages.length%> pages with <%=revisions.length%> revisions in 
+Namespace 0).
+
+\subsection*{Global Wiki Statistics}
+
+\begin{tabular}{>{\bfseries}lrrrrr}
+  &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min} &\textbf{max}\\
+  <% wiki.global_userstats.each do |a| %>%
+  <%=a.shift%> & <%=a.collect { |d| "%.2f" % d}.join('&') %>\\
+  <% end %>%
+\end{tabular}
+
+\section{And a nice distribution}
+<% 
+ur = users.collect { |u| u.revisions.length }
+ur.gp_plot_lorenz(:png=>'lorenz.png', :size => '1000,1000') 
+%>
+\begin{center}
+  \includegraphics[width=\textwidth]{lorenz.png}
+\end{center}
+
+\end{document}
