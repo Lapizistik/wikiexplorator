@@ -230,6 +230,63 @@ class Gnuplot
     s << @datasets.collect { |d| d.data_to_s }.compact.join
   end
 
+  # computes a fit function and adds it to the plotables to be plotted
+  # on #plot or #splot. If you add more than one fitting function
+  # ensure that they use different function and fitting parameter names 
+  # (unless you know what you are doing).
+  # 
+  # _params_ is a Hash of options:
+  # <tt>:function => 'f(x)=a*x+b'</tt>:: the function to be fitted.
+  # <tt>:data => -1</tt>:: 
+  #   the index of the plotable to be used for fitting. Defaults to -1,
+  #   which is the last plotable added (see #add).
+  # <tt>:via => 'a,b'</tt>:: the names of the variables to be fitted
+  # <tt>:ranges</tt>:: ranges to be used for the fitting
+  # <tt>:prepare</tt>:: 
+  #   a String passed to gnuplot before doing the fitting.
+  #   Use this to set initial values to variables, e.g. 
+  #   <tt>:prepare => 'a=3; b=7'</tt>
+  # <tt>:FIT_LIMIT</tt>:: convergence epsilon (see gnuplot documentation)
+  # <tt>:FIT_MAXITER => 100</tt>:: 
+  #   max number of iterations (see gnuplot documentation)
+  # <tt>:add => true</tt>:: 
+  #   if _false_ the fit is done but the function is not added to the 
+  #   plotables (use this if you just want to compute the parameters).
+  # All other _params_ are forwarded to #add.
+  #
+  # Example:
+  #   Gnuplot.new do |gp|
+  #     gp << [1,2,3,4,4,3,3,2,1]
+  #     gp.fit(:function => 'f(x) = a*x**2 + b*x + c', :via => 'a,b,c')
+  #     gp.plot
+  #   end
+  def fit(params={})
+    params = {
+      :function => 'f(x)=a*x+b',
+      :data => -1,
+      :via => 'a,b',
+      :FIT_MAXITER => 100,
+      :add => true
+    }.merge(params)
+    if !((dataset=@datasets[d=params.delete(:data)]) && (data=dataset.data))
+      raise ArgumentError.new("not a valid dataset index: #{d}")
+    end
+    prepare = params.delete(:prepare)
+    fitlimit = params.delete(:FIT_LIMIT) || params.delete(:fit_limit)
+    fitmaxiter = params.delete(:FIT_MAXITER) || params.delete(:fit_maxiter)
+    fdef = params.delete(:function)
+    fdef =~ /^(.*?)=/
+    fkt = $1
+    raise ArgumentError.new("invalid function definition: #{fdef}") unless fkt
+    command(prepare) if prepare   # initialize parameters
+    command("FIT_LIMIT = #{fitlimit}") if fitlimit
+    command("FIT_MAXITER = #{fitmaxiter}") if fitmaxiter
+    command(fdef)                 # define the function
+    command("fit #{params[:ranges]} #{fkt} '-' #{dataset.using} via #{params.delete(:via)}")
+    command(dataset.data_to_s)
+    add(fkt, params)           if params.delete(:add)
+  end
+
   def sets_to_s
     @sets.collect { |set|
       if set.instance_of?(Array)
@@ -271,7 +328,7 @@ class Gnuplot
   # This class holds a String representing a function or an Enumerable
   # to be plotted.
   class DataSet
-    attr_accessor :plotable
+    attr_accessor :cmd, :data
     attr_accessor :title, :with, :using
 
     # _plotable_ may be a string (representing a gnuplot function),
@@ -318,7 +375,9 @@ class Gnuplot
         end
       }.join("\n") + "\ne\n"
     end
-
+    def function?
+      @data == nil
+    end
   end
 end
 
