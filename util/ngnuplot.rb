@@ -339,15 +339,18 @@ class Gnuplot
 
     # _plotable_ may be a string (representing a gnuplot function),
     # or an Enumerable of values or Enumerables
-    # representing a gnuplot dataset. If any Strings are found in the
-    # data, they will be quoted for gnuplot, if Time objects are found
-    # they are converted using :timefmt. If timeformat is not set, they
-    # are silently converted to floats (seconds from 2000-1-1 0:0, as this
-    # is the gnuplot zero time). When using timeformat you have to ensure
-    # by yourself that the gnuplot xdata, timefmt and other settings
-    # are done (and certainly all DataSets must use the same format).
+    # representing a gnuplot dataset. 
     #
-    # Example:
+    # If any Strings are found in the data, they will be quoted for gnuplot.
+    #  
+    # If Time objects are found they are converted using :timefmt. If
+    # timeformat is not set, they are silently converted to floats
+    # (seconds from 2000-1-1 0:0, as this is the gnuplot zero
+    # time). When using timeformat you have to ensure by yourself that
+    # the gnuplot xdata, timefmt and other settings are done (and
+    # certainly all DataSets must use the same format).
+    #
+    # Example for using Times in Dataset:
     #
     #   t = Time.local(2008,1)
     #   step = 60*60*24*30
@@ -439,7 +442,7 @@ module Enumerable
   #   String or Array of Strings giving the axis with timedata.
   #   Defaults to "x".
   #
-  # For other _params_ see Gnuplot#plot and Gnuplot::DataSet#new.
+  # For other _params_ see Gnuplot#plot and Gnuplot::DataSet.new.
   #
   def gp_plot(params={})
     Gnuplot.new do |gp|
