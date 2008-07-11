@@ -3,6 +3,8 @@
 class Gnuplot
   CMD = ENV['RB_GNUPLOT'] || 'gnuplot'
   
+  T0 = Time.gm(2000) # gnuplot zero time
+
   # A collection of all datasets to be plottet 
   attr_reader :datasets
 
@@ -337,7 +339,8 @@ class Gnuplot
 
     # _plotable_ may be a string (representing a gnuplot function),
     # or an Enumerable of values or Enumerables
-    # representing a gnuplot dataset.
+    # representing a gnuplot dataset. If any Strings are found in the
+    # data, they will be quoted for gnuplot.
     # 
     # Params is a Hash of parameters associated with this dataset:
     # :title, :with, :using, :axes, :matrix.
@@ -353,31 +356,41 @@ class Gnuplot
     end
 
     def update(params)
-      @title  = params[:title]  if params.key?(:title)
-      @with   = params[:with]   if params.key?(:with)
-      @using  = params[:using]  if params.key?(:using)
-      @axes   = params[:axes]   if params.key?(:axes)
-      @matrix = params[:matrix] if params.key?(:matrix)
+      @title   = params[:title]
+      @with    = params[:with]
+      @using   = params[:using]
+      @axes    = params[:axes]
+      @matrix  = params[:matrix]
+      @timefmt = params[:timefmt]
     end
     
     def params_to_s
       s="#{@cmd} "
-      s << "matrix " if @matrix
+      s << "using #{@using} "     if @using
+      s << "using 1:2 "           if @timefmt && !@using
+      s << "matrix "              if @matrix
       s << "title \"#{@title}\" " if @title
-      s << "with #{@with} "   if @with
-      s << "using #{@using} " if @using
+      s << "with #{@with} "       if @with
       s << "axes #{@axes} "   if @axes
       s
     end
     def data_to_s
       return nil unless @data # shortcut. Nothing to do.
-      @data.collect { |a|
+      @data.collect { |a| 
         if a.respond_to?(:join)
-          a.join(' ')
+          a.collect { |v| gp_s(v) }.join(' ')
         else
-          a
+          gp_s(a)
         end
       }.join("\n") + "\ne\n"
+    end
+    def gp_s(v)
+      case v
+      when String : '"'+v+'"'
+      when Time   : @timefmt ? v.strftime(@timefmt) : (v-T0)
+      else
+        v
+      end
     end
     def function?
       @data == nil

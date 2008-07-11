@@ -231,7 +231,7 @@ module Mediawiki
   class Wiki
     # Generates a report for the wiki. Returns a String with the report
     # for plain report formats and a String with a filename for complex
-    # report formats. See Report.report for a description of parameters.
+    # report formats. See Report.new for a description of parameters.
     def report(type=:txt, params={})
       Report.new(self, type, params).generate
     end
