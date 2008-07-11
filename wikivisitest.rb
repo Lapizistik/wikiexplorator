@@ -7,8 +7,8 @@ JBRIDGE_OPTIONS = {
 }
 require 'yajb/jbridge'
 include JavaBridge
-#jimport 'wikiVisi.*'
-# jimport 'wikiVisi.DataTable'
+jimport 'visualizer.VisuMain'
+jimport 'visualizer.ruby.FlatCube'
 
 X = 60
 Y = 60
