@@ -340,7 +340,29 @@ class Gnuplot
     # _plotable_ may be a string (representing a gnuplot function),
     # or an Enumerable of values or Enumerables
     # representing a gnuplot dataset. If any Strings are found in the
-    # data, they will be quoted for gnuplot.
+    # data, they will be quoted for gnuplot, if Time objects are found
+    # they are converted using :timefmt. If timeformat is not set, they
+    # are silently converted to floats (seconds from 2000-1-1 0:0, as this
+    # is the gnuplot zero time). When using timeformat you have to ensure
+    # by yourself that the gnuplot xdata, timefmt and other settings
+    # are done (and certainly all DataSets must use the same format).
+    #
+    # Example:
+    #
+    #   t = Time.local(2008,1)
+    #   step = 60*60*24*30
+    #   # we create an array of arrays of the form [[t1, v1], [t2,v2], ...]
+    #   # with ti Times and vi some floats
+    #   a = (1..10).collect { |i| [t+=step, i+rand ] }
+    #   puts 'See our nice array:', a.inspect
+    #   fmt = '%Y-%m-%d'
+    #   Gnuplot.new do |gp|
+    #     gp.set('xdata', 'time')
+    #     gp.set('timefmt', fmt, true)
+    #     gp.set('format x', '%b', true)
+    #     gp.add(a, :timefmt => fmt, :with => 'lines')
+    #     gp.plot
+    #   end
     # 
     # Params is a Hash of parameters associated with this dataset:
     # :title, :with, :using, :axes, :matrix.
@@ -411,10 +433,21 @@ module Enumerable
   #  [[1,1],[2,2],[4,3],[3,4]].gp_plot(:with => 'lines', :png => "test.png")
   #  "sin(x)".gp_plot
   #
-  # For _params_ see Gnuplot#plot and Gnuplot::DataSet#new.
+  # _params_:
+  # :timefmt:: format string for Time entries.
+  # :timeaxis:: 
+  #   String or Array of Strings giving the axis with timedata.
+  #   Defaults to "x".
+  #
+  # For other _params_ see Gnuplot#plot and Gnuplot::DataSet#new.
   #
   def gp_plot(params={})
     Gnuplot.new do |gp|
+      if fmt=params[:timefmt]
+        axis = params.delete(:timeaxis) || 'x'
+        axis.each { |i| gp.set("#{i}data",'time') }
+        gp.set('timefmt', fmt, true)
+      end
       gp << gp_data(params)
       gp.plot(params)
     end
