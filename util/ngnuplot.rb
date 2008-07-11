@@ -282,13 +282,13 @@ class Gnuplot
     fdef = params.delete(:function)
     fdef =~ /^(.*?)=/
     fkt = $1
-    using = params.delete(:using) || dataset.using
+    using = params.delete(:using) || dataset.using || '1:2'
     raise ArgumentError.new("invalid function definition: #{fdef}") unless fkt
     command(prepare) if prepare   # initialize parameters
     command("FIT_LIMIT = #{fitlimit}") if fitlimit
     command("FIT_MAXITER = #{fitmaxiter}") if fitmaxiter
     command(fdef)                 # define the function
-    command("fit #{params[:ranges]} #{fkt} '-' #{using} via #{params.delete(:via)}")
+    command("fit #{params[:ranges]} #{fkt} '-' using #{using} via #{params.delete(:via)}")
     command(dataset.data_to_s)
     add(fkt, params)           if params.delete(:add)
   end
@@ -387,12 +387,12 @@ class Gnuplot
       @axes    = params[:axes]
       @matrix  = params[:matrix]
       @timefmt = params[:timefmt]
+      @using = "1:2" if @timefmt && !@using
     end
     
     def params_to_s
       s="#{@cmd} "
       s << "using #{@using} "     if @using
-      s << "using 1:2 "           if @timefmt && !@using
       s << "matrix "              if @matrix
       s << "title \"#{@title}\" " if @title
       s << "with #{@with} "       if @with

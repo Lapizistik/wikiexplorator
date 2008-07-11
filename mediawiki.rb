@@ -50,6 +50,7 @@ require 'mediawiki/core'
 require 'mediawiki/db'
 require 'mediawiki/functions'
 require 'mediawiki/graph'
+require 'mediawiki/report.rb'
 
 module Mediawiki
   Version = 0.8
