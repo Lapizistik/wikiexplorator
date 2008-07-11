@@ -11,6 +11,22 @@ module Mediawiki
   module Report
     # The directory the templates are found.
     TemplateDir = File.join(File.dirname(__FILE__),'reports')
+
+    # creates a Report of type _type_ for the _wiki_. _type_ may be
+    # one of <tt>:txt</tt>, <tt>:html</tt>, <tt>tex</tt> or <tt>pdf</tt>.
+    #
+    # For parameter description see the new method of the corresponding
+    # class in Report.
+    def Report.new(wiki, type=:txt, params={})
+      {
+        :txt    => PlainText,
+        :html   => HTML,
+        :tex    => LaTeX,
+        :latex  => LaTeX,
+        :pdf    => PDF
+      }[type].new(wiki, params)
+    end
+
     # Base class for all reports. Not to be used directly.
     class Base
       # creates a Report
@@ -26,23 +42,28 @@ module Mediawiki
       # <tt>:template</tt> => "default":: the base name of the template
       # <tt>:templatedir</tt> => TemplateDir:: where templates are to be found
       # <tt>:language</tt> => wiki.language:: language of the template file
-      # <tt>:templatefile</tt>=><i>templatedir/template.language.type</i>::
+      # <tt>:templatefile</tt>=><i>templatedir/template.language.ttype</i>::
       #   the full filename of the template. 
+      # <tt>:type</tt>::
+      #   type of the report. Used to find the template (if :ttype is not set).
+      # <tt>:ttype</tt>:: 
+      #   file extension for the template file. Used if this differs from
+      #   the report type.
       # If the template file for the selected language does not exist,
-      # <i>templatedir/template.type</i> is tried.
+      # <i>templatedir/template.ttype</i> is tried.
       def initialize(wiki, params={})
         @wiki = wiki
         params = {
           :templatedir => TemplateDir,
           :template => 'default',
           :language => @wiki.language,
-          :type => '',
         }.merge(params)
 
         @type = params[:type]
+        ttype = params[:ttype] || @type
 
         # searching for the template ...
-        tmpl = "#{params[:template]}.#{params[:language]}.#{@type}"
+        tmpl = "#{params[:template]}.#{params[:language]}.#{ttype}"
         tmpl_dir = params[:templatedir]
         lang = true
         tmpl_full_l = File.join(tmpl_dir, tmpl)
@@ -51,7 +72,7 @@ module Mediawiki
           @erb = ERB.new(File.read(tmpl_full))
         rescue Errno::ENOENT
           if lang
-            tmpl = "#{params[:template]}.#{params[:type]}"
+            tmpl = "#{params[:template]}.#{ttype}"
             tmpl_full = File.join(tmpl_dir, tmpl)
             warn "Reading '#{tmpl_full_l}' failed. Trying '#{tmpl_full}'."
             lang = false
@@ -77,13 +98,14 @@ module Mediawiki
 
     # Plain Text reports which do not need temporary files
     class PlainText < Base
-      # see Base#new for parameters. Type is set to "txt".
+      # see Base#new for parameters. :ttype is set to "txt".
       def initialize(wiki, params={})
-        super(wiki, { :type => 'txt' }.merge(params))
+        super(wiki, { :ttype => 'txt' }.merge(params))
       end
       # pretty prints this report on the screen.
       def pp
-        puts generate
+        @generated ||= generate
+        puts @generated
       end
     end
 
@@ -113,17 +135,17 @@ module Mediawiki
       # <tt>:filename</tt>:: 
       #   the name of the report file. To be given without path but with
       #   extension. Defaults to <tt>report</tt>.<i>type</i>.
-      # <tt>:type</tt>:: 
-      #   type of the report. Used to find the template and to generate the
-      #   default report filename (if outtype is not set).
-      # <tt>:outtype</tt>::
-      #   file extension for the report file. Used if this differs from
-      #   the template extension.
+      # <tt>:type</tt>::
+      #   type of the report. Used to find the template (if :ttype is not set)
+      #   and to generate the default report filename.
+      # <tt>:ttype</tt>:: 
+      #   file extension for the template file. Used if this differs from
+      #   the report type.
       # For all further parameters see Base#new
       def initialize(wiki, params={})
         super(wiki, params)
         @basedir = params[:basedir] || Dir.tmpdir
-        @filename = params[:filename] || ('report.'+(params[:outtype] ||@type))
+        @filename = params[:filename] || ('report.' + @type)
         mode = params[:mode] || 0700
         mode = mode.oct if mode.kind_of?(String)
         if @outputdir = params[:outputdir]
@@ -161,7 +183,7 @@ module Mediawiki
     
     # HTML Reports
     class HTML < DirBase
-      # see DirBase#new for parameters. Type is set to "html".
+      # see DirBase#new for parameters. :ttype is set to "html".
       def initialize(wiki, params={})
         super(wiki, {:type => 'html'}.merge(params))
       end
@@ -169,7 +191,7 @@ module Mediawiki
 
     # LaTeX Reports. You may prefer PDF.
     class LaTeX < DirBase
-      # see DirBase#new for parameters. Type is set to "tex".
+      # see DirBase#new for parameters. :ttype is set to "tex".
       def initialize(wiki, params={})
         super(wiki, {:type => 'tex'}.merge(params))
       end
@@ -179,9 +201,10 @@ module Mediawiki
     class PDF < DirBase
       TeXname = 'report.tex'
 
-      # see DirBase#new for parameters. Type is set to "tex", outtype is "pdf".
+      # see DirBase#new for parameters. 
+      # :ttype is set to "tex", :type is "pdf".
       def initialize(wiki, params={})
-        super(wiki, {:type => 'tex', :outtype => 'pdf'}.merge(params))
+        super(wiki, {:type => 'pdf', :ttype => 'tex'}.merge(params))
         @texname = TeXname
       end
 
@@ -203,6 +226,14 @@ module Mediawiki
         end
         File.join(@outputdir, @filename)
       end
+    end
+  end
+  class Wiki
+    # Generates a report for the wiki. Returns a String with the report
+    # for plain report formats and a String with a filename for complex
+    # report formats. See Report.report for a description of parameters.
+    def report(type=:txt, params={})
+      Report.new(self, type, params).generate
     end
   end
 end
