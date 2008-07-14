@@ -18,48 +18,105 @@ import prefuse.visual.VisualTable;
  * @author Rene Wegener
  *
  */
-public class Layouts //extends SpecifiedLayout
+public class Layouts 
 {
-	protected int pixelSize;
-	
-	/*public Layouts(String arg0, String arg1, String arg2,
-			int ps) 
-	{
-		super(arg0, arg1, arg2);
-		pixelSize = ps;
-	}*/
-
-	
 	/**
-	 * create a layout row by row. The desired size is
-	 * a square. As for all methods, several parameters have 
-	 * to be given:
+	 * create a layout row by row. As for all methods, 
+	 * several parameters have to be given:
 	 * v is a vector holding the Points that will be
 	 * arranged. startX and startY are the x- and y-
 	 * coordinates at which the layout algorithm will
 	 * start to place the points. itemWidth and itemHeight
 	 * represent the size of the items that shall be placed.
-	 */
-	public static void createSimpleLayout(Vector v, int startX, int startY, int itemWidth,
+	 * This algorithm tries to create a square matrix.
+	*/
+	public static void createRowLayout(Vector v, int startX, int startY, int itemWidth,
 			int itemHeight)
 	{
-		// how many space is needed for the whole
-		// set of items?
 		int squareWidth = (int)(Math.ceil(Math.sqrt(v.size())));
+		createRowLayout(v, startX, startY, itemWidth, itemHeight,
+				squareWidth, squareWidth);
+	}
+	
+	/**
+	 * create a layout row by row. As for all methods, 
+	 * several parameters have to be given:
+	 * v is a vector holding the Points that will be
+	 * arranged. startX and startY are the x- and y-
+	 * coordinates at which the layout algorithm will
+	 * start to place the points. itemWidth and itemHeight
+	 * represent the size of the items that shall be placed.
+	 * matrixWidth and matrixHeight define the desired size
+	 * of the whole matrix.
+	 */
+	public static void createRowLayout(Vector v, int startX, int startY, int itemWidth,
+			int itemHeight, int matrixWidth, int matrixHeight)
+	{
+		if (matrixWidth <= 0 && matrixHeight <= 0)
+		{
+			matrixWidth = (int)(Math.ceil(Math.sqrt(v.size())));
+			matrixHeight = (int)(Math.ceil(Math.sqrt(v.size())));
+		}
+		else if (matrixWidth <= 0)
+		{
+			matrixWidth = (int)Math.ceil(v.size() / (double)matrixHeight);
+		}
+		else if (matrixHeight <= 0)
+		{
+			matrixHeight = (int)Math.ceil(v.size() / (double)matrixWidth);
+		}
 		int currentIndex = 0;
-		for (int i = 0; i < squareWidth; i++)
-			for (int j = 0; j < squareWidth; j++)
+		for (int y = 0; y < matrixHeight; y++)
+			for (int x = 0; x < matrixWidth; x++)
 			{
 				if (currentIndex >= v.size())
 					break;
 				Point actItem = (Point)v.get(currentIndex);
-				int x = startX + j * itemWidth;
-				int y = startY + i * itemHeight;
-				actItem.setLocation(x, y);
+				actItem.setLocation(startX + x * itemWidth, 
+						startY + y * itemHeight);
 				currentIndex++;
 			}
 	}
 	
+	/**
+	 * create a layout column by column. As for all methods, 
+	 * several parameters have to be given:
+	 * v is a vector holding the Points that will be
+	 * arranged. startX and startY are the x- and y-
+	 * coordinates at which the layout algorithm will
+	 * start to place the points. itemWidth and itemHeight
+	 * represent the size of the items that shall be placed.
+	 * matrixWidth and matrixHeight define the desired size
+	 * of the whole matrix.
+	 */
+	public static void createColumnLayout(Vector v, int startX, int startY, int itemWidth,
+			int itemHeight, int matrixWidth, int matrixHeight)
+	{
+		if (matrixWidth <= 0 && matrixHeight <= 0)
+		{
+			matrixWidth = (int)(Math.ceil(Math.sqrt(v.size())));
+			matrixHeight = (int)(Math.ceil(Math.sqrt(v.size())));
+		}
+		else if (matrixWidth <= 0)
+		{
+			matrixWidth = (int)Math.ceil(v.size() / (double)matrixHeight);
+		}
+		else if (matrixHeight <= 0)
+		{
+			matrixHeight = (int)Math.ceil(v.size() / (double)matrixWidth);
+		}
+		int currentIndex = 0;
+		for (int x = 0; x < matrixWidth; x++)
+			for (int y = 0; y < matrixHeight; y++)
+			{
+				if (currentIndex >= v.size())
+					break;
+				Point actItem = (Point)v.get(currentIndex);
+				actItem.setLocation(startX + x * itemWidth, 
+						startY + y * itemHeight);
+				currentIndex++;
+			}
+	}
 	/**
 	 * Create a recursive Morton Z-Curve. Although the method
 	 * will work on a set of items of any size, the best
@@ -306,17 +363,8 @@ public class Layouts //extends SpecifiedLayout
 					if (currentIndex >= v.size())
 						break;
 					VisualItem actItem = ((VisualItem)v.get(currentIndex));
-					if (GlyphTable.isGlyph(actItem))
-					{
-						actItem.set("xCor", new Integer(posX));
-						actItem.set("yCor", new Integer(posY));
-					}
-					else
-					{
-						int index = ((Integer)actItem.get("index")).intValue();
-						//gt.setXAt(posX, index);
-						//gt.setYAt(posY, index);
-					}
+					actItem.set("xCor", new Integer(posX));
+					actItem.set("yCor", new Integer(posY));
 					posX += itemWidth;
 					currentIndex++;
 				}

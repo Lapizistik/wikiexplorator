@@ -7,10 +7,11 @@ import prefuse.Visualization;
 import prefuse.visual.AggregateTable;
 import prefuse.visual.VisualItem;
 import prefuse.visual.VisualTable;
+import visualizer.StringConstants;
 
 /**
  * One of the central classes of the program. GlyphTable
- * is a VisualTable whcih means that it holds all VisualItems
+ * is a VisualTable which means that it holds all VisualItems
  * that represent glyph icons. In addition it contains
  * general data like the z axis description.
  * 
@@ -22,7 +23,7 @@ public class GlyphTable extends VisualTable
 	protected String data, xAxisTitle, yAxisTitle, zAxisTitle;
 	protected int[] x;
 	protected int[] y;
-	protected int width, height;
+	protected int width, height, xAxisCount, yAxisCount, zAxisCount;
 	protected String[] pixelDesc;
 	
 	public GlyphTable(Visualization vis, String str)
@@ -30,13 +31,22 @@ public class GlyphTable extends VisualTable
 		super(vis, str);
 	}
 	
-	public void init(String dat, int zAxisCount)
+	public void init(String dat, int xAxis, int yAxis, int zAxis)
 	{
 		data = dat;
-		x = new int[zAxisCount];
-		y = new int[zAxisCount];
-		pixelDesc = new String[zAxisCount];
-		for (int i = 0; i < zAxisCount; i++)
+		xAxisCount = xAxis;
+		yAxisCount = yAxis;
+		zAxisCount = zAxis;
+		int numberOfValues;
+		if (data.equals(StringConstants.Data3D))
+			numberOfValues = zAxisCount;
+		else
+			numberOfValues = xAxisCount;
+		x = new int[numberOfValues];
+		y = new int[numberOfValues];
+		pixelDesc = new String[numberOfValues];
+		
+		for (int i = 0; i < numberOfValues; i++)
 		{
 			x[i] = 0;
 			y[i] = 0;
@@ -66,7 +76,7 @@ public class GlyphTable extends VisualTable
 		return y[index];
 	}
 	
-	public void setZDescAt(String desc, int index)
+	public void setDescAt(String desc, int index)
 	{
 		pixelDesc[index] = desc;
 	}
@@ -76,7 +86,22 @@ public class GlyphTable extends VisualTable
 		return pixelDesc[index];
 	}
 	
+	public int getXAxisCount()
+	{
+		return xAxisCount;
+	}
+	
+	public int getYAxisCount()
+	{
+		return yAxisCount;
+	}
+	
 	public int getZAxisCount()
+	{
+		return zAxisCount;
+	}
+	
+	public int getPixelCount()
 	{
 		return pixelDesc.length;
 	}
@@ -121,11 +146,21 @@ public class GlyphTable extends VisualTable
 		return data;
 	}
 	
-	public static boolean isGlyph(VisualItem item)
+	public void updateMeans(int start, int stop)
 	{
-		if (item.getGroup().equals("glyphTable"))
-			return true;
-		else
-			return false;
+		for (int i = 0; i < getRowCount(); i++)
+		{
+			VisualItem item = getItem(i);
+			double val = 0, scalVal = 0;
+			for (int j = start; j <= stop; j++)
+			{
+				val += ((double[])item.get("value"))[j];
+				scalVal += ((double[])item.get("scaledValue"))[j];
+			}
+			val /= (stop - start + 1);
+			scalVal /= (stop - start + 1);
+			item.set("mean", new Double(val));
+			item.set("scaledMean", new Double(scalVal));
+		}
 	}
 }

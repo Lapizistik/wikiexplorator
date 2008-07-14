@@ -66,83 +66,63 @@ public class PixelRenderer extends LabelRenderer
 	
 	public void render(Graphics2D g, VisualItem item) 
 	{
-			if (GlyphTable.isGlyph(item))
+			int startX = ((Integer)item.get("xCor")).intValue();
+	        int startY = ((Integer)item.get("yCor")).intValue();
+	        int w = gt.getWidth() + 1;
+	        int h = gt.getHeight() + 1;
+	        // draw a rectangle
+	        if (frame.isBorderOn())
 	        {
-	        	int startX = ((Integer)item.get("xCor")).intValue();
-	        	int startY = ((Integer)item.get("yCor")).intValue();
-	        	int w = gt.getWidth() + 1;
-	        	int h = gt.getHeight() + 1;
-	        	// draw a rectangle
-	        	if (frame.isBorderOn())
-	        	{
-	        		g.setColor(Color.black);
-	        		g.drawRect(startX - 1, startY - 1, w, h);
-	        	}
-	        	// fill it with the pixels
-	        	for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
-	        	{
-	        		int pixelX = gt.getXAt(i);
-	        		int pixelY = gt.getYAt(i);
-	        		double val = ((double[])item.get("scaledValue"))[i];
-	        		drawPixel(g, val, startX + pixelX, startY + pixelY);
-	        	}
-	        	// now draw a label 
-	        	if (frame.getGlyphLayout().equals(StringConstants.TableLayout))
-	        	{
-	        		int x = ((Integer)item.get("xCor")).intValue();
-        			int y = ((Integer)item.get("yCor")).intValue();
-        			// does this item belong to the first row?
-        			int fontHeight;
-        			if (gt.getWidth() < gt.getHeight())
-        				fontHeight = gt.getWidth() - 2;
-        			else
-        				fontHeight = gt.getHeight() - 2;
-        			if (fontHeight < 0)
-        				fontHeight = 0;
-        			if (y == 0)
-	        		{
-	        			AffineTransform fontAT = new AffineTransform();
-	        			fontAT.rotate(Math.toRadians(270));
-	        			Font font = (new Font("ARIAL", Font.PLAIN, fontHeight)).deriveFont(fontAT);
-	        			String desc = (String)(item.get("desc"));
-			        	g.setColor(Color.black);
-			        	g.setFont(font);
-			        	g.drawString(desc, x + fontHeight/2 + gt.getWidth()/2, y - 2);
-		        	}
-	        		// does this item belong to the left column?
-	        		if (x == 0)
-	        		{
-	        			Font font =  new Font("Arial", Font.PLAIN, fontHeight);
-	        			String desc = (String)(item.get("desc"));
-			        	g.setColor(Color.black);
-			        	g.setFont(font);
-			        	int stringWidth = (int)(font.getStringBounds(desc, g.getFontRenderContext())).getWidth();
-			        	g.drawString(desc, x - stringWidth - 2, y + fontHeight/2 + gt.getHeight()/2);
-		        	}
-	        	}
-	        	/*if (item.canGetString("author") && textSize > 0 &&
-	        			!table)
-	        	{
-		        	String desc = (String)(item.get("author"));
-		        	if (desc.length() > 10)
-		        		desc = desc.substring(0, 10) + ".";
-		        	g.setColor(Color.black);
-		        	g.setFont(new Font("Arial", Font.PLAIN, textSize - 2));
-		        	g.drawString(desc, x + 1, y + textSize - 1);
-	        	}*/
+	        	g.setColor(Color.black);
+	        	g.drawRect(startX - 1, startY - 1, w, h);
 	        }
-	        /*else if (item.get("type").equals("label") && table)
+	        // fill it with the pixels
+	        for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
+	        {
+	        	int pixelX = gt.getXAt(i);
+	        	int pixelY = gt.getYAt(i);
+	        	double val = ((double[])item.get("scaledValue"))[i];
+	        	drawPixel(g, val, startX + pixelX, startY + pixelY);
+	        }
+	        // now draw a label 
+	        if (frame.getGlyphLayout().equals(StringConstants.TableLayout) ||
+	        		frame.getGlyphLayout().equals(StringConstants.OptimizedTableLayout))
 	        {
 	        	int x = ((Integer)item.get("xCor")).intValue();
-	        	int y = ((Integer)item.get("yCor")).intValue();
-	        	String text = (String)(item.get("text"));
-		        if (!text.equals(""))
-		        {
-		        	g.setColor(Color.black);
-		        	g.setFont(new Font("Arial", Font.PLAIN, textSize));
-		        	g.drawString(text, x, y);
-		        }
-	        }*/
+        		int y = ((Integer)item.get("yCor")).intValue();
+        		// does this item belong to the first row?
+        		int fontHeight;
+        		if (gt.getWidth() < gt.getHeight())
+        			fontHeight = gt.getWidth() - 2;
+        		else
+        			fontHeight = gt.getHeight() - 2;
+        		if (fontHeight < 0)
+        			fontHeight = 0;
+        		if (y == 0)
+	        	{
+	        		AffineTransform fontAT = new AffineTransform();
+	        		fontAT.rotate(Math.toRadians(270));
+	        		Font font = (new Font("ARIAL", Font.PLAIN, fontHeight)).deriveFont(fontAT);
+	        		String desc;
+	        		desc = (String)(item.get("desc"));
+	        		desc = desc.substring(0, desc.indexOf(","));
+			      	g.setColor(Color.black);
+			       	g.setFont(font);
+			       	g.drawString(desc, x + fontHeight/2 + gt.getWidth()/2, y - 2);
+		       	}
+	        	// does this item belong to the left column?
+	        	if (x == 0)
+	        	{
+	        		Font font =  new Font("Arial", Font.PLAIN, fontHeight);
+	        		String desc;
+	        		desc = (String)(item.get("desc"));
+	        		desc = desc.substring(desc.indexOf(",") + 2, desc.length());
+			       	g.setColor(Color.black);
+			       	g.setFont(font);
+			       	int stringWidth = (int)(font.getStringBounds(desc, g.getFontRenderContext())).getWidth();
+			       	g.drawString(desc, x - stringWidth - 2, y + fontHeight/2 + gt.getHeight()/2);
+		       	}
+	        }
 	}
 	
 	public void setTableLabeling(boolean bol)
@@ -197,13 +177,10 @@ public class PixelRenderer extends LabelRenderer
 	 protected Shape getRawShape(VisualItem item) 
 	 {
 		 int x = 0, y = 0, width = 0, height = 0;
-		 if (GlyphTable.isGlyph(item))
-		 {
-			 x = ((Integer)item.get("xCor")).intValue();
-			 y = ((Integer)item.get("yCor")).intValue();
-			 width = gt.getWidth();
-			 height = gt.getHeight();
-		 }
+		 x = ((Integer)item.get("xCor")).intValue();
+		 y = ((Integer)item.get("yCor")).intValue();
+		 width = gt.getWidth();
+		 height = gt.getHeight();
 		 // get bounding box dimensions
 	     m_bbox.setFrame(x, y, width, height);
 	     
