@@ -18,6 +18,7 @@ import visualizer.data.DataSet;
 import visualizer.data.DataTable;
 import visualizer.display.GlyphTable;
 import visualizer.display.Layouts;
+import visualizer.display.OptimizingLayouts;
 import visualizer.display.PixelRenderer;
 import visualizer.userInterface.PixelFrame;
 import visualizer.userInterface.PixelSelector;
@@ -132,29 +133,43 @@ public class VisuMain
 	{
 		int startX = 0;
 		int startY = 0;
-		int space = 5;
+		int space = 3;
 		glyphLayout = layout;
 		Vector v = new Vector();
-	    for (int i = 0; i < glyphTable.getRowCount(); i++)
-	    {
-	    	v.add(new Point(((Integer)glyphTable.getItem(i).get("xCor")).intValue(), 
-	    			((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
-	    }
-	    //Sort.sort(v, glyphSorting);
+		if (!layout.equals(StringConstants.OptimizedTableLayout))
+		    for (int i = 0; i < glyphTable.getRowCount(); i++)
+		    	v.add(new Point(((Integer)glyphTable.getItem(i).get("xCor")).intValue(), 
+		    			((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
+		else
+		    for (int i = 0; i < glyphTable.getRowCount(); i++)
+		    	v.add(glyphTable.getItem(i));
+		//Sort.sort(v, glyphSorting);
 	    if (layout.equals(StringConstants.ZLayout))
 	    	Layouts.createZLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
 	    else if (layout.equals(StringConstants.MyZLayout))
 	    	Layouts.createFlexibleZLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
 	    else if (layout.equals(StringConstants.RowLayout) || 
 	    		layout.equals(StringConstants.TableLayout))
-	    	Layouts.createSimpleLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
-		
-	    for (int i = 0; i < v.size(); i++)
-		{
-			Point p = ((Point)v.get(i));
-			glyphTable.getItem(i).set("xCor", new Integer((int)p.getX()));
-			glyphTable.getItem(i).set("yCor", new Integer((int)p.getY()));
-		}
+	    {	
+	    	if (glyphTable.getDataType().equals(StringConstants.Data3D))
+	    		Layouts.createRowLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space,
+	   			glyphTable.getXAxisCount(), glyphTable.getYAxisCount());
+	    	else
+	    		Layouts.createRowLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space, 0, 0);
+	    }
+	    else if (layout.equals(StringConstants.OptimizedTableLayout))
+	    {
+	    	OptimizingLayouts.createOrderedTableLayout(v, startX, startY, glyphTable.getWidth() + space, 
+	    			glyphTable.getHeight() + space, glyphTable);
+	    }
+	    
+	    if (!layout.equals(StringConstants.OptimizedTableLayout))
+		    for (int i = 0; i < v.size(); i++)
+			{
+				Point p = ((Point)v.get(i));
+				glyphTable.getItem(i).set("xCor", new Integer((int)p.getX()));
+				glyphTable.getItem(i).set("yCor", new Integer((int)p.getY()));
+			}
 	    // update the labeling:
 	    // if data is ordered by author names and layout
 	    // is simple layout, we have got a table layout
@@ -174,11 +189,21 @@ public class VisuMain
 	
 	public void updatePixelLayout(String layout)
 	{
+		if (layout.equals(StringConstants.RowLayout))
+			updatePixelLayout(layout, glyphTable.getWidth(), 0);
+		else if (layout.equals(StringConstants.ColumnLayout))
+			updatePixelLayout(layout, 0, glyphTable.getHeight());
+		else
+			updatePixelLayout(layout, 0, 0);
+	}
+	
+	public void updatePixelLayout(String layout, int matrixWidth, int matrixHeight)
+	{
 		pixelLayout = layout;
 		// create a Vector of Points which represent the 
 		// pixels
 		Vector pixels = new Vector();
-		for (int i = 0; i < glyphTable.getZAxisCount(); i++)
+		for (int i = 0; i < glyphTable.getPixelCount(); i++)
 		{
 			if (i >= frame.getStartIndex() && i <= frame.getStopIndex())
 				pixels.add(new Point(glyphTable.getXAt(i),
@@ -192,8 +217,11 @@ public class VisuMain
 	    	Layouts.createFlexibleZLayout(pixels, 
 	    	0, textSize, 1, 1);
 	    else if (layout.equals(StringConstants.RowLayout))
-	    	Layouts.createSimpleLayout(pixels, 
-	    	0, textSize, 1, 1);
+	    	Layouts.createRowLayout(pixels, 
+	    	0, textSize, 1, 1, matrixWidth, matrixHeight);
+	    else if (layout.equals(StringConstants.ColumnLayout))
+	    	Layouts.createColumnLayout(pixels, 
+	    	0, textSize, 1, 1, matrixWidth, matrixHeight);
 	    else if (layout.equals(StringConstants.FatRowLayout))
 	    	Layouts.createLineLayout(pixels, 
 	    	0, textSize, 1, 1);
@@ -239,8 +267,8 @@ public class VisuMain
 	
     public static void main(String[] args) 
     {
-    	VisuMain visuMain = new VisuMain();
-    	TestCube test = new TestCube();
-    	visuMain.init(test);
+    	VisuMain visuMain1 = new VisuMain();
+    	DataSet test = new TestCube();
+    	visuMain1.init(test);
     }
 }

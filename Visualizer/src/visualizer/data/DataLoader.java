@@ -88,10 +88,10 @@ public class DataLoader
 	     }
          
          // create z axis description
-	     gt.init(StringConstants.Data2D, dt.getXAxisCount());
+	     gt.init(StringConstants.Data2D, dt.getXAxisCount(), dt.getYAxisCount(), 0);
 	     for (int x = 0; x < dt.getXAxisCount(); x++)
 	     {
-	    	 gt.setZDescAt(dt.getXAxisNameAt(x), x);
+	    	 gt.setDescAt(dt.getXAxisNameAt(x), x);
 	     }
     }
 	
@@ -115,6 +115,7 @@ public class DataLoader
         gt.addColumn("xCor", int.class);
         gt.addColumn("yCor", int.class);
         gt.addColumn("mean", double.class);
+        gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
         gt.addColumn("scaledValue", double[].class);
         // first create all Glyphs  
@@ -131,9 +132,9 @@ public class DataLoader
       	}
     	
         int currentIndex = 0;
-        for (int x = 0; x < dc.getXAxisCount(); x++)
+        for (int y = 0; y < dc.getYAxisCount(); y++)
         {
-        	for (int y = 0; y < dc.getYAxisCount(); y++)
+        	for (int x = 0; x < dc.getXAxisCount(); x++)
         	{
 	        	VisualItem newItem = gt.addItem();
 	        	newItem.set("index", new Integer(currentIndex));
@@ -144,7 +145,7 @@ public class DataLoader
 	        	// the values for the pixels are assumed to be stored
 	        	// in the z-axis
 	        	double[] val, scalVal;
-	        	double sum = 0;
+	        	double sum = 0, scaledMean = 0;
 	        	val = new double[dc.getZAxisCount()];
 	        	scalVal = new double[dc.getZAxisCount()];
 	        	for (int z = 0; z < dc.getZAxisCount(); z++)
@@ -152,11 +153,14 @@ public class DataLoader
 	            	val[z] = dc.getValueAt(x, y, z);
 	        		scalVal[z] = val[z] / highest;
 	        		sum += val[z];
+	        		scaledMean += scalVal[z];
 		       	}
 	        	sum /= (double)dc.getZAxisCount();
+	        	scaledMean /= (double)dc.getZAxisCount();
 	        	newItem.set("value", val);
 	        	newItem.set("scaledValue", scalVal);
 	        	newItem.set("mean", new Double(sum));
+	        	newItem.set("scaledMean", new Double(scaledMean));
 	        	
 	        	currentIndex++;
 	     	}// end of for y
@@ -189,10 +193,10 @@ public class DataLoader
 	         newItem.set("text", dc.getYAxisNameAt(i));
 	     }*/
 	     // create z axis description
-	     gt.init(StringConstants.Data3D, dc.getZAxisCount());
+	     gt.init(StringConstants.Data3D, dc.getXAxisCount(), dc.getYAxisCount(), dc.getZAxisCount());
 	     for (int z = 0; z < dc.getZAxisCount(); z++)
 	     {
-	    	 gt.setZDescAt(dc.getZAxisNameAt(z), z);
+	    	 gt.setDescAt(dc.getZAxisNameAt(z), z);
 	     }
     } // end of loadCube
 }

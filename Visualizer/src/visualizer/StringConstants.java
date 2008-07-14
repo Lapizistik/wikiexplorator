@@ -14,13 +14,15 @@ package visualizer;
  */
 public class StringConstants 
 {
-	public static String RowLayout = "Zeilenweise Anordnung",
-		ColumnLayout = "Spaltenweise Anordnung",
+	public static String RowLayout = "Zeile fuer Zeile",
+		ColumnLayout = "Spalte fuer Spalte",
 		ZLayout = "Morton Z-Kurve",
 		MyZLayout = "Nicht quadratische Z-Kurve",
 		HilbertLayout = "Hilbert Kurve",
 		TableLayout = "Tabelle",
+		OptimizedTableLayout = "Ähnlichkeitstabelle",
 		FatRowLayout = "Schlangenlinien",
+		MatrixLayout = "Matrix",
 		GrayScale = "Grauwertskala",
 		HeatScale = "Hitzeskala",
 		GlyphBorders = "Glyphenumrandung",

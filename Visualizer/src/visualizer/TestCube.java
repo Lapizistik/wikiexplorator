@@ -14,11 +14,34 @@ import visualizer.data.DataCube;
  */
 public class TestCube extends DataCube
 {
+	double[][][] arr;
 	/**
      * create new TestCube Object
      */
 	public TestCube()
 	{
+		arr = new double[getXAxisCount()][getYAxisCount()][getZAxisCount()];
+		for (int y = 0; y < getYAxisCount(); y++)
+			for (int x = y; x < getXAxisCount(); x++)
+				for (int z = 0; z < getZAxisCount(); z++)
+				{
+					if (x == y)
+						arr[x][y][z] = 0;
+					else if (z == 0)
+					{
+						//if (Math.random() > 0.95)
+						//	arr[x][y][z] = 1;
+						//else
+						//	arr[x][y][z] = 0;
+						arr[x][y][z] = Math.random();
+					}
+					else
+						arr[x][y][z] = arr[x][y][z-1] + 
+							(Math.random() / 20) - 0.025d;
+					if (arr[x][y][z] < 0)
+						arr[x][y][z] = 0;
+					arr[y][x][z] = arr[x][y][z];
+				}
 	}
     
 	/**
@@ -26,17 +49,17 @@ public class TestCube extends DataCube
      */
 	public int getZAxisCount()
 	{
-		return 300;
+		return 250;
 	}
 	
 	public int getXAxisCount()
 	{
-		return 60;
+		return 20;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 60;
+		return 20;
 	}
 	
     /**
@@ -44,7 +67,7 @@ public class TestCube extends DataCube
      */
     public double getValueAt(int x, int y, int z)
 	{
-    	return (x * y * z);
+    	return arr[x][y][z];
 	}
 	
    /**
