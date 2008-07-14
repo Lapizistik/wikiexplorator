@@ -100,7 +100,10 @@ public class PixelSelector extends SubtreeDragControl
 				frame.setPixelDesc(selection);
 				select1 = -1;
 				select2 = -1;
+				at.updateMeans(startIndex, stopIndex);
 				frame.setRange(startIndex, stopIndex);
+				frame.updatePixelLayout();
+				frame.updateGlyphLayout();
 				frame.updateVisu();
 			}
 		}
@@ -110,31 +113,28 @@ public class PixelSelector extends SubtreeDragControl
             java.awt.event.MouseEvent e)
 	{
 		Display d = (Display)e.getSource();
-        if (GlyphTable.isGlyph(item))
+        frame.setGlyphDesc((String)item.get("desc"));
+        d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+        int clickX = e.getX();
+		int clickY = e.getY();
+		Point2D p = dis.getAbsoluteCoordinate(new Point(clickX, clickY), null);
+		int absX = (int)p.getX();
+		int absY = (int)p.getY();
+		absX -= ((Integer)item.get("xCor")).intValue();
+		absY -= ((Integer)item.get("yCor")).intValue();
+		int pixel = -1;
+		for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
+		{
+			if (at.getXAt(i) == absX && at.getYAt(i) == absY)
+				pixel = i;
+		}
+		if (selection.equals(StringConstants.Nothing) && pixel > -1)
         {
-        	frame.setGlyphDesc((String)item.get("desc"));
-        	d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-            int clickX = e.getX();
-			int clickY = e.getY();
-			Point2D p = dis.getAbsoluteCoordinate(new Point(clickX, clickY), null);
-			int absX = (int)p.getX();
-			int absY = (int)p.getY();
-			absX -= ((Integer)item.get("xCor")).intValue();
-			absY -= ((Integer)item.get("yCor")).intValue();
-			int pixel = -1;
-			for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
-			{
-				if (at.getXAt(i) == absX && at.getYAt(i) == absY)
-					pixel = i;
-			}
-			if (selection.equals(StringConstants.Nothing) && pixel > -1)
-        	{
-        		frame.setPixelDesc(at.getZDescAt(pixel));
-        	}
-        	else if (pixel > -1)
-        	{
-        		frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
-        	}
+        	frame.setPixelDesc(at.getZDescAt(pixel));
+        }
+        else if (pixel > -1)
+        {
+        	frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
         }
     }
 	
@@ -142,31 +142,27 @@ public class PixelSelector extends SubtreeDragControl
             java.awt.event.MouseEvent e)
 	{
 		Display d = (Display)e.getSource();
-        if (GlyphTable.isGlyph(item))
+        d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+        int clickX = e.getX();
+		int clickY = e.getY();
+		Point2D p = dis.getAbsoluteCoordinate(new Point(clickX, clickY), null);
+		int absX = (int)p.getX();
+		int absY = (int)p.getY();
+		absX -= ((Integer)item.get("xCor")).intValue();
+		absY -= ((Integer)item.get("yCor")).intValue();
+		int pixel = -1;
+		for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
+		{
+			if (at.getXAt(i) == absX && at.getYAt(i) == absY)
+				pixel = i;
+		}
+		if (selection.equals(StringConstants.Nothing) && pixel > -1)
         {
-        	d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-            int clickX = e.getX();
-			int clickY = e.getY();
-			Point2D p = dis.getAbsoluteCoordinate(new Point(clickX, clickY), null);
-			int absX = (int)p.getX();
-			int absY = (int)p.getY();
-			absX -= ((Integer)item.get("xCor")).intValue();
-			absY -= ((Integer)item.get("yCor")).intValue();
-			int pixel = -1;
-			for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
-			{
-				if (at.getXAt(i) == absX && at.getYAt(i) == absY)
-					pixel = i;
-			}
-			
-        	if (selection.equals(StringConstants.Nothing) && pixel > -1)
-        	{
-        		frame.setPixelDesc(at.getZDescAt(pixel));
-        	}
-        	else if (pixel > -1)
-        	{
-        		frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
-        	}
+        	frame.setPixelDesc(at.getZDescAt(pixel));
+        }
+        else if (pixel > -1)
+        {
+        	frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
         }
     }
 	
@@ -174,17 +170,13 @@ public class PixelSelector extends SubtreeDragControl
             java.awt.event.MouseEvent e)
 	{
 		Display d = (Display)e.getSource();
-	    if (GlyphTable.isGlyph(item))
-	    {
-	    	d.setCursor(Cursor.getDefaultCursor());
-	    	frame.setGlyphDesc(StringConstants.Nothing);
-	    }
+	   	d.setCursor(Cursor.getDefaultCursor());
+	   	frame.setGlyphDesc(StringConstants.Nothing);
 	    if (selection.equals(StringConstants.Nothing))
         	frame.setPixelDesc(StringConstants.Nothing);
         else
         	frame.setPixelDesc("Von " + selection + " bis ");
-   }
-	
+    }
 	
 	public void mouseClicked(java.awt.event.MouseEvent e)
 	{

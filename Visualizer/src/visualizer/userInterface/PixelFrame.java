@@ -66,15 +66,21 @@ public class PixelFrame extends JFrame
 	protected String glyph, pixel, pref;
 	protected GlyphTable gt;
 	protected boolean bordersOn = true;
+	protected static int number = 0;
 	
 	public PixelFrame(String title)
 	{
 		super(title);
+		number++;
 		this.addWindowListener(new WindowAdapter()
 	    {
 	    	public void windowClosing(WindowEvent we)
 	    	{
-	    		System.exit(0);
+	    		number--;
+	    		if (number > 0)
+	    			setVisible(false);
+	    		else if (number == 0)
+	    			System.exit(0);
 	    	}
 	    });
 	}
@@ -109,7 +115,7 @@ public class PixelFrame extends JFrame
 		startLabel = new JLabel();
 		stopLabel = new JLabel();
 		setStartIndex(0);
-		setStopIndex(gt.getZAxisCount() - 1);
+		setStopIndex(gt.getPixelCount() - 1);
 		JLabel place = new JLabel("<<<<<<Platzhalter>>>>>>");
 		// the slider
 		timeSlider = new JRangeSlider(0, stopIndex, 0, stopIndex, SwingConstants.VERTICAL);
@@ -123,6 +129,7 @@ public class PixelFrame extends JFrame
             {
               	setStartIndex(timeSlider.getLowValue());
             	setStopIndex(timeSlider.getHighValue());
+            	gt.updateMeans(startIndex, stopIndex);
             	vis.updatePixelLayout(pixel);
         		vis.updateGlyphSize();
         		vis.updateGlyphLayout(glyph);
@@ -180,20 +187,24 @@ public class PixelFrame extends JFrame
 		prefMenu.getPopupMenu().setName("prefMenu");
 		helpMenu = new JMenu("Hilfe");
 		helpMenu.getPopupMenu().setName("helpMenu");
-		JMenuItem[] glyphItem = new JMenuItem[4];
+		JMenuItem[] glyphItem = new JMenuItem[5];
 		JMenuItem[] pixelItem = new JMenuItem[5];
 		JMenuItem[] prefItem = new JMenuItem[3];
 		glyphItem[0] = new JRadioButtonMenuItem(StringConstants.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
 		glyphItem[1] = new JRadioButtonMenuItem(StringConstants.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
 		glyphItem[2] = new JRadioButtonMenuItem(StringConstants.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
 		glyphItem[3] = new JRadioButtonMenuItem(StringConstants.TableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
+		glyphItem[4] = new JRadioButtonMenuItem(StringConstants.OptimizedTableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
+		if (gt.getDataType().equals(StringConstants.Data2D))
+		{
+			glyphItem[3].setEnabled(false);
+			glyphItem[4].setEnabled(false);
+		}
 		ButtonGroup glyphGroup = new ButtonGroup();
-		glyphGroup.add(glyphItem[0]);
-		glyphGroup.add(glyphItem[1]);
-		glyphGroup.add(glyphItem[2]);
-		glyphGroup.add(glyphItem[3]);
+		for (int i = 0; i < glyphItem.length; i++)
+			glyphGroup.add(glyphItem[i]);
 		glyphItem[0].setSelected(true);
-		pixelItem[0] = new JRadioButtonMenuItem(StringConstants.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
+		pixelItem[0] = new JRadioButtonMenuItem(StringConstants.MatrixLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
 		pixelItem[1] = new JRadioButtonMenuItem(StringConstants.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
 		pixelItem[2] = new JRadioButtonMenuItem(StringConstants.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
 		pixelItem[3] = new JRadioButtonMenuItem(StringConstants.HilbertLayout, new ImageIcon(getClass().getResource("/pics/hilbert.gif")));
@@ -291,7 +302,15 @@ public class PixelFrame extends JFrame
 	 */
 	public void updatePixelLayout()
 	{
-		vis.updatePixelLayout(pixel);
+		updatePixelLayout(0, 0);
+	}
+	
+	/**
+	 * Re-arrange the pixels. 
+	 */
+	public void updatePixelLayout(int matrixWidth, int matrixHeight)
+	{
+		vis.updatePixelLayout(pixel, matrixWidth, matrixHeight);
 		vis.updateGlyphSize();
 		vis.updateGlyphLayout(glyph);
 	}

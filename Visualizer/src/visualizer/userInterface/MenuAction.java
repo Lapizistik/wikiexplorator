@@ -8,11 +8,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
+import javax.swing.WindowConstants;
 
 import visualizer.StringConstants;
 
@@ -50,10 +52,24 @@ public class MenuAction implements ActionListener
 		}
 		else if (source.equals("pixelMenu"))
 		{
-			frame.setPixelLayout(selection);
-			frame.updatePixelLayout();
-			frame.updateGlyphLayout();
-			frame.updateVisu();
+			// if matrix layout was chosen
+			// open a dialog box for the options
+			if (selection.equals(StringConstants.MatrixLayout))
+			{
+				 JDialog dialog = new MatrixOptionsDialog(frame, "Matrix Optionen", true);
+			     dialog.setSize(400,300);
+			     dialog.setLocation(300, 200);
+			     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+			     dialog.setResizable(false);
+			     dialog.setVisible(true);
+			}
+			else
+			{
+				frame.setPixelLayout(selection);
+				frame.updatePixelLayout();
+				frame.updateGlyphLayout();
+				frame.updateVisu();
+			}
 		}
 		else if (source.equals("prefMenu"))
 		{
