@@ -64,23 +64,55 @@
       </tbody>
     </table>
 
-    <h2>And a nice distribution</h2>
+<%# Cummulative Distribution Functions: Lorenz, Gini, Pareto %>
+
+    <h2>Cummulative Distribution of Revisions vs. Authors</h2>
 
     <% ur = users.collect { |u| u.revisions.length }
-       ur.gp_plot_lorenz(:svg=>'lorenz.svg') 
-       ur.gp_plot_lorenz(:png=>'lorenz.png', :size => '500,500') 
+       ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "revisions", :svg=>'cdfar.svg')
+       ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "revisions", :png=>'cdfar.png', :size => '480,480')
     %>
     <p>
-      <a href="lorenz.svg">
-	<img alt="lorenz-curve revisions per user" src="lorenz.png" />
+      <a href="cdfar.svg">
+	<img alt="lorenz curve - revisions vs. authors" src="cdfar.png" />
       </a>
     </p>
 
+    <h2>Cummulative Distribution of Pages vs. Authors</h2>
+
+    <% up = users.collect { |u| u.pages.length }
+       up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pages", :svg=>'cdfap.svg')
+       up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pages", :png=>'cdfap.png', :size => '480,480')
+    %>
+    <p>
+      <a href="cdfap.svg">
+	<img alt="lorenz curve - pages vs. authors" src="cdfap.png" />
+      </a>
+    </p>
+
+    <h2>Cummulative Distribution of Revisions vs. Pages</h2>
+
+    <% pr = pages.collect { |p| p.revisions.length }
+       pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", :svg=>'cdfpr.svg')
+       pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", :png=>'cdfpr.png', :size => '480,480')
+    %>
+    <p>
+      <a href="cdfpr.svg">
+	<img alt="lorenz curve - revisions vs. pages" src="cdfpr.png" />
+      </a>
+    </p>
+
+
+<%# Set Filter and Time Raster%>
+	<%
+	filter = wiki.filter.clone # clone filter
+	raster = wiki.timeraster(:zero => :month, :step => :month) # set time raster to monthly spells
+  	%>
+
 <%# Cummulative Revisions per Month (CRPM) %>
+
 	<h2>Cummulative Revisions per Month</h2>
 	<% 
-  filter = wiki.filter.clone   # let's get a new Filter
-  raster = wiki.timeraster(:zero => :month, :step => :month) # the timeraster
   crpm = raster[1..-2].collect { |e| filter.endtime = e 
                                      [ e, wiki.revisions(filter).length ] }
 		Gnuplot.new do |gp|
@@ -106,6 +138,7 @@
 	</p>
 
 <%# Revisions per Month (RPM) %>
+
 	<h2>Revisions per Month</h2>
 	<% 
   rpm = raster[1..-2].enum_cons(2).collect { |s,e| 
@@ -133,6 +166,7 @@
 	</p>
 
 <%# Relative Author Participation %>
+
 	<h2>Relative Author Participation</h2>
 	<%
   # events
