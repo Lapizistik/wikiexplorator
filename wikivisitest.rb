@@ -10,6 +10,8 @@ include JavaBridge
 jimport 'visualizer.VisuMain'
 jimport 'visualizer.ruby.FlatCube'
 
+puts 'starting...'
+
 X = 60
 Y = 60
 Z = 300

@@ -78,12 +78,18 @@
 
 <%# Cummulative Revisions per Month (CRPM) %>
 	<h2>Cummulative Revisions per Month</h2>
-	<% crpm = wiki.timeraster(:zero => :month, :step => :month)[1..-2].collect { |e| wiki.filter.revision_timespan = (wiki.timeline.first..e); [ e, wiki.revisions.length ] }
+	<% 
+  filter = wiki.filter.clone   # let's get a new Filter
+  raster = wiki.timeraster(:zero => :month, :step => :month) # the timeraster
+  crpm = raster[1..-2].collect { |e| filter.endtime = e 
+                                     [ e, wiki.revisions(filter).length ] }
 		Gnuplot.new do |gp|
 			gp.set('xdata', 'time')
 			gp.set('timefmt', '%Y-%m-%d', true)
 	  		gp.set('format x', '%b %y', true)
-			gp.add(crpm, :timefmt => '%Y-%m-%d', :with => 'linespoints', :title => 'revisions')
+			gp.add(crpm, :timefmt => '%Y-%m-%d', 
+                                     :with => 'linespoints', 
+                                     :title => 'revisions')
 			gp.set('nokey')
 			gp.set('xtics rotate')
 			gp.set('title "Cummulative Revisions per Month"')
@@ -101,12 +107,16 @@
 
 <%# Revisions per Month (RPM) %>
 	<h2>Revisions per Month</h2>
-	<% rpm = wiki.timeraster(:zero => :month, :step => :month)[1..-2].enum_cons(2).collect { |s,e| wiki.filter.revision_timespan = (s..e); [ e, wiki.revisions.length ] }
+	<% 
+  rpm = raster[1..-2].enum_cons(2).collect { |s,e| 
+                      filter.revision_timespan = (s..e)
+                      [ e, wiki.revisions(filter).length ] }
 	Gnuplot.new do |gp|
 		gp.set('xdata', 'time')
 		gp.set('timefmt', '%Y-%m-%d', true)
 		gp.set('format x', '%b %y', true)
-		gp.add(rpm, :timefmt => '%Y-%m-%d', :with => 'lines', :title => 'revisions' )
+		gp.add(rpm, :timefmt => '%Y-%m-%d', :with => 'lines', 
+                            :title => 'revisions' )
 		gp.set('xtics rotate')
 		gp.set('title "Revisions per Month"')
 		gp.set('xlabel "month"')
@@ -125,27 +135,23 @@
 <%# Relative Author Participation %>
 	<h2>Relative Author Participation</h2>
 	<%
-	# time raster
-	raster = wiki.timeraster(:zero => :month, :step => :month)
-	# filter
-	filter = wiki.filter
-	# events
-	events = wiki.users.collect{ |u| [ u.time_of_first_event, u.time_of_last_event ] }
-	# authors
-	authors = raster.enum_cons(2).collect { |s,e|
-	  filter.revision_timespan = (s..e)
-	  [
-	    e, wiki.coauthorgraph.remove_lonely_nodes.nodes.length / events.reject { |f,l| 
-	      (f > e) || (l < s)
-	    }.length.to_f
-	  ]
-	}[1..-2]
+  # events
+  events = wiki.users.collect{ |u| 
+                [ u.time_of_first_event, u.time_of_last_event ] 
+           }.select { |f,l| f && l }
+  # authors
+  authors = raster.enum_cons(2).collect { |s,e|
+	      filter.revision_timespan = (s..e)
+	      [ e, wiki.coauthorgraph.remove_lonely_nodes.nodes.length.to_f / 
+                   events.reject { |f,l| (f > e) || (l < s) }.length.to_f ]
+	    }[1..-2]
 	# Gnuplot
 	Gnuplot.new do |gp|
 		gp.set('xdata', 'time')
 		gp.set('timefmt', '%Y-%m-%d', true)
 		gp.set('format x', '%b %y', true)
-		gp.add(authors, :timefmt => '%Y-%m-%d', :with => 'lines', :title => 'authors')
+		gp.add(authors, :timefmt => '%Y-%m-%d', :with => 'lines', 
+                                :title => 'authors')
 		gp.set('nokey')
 		gp.set('xtics rotate')
 		gp.set('title "Author Participation"')
@@ -172,6 +178,7 @@ uni-bamberg.de">klaus.stein<!--nein-->&#x0040;<!--nein-->uni-bamberg.de</a>&gt;
     </address>
 <!-- Created: Thu Jul 10 14:37:18 CEST 2008 -->
 <!-- hhmts start -->
+Last modified: Tue Jul 15 09:49:53 CEST 2008
 <!-- hhmts end -->
   </body>
 </html>
