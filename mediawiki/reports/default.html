@@ -142,8 +142,9 @@
   # authors
   authors = raster.enum_cons(2).collect { |s,e|
 	      filter.revision_timespan = (s..e)
-	      [ e, wiki.coauthorgraph.remove_lonely_nodes.nodes.length.to_f / 
-                   events.reject { |f,l| (f > e) || (l < s) }.length.to_f ]
+	      [ e,
+                wiki.coauthorgraph(filter).remove_lonely_nodes.nodes.length /
+                events.reject { |f,l| (f > e) || (l < s) }.length.to_f ]
 	    }[1..-2]
 	# Gnuplot
 	Gnuplot.new do |gp|
@@ -178,7 +179,7 @@ uni-bamberg.de">klaus.stein<!--nein-->&#x0040;<!--nein-->uni-bamberg.de</a>&gt;
     </address>
 <!-- Created: Thu Jul 10 14:37:18 CEST 2008 -->
 <!-- hhmts start -->
-Last modified: Tue Jul 15 09:49:53 CEST 2008
+Last modified: Tue Jul 15 09:55:03 CEST 2008
 <!-- hhmts end -->
   </body>
 </html>
