@@ -40,27 +40,33 @@ public class OptimizingLayouts
 			}*/
 		
 		// optimize the layout by moving rows/columns
-		int maxLoops = 100;
+		int accuracy = 3;
+		int maxLoops = 100;//v.size() * accuracy;
+		double maxDistImprovement, distBefor, distAfter,
+		distImprovement;
+		int rowToMove = 0, newIndex = 0;
 		for (int loop = 0; loop < maxLoops; loop++)
 		{
-			boolean moveRow = true;
-			double newDist, bestDist, actDist;
-			int bestOld = 0, bestNew = 0;
-			actDist = getTableDistortion(v, tableWidth, tableHeight);
-			bestDist = actDist;
-			for (int y = 0; y < tableHeight - 1; y++)
+			maxDistImprovement = 0;
+			for (int y = 0; y < tableHeight; y++)
 			{
+			//int y = (int)(Math.random() * tableHeight);
+				distBefor = getRowDistortion(v, tableWidth, tableHeight, y);
 				// move where?
-				for (int newY = y + 1; newY < tableHeight; newY++)
+				for (int newY = 0; newY < tableHeight; newY++)
 				{
 					moveRow(v, y, newY, tableWidth);
 					moveColumn(v, y, newY, tableWidth, tableHeight);
-					newDist = getTableDistortion(v, tableWidth, tableHeight);
-					if (newDist < bestDist)
+					if (newY < y)
+						distAfter = getRowDistortion(v, tableWidth, tableHeight, newY + 1);
+					else	
+						distAfter = getRowDistortion(v, tableWidth, tableHeight, newY);
+					distImprovement = distBefor - distAfter;
+					if (distImprovement > maxDistImprovement)
 					{
-						bestDist = newDist;
-						bestOld = y;
-						bestNew = newY;
+						maxDistImprovement = distImprovement;
+						rowToMove = y;
+						newIndex = newY;
 					}
 					// undo the changes
 					moveRow(v, newY, y, tableWidth);
@@ -69,13 +75,13 @@ public class OptimizingLayouts
 			}
 		
 			// now perform the best action
-			if (bestDist < actDist)
+			if (maxDistImprovement > 0)
 			{
-				moveRow(v, bestOld, bestNew, tableWidth);
-				moveColumn(v, bestOld, bestNew, tableWidth, tableHeight);
+				moveRow(v, rowToMove, newIndex, tableWidth);
+				moveColumn(v, rowToMove, newIndex, tableWidth, tableHeight);
 			}
-			else // no improvement was possible
-				break;
+			//else // no improvement was possible
+				//break;
 		} // loop
 		
 		// position update
@@ -101,15 +107,17 @@ public class OptimizingLayouts
 				points[i] = new Point((int)(Math.random() * 500), 
 						(int)(Math.random() * 500));
 		// now optimize
-		int maxLoops = 10000;
-		double actStress, bestStress;
+		int accuracy = 50;
+		int maxLoops = v.size() * accuracy;
+		double maxStressImprovement, stressBefor, stressAfter,
+		stressImprovement;
 		int bestPoint = 0, dirX = 0, dirY = 0;
 		for (int loop = 0; loop < maxLoops; loop++)
 		{
-			actStress = getFStress(distances, points);
-			bestStress = actStress;
-			/*for (int i = 0; i < points.length; i++)
-			{
+			maxStressImprovement = 0;
+			//for (int i = 0; i < points.length; i++)
+			//{
+			int i = (int)(Math.random() * points.length);
 				// try to move point i in any direction 
 				// and measure the new stress
 				int step = 10;
@@ -117,12 +125,14 @@ public class OptimizingLayouts
 					for (int yMove = -step; yMove <= step; yMove += step)
 						if (xMove != 0 || yMove != 0)
 						{
+							stressBefor = getSingleStress(distances, points, i);
 							points[i].setLocation(points[i].getX() + xMove, 
 									points[i].getY() + yMove);
-							double testStress = getFStress(distances, points);
-							if (testStress < bestStress)
+							stressAfter = getSingleStress(distances, points, i);
+							stressImprovement = stressBefor - stressAfter;
+							if (stressImprovement > maxStressImprovement)
 							{
-								bestStress = testStress;
+								maxStressImprovement = stressImprovement;
 								bestPoint = i;
 								dirX = xMove;
 								dirY = yMove;
@@ -131,29 +141,31 @@ public class OptimizingLayouts
 							points[i].setLocation(points[i].getX() - xMove, 
 									points[i].getY() - yMove);
 						}
-			}*/
+			//}
+			// choose best action
+			if (maxStressImprovement > 0)
+			{
+				points[bestPoint].setLocation(points[bestPoint].getX() + dirX, 
+						points[bestPoint].getY() + dirY);
+				//System.out.println("Durchlauf Nr. " + loop);
+			}
+			//else // no improvement possible
+				//break;
+		
 			// very simple simulated annealing test
-			int next = (int)(Math.random() * points.length);
+			/*int next = (int)(Math.random() * points.length);
 			int step = 10;
 			dirX = (int)(Math.random() * 2 * step) - step;
 			dirY = (int)(Math.random() * 2 * step) - step;
+			actStress = getSingleStress(distances, points, next);
 			points[next].setLocation(points[next].getX() + dirX, 
 					points[next].getY() + dirY);
-			double testStress = getFStress(distances, points);
+			double testStress = getSingleStress(distances, points, next);
 			if (testStress > actStress)
 			{
 				points[next].setLocation(points[next].getX() - dirX, 
 					points[next].getY() - dirY);
-			}		
-			// choose best action
-			//if (bestStress < actStress)
-			//{
-			//	points[bestPoint].setLocation(points[bestPoint].getX() + dirX, 
-			//			points[bestPoint].getY() + dirY);
-			//	System.out.println("Durchlauf Nr. " + loop);
-			//}
-			//else // no improvement possible
-			//	break;
+			}*/		
 		}
 		
 		// position update
@@ -255,17 +267,22 @@ public class OptimizingLayouts
 		return val;
 	}
 	
-	public static double getTableDistortion(Vector table, int tableWidth,
-			int tableHeight)
+	public static double getRowDistortion(Vector table, int tableWidth,
+			int tableHeight, int index)
 	{
 		double distortion = 0;
-		for (int i = 0; i < tableHeight - 1; i++)
-		{
-			distortion += getRowEuclidianDistance(table, i, i + 1,
+		if (index > 0)
+			distortion += getRowEuclidianDistance(table, index, index - 1,
 					tableWidth);// * getRowMean(table, i, tableWidth)
 					// * getRowMean(table, i + 1, tableWidth);
-		}
-		distortion /= (tableHeight - 1);
+		if (index < tableHeight - 1)
+			distortion += getRowEuclidianDistance(table, index, index + 1,
+					tableWidth);// * getRowMean(table, i, tableWidth)
+		if (index > 0 && index < tableHeight - 1)
+			distortion /= (2 * tableWidth);
+		else
+			distortion /= tableWidth;
+		
 		return distortion;
 	}
 
@@ -402,5 +419,16 @@ public class OptimizingLayouts
 				sum2 += (double)Math.pow(dist[i][j], 2);
 			}
 		return (Math.sqrt(sum1 / sum2));
+	}
+	
+	public static double getSingleStress(double[][] dist, Point[] points, int index)
+	{
+		double sum1 = 0, sum2 = 0;
+		for (int i = 0; i < dist.length; i++)
+		{
+			sum1 += Math.pow(dist[index][i] - getEuclidianDistance(points[index], points[i]), 2);
+			sum2 += (double)Math.pow(dist[index][i], 2);
+		}
+		return (sum1 / sum2);
 	}
 }
