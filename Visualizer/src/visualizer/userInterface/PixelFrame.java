@@ -187,7 +187,7 @@ public class PixelFrame extends JFrame
 		prefMenu.getPopupMenu().setName("prefMenu");
 		helpMenu = new JMenu("Hilfe");
 		helpMenu.getPopupMenu().setName("helpMenu");
-		JMenuItem[] glyphItem = new JMenuItem[5];
+		JMenuItem[] glyphItem = new JMenuItem[6];
 		JMenuItem[] pixelItem = new JMenuItem[5];
 		JMenuItem[] prefItem = new JMenuItem[3];
 		glyphItem[0] = new JRadioButtonMenuItem(StringConstants.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
@@ -195,6 +195,7 @@ public class PixelFrame extends JFrame
 		glyphItem[2] = new JRadioButtonMenuItem(StringConstants.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
 		glyphItem[3] = new JRadioButtonMenuItem(StringConstants.TableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
 		glyphItem[4] = new JRadioButtonMenuItem(StringConstants.OptimizedTableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
+		glyphItem[5] = new JRadioButtonMenuItem(StringConstants.MDSLayout);
 		if (gt.getDataType().equals(StringConstants.Data2D))
 		{
 			glyphItem[3].setEnabled(false);
