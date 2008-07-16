@@ -274,7 +274,7 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	DataSet test = new TestTable();
+    	DataSet test = new TestCube();
     	visuMain1.init(test);
     }
 }
