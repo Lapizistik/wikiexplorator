@@ -21,6 +21,7 @@ public class StringConstants
 		HilbertLayout = "Hilbert Kurve",
 		TableLayout = "Tabelle",
 		OptimizedTableLayout = "Ähnlichkeitstabelle",
+		MDSLayout = "MDS Layout", 
 		FatRowLayout = "Schlangenlinien",
 		MatrixLayout = "Matrix",
 		GrayScale = "Grauwertskala",

@@ -29,11 +29,13 @@ public class TestCube extends DataCube
 						arr[x][y][z] = 0;
 					else if (z == 0)
 					{
-						//if (Math.random() > 0.95)
-						//	arr[x][y][z] = 1;
-						//else
-						//	arr[x][y][z] = 0;
-						arr[x][y][z] = Math.random();
+						if (Math.random() > 0.95)
+							arr[x][y][z] = 1;
+						else if (Math.random() > 0.7)
+							arr[x][y][z] = 0.5;
+						else
+							arr[x][y][z] = 0;
+						//arr[x][y][z] = Math.random();
 					}
 					else
 						arr[x][y][z] = arr[x][y][z-1] + 
@@ -49,17 +51,17 @@ public class TestCube extends DataCube
      */
 	public int getZAxisCount()
 	{
-		return 250;
+		return 100;
 	}
 	
 	public int getXAxisCount()
 	{
-		return 20;
+		return 30;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 20;
+		return 30;
 	}
 	
     /**

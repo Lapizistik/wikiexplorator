@@ -136,7 +136,8 @@ public class VisuMain
 		int space = 3;
 		glyphLayout = layout;
 		Vector v = new Vector();
-		if (!layout.equals(StringConstants.OptimizedTableLayout))
+		if (!layout.equals(StringConstants.OptimizedTableLayout)
+				&& !layout.equals(StringConstants.MDSLayout))
 		    for (int i = 0; i < glyphTable.getRowCount(); i++)
 		    	v.add(new Point(((Integer)glyphTable.getItem(i).get("xCor")).intValue(), 
 		    			((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
@@ -162,8 +163,13 @@ public class VisuMain
 	    	OptimizingLayouts.createOrderedTableLayout(v, startX, startY, glyphTable.getWidth() + space, 
 	    			glyphTable.getHeight() + space, glyphTable);
 	    }
-	    
-	    if (!layout.equals(StringConstants.OptimizedTableLayout))
+	    else if (layout.equals(StringConstants.MDSLayout))
+	    {
+	    	OptimizingLayouts.createMDSLayout(v, glyphTable.getWidth() + space, 
+	    			glyphTable.getHeight() + space, glyphTable);
+	    }
+	    if (!layout.equals(StringConstants.OptimizedTableLayout)
+	    		&& !layout.equals(StringConstants.MDSLayout))
 		    for (int i = 0; i < v.size(); i++)
 			{
 				Point p = ((Point)v.get(i));
@@ -268,7 +274,7 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	DataSet test = new TestCube();
+    	DataSet test = new TestTable();
     	visuMain1.init(test);
     }
 }
