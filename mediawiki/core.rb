@@ -45,7 +45,7 @@ module Mediawiki
     # Creates a new Wiki object from database connection _wikidb_.
     #
     # For description of _options_ see Wiki.open
-    def initialize(wikidb, options)
+    def initialize(wikidb, options={})
       @version = options[:version] || 1.8
       @dburl = wikidb.to_s
       @name = options[:name] || 'wiki'
@@ -131,8 +131,7 @@ module Mediawiki
     #     in your wiki you use:
     #       :ns_mapping=>{'Custom' => 100, 'Custom_talk' => 101}
     def Wiki.open(db, host, user, pw, options={})
-      Wiki.new(DB.new(db, host, user, pw, options[:engine] || "Mysql", 
-                      options[:version] || 1.8), options)
+      Wiki.new(DB.new(db, host, user, pw, options), options)
     end
 
     # Loads a Wiki from a YAML file created by Wiki#yaml_save.

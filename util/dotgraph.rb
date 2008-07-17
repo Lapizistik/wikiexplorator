@@ -10,9 +10,9 @@ class DotGraph
   # as we will introduce special DotGraph::Node objects in future when needed
   attr_reader :nodes
   # the Link objects representing the links between the nodes. 
-  # Currently this is a Hash with the key being a Link object and the value 
-  # being a number representing the nr. of times the link was set 
-  # (subject to change)
+  # Currently this is a Hash with the key being an Array with the source Node
+  # as first and the destination node as second (last) component, and the
+  # value being the Link object itself.
   attr_reader :links
   # boolean indicating whether the link count should be included in the output
   attr_reader :linkcount
@@ -58,9 +58,6 @@ class DotGraph
   #   * if _false_, the maximum of the old link weight and _w_ is used.
   def link(src, dest, w=1, add=true)
     src, dest = dest, src  if (!@directed) && (src.object_id > dest.object_id)
-    # the following lines are not very efficient: 
-    # a lot of Link objects may be generated which are never used again later.
-    # 
     key = [src,dest]
     l = (@links[key] ||= Link.new(self, src, dest))
 
@@ -72,9 +69,15 @@ class DotGraph
     l
   end
 
+  # add a link with a timestamp
   def timelink(src, dest, time, w=1, add=true)
     l = link(src, dest, w, add)
     l << time
+  end
+
+  # sort timestamps of all links
+  def sort_times
+    @links.each_value { |l| l.sort_times }
   end
 
   # remove all links from this graph.
@@ -554,8 +557,20 @@ class DotGraph
     DotGraph::nid(o)
   end
   
-  class Link # :nodoc:
-    attr_reader :src, :dest, :weight, :attrs, :timeline
+  class Link
+    # the source Node of this Link
+    attr_reader :src
+    # the destination Node of this Link
+    attr_reader :dest
+    # the weight of this Link
+    attr_reader :weight
+    # anny further Link attributes
+    attr_reader :attrs
+    # the Link timeline (used e.g. for Sonia)
+    attr_reader :timeline
+
+    # creates a new Link object. Do not use this directly but use 
+    # Dotgraph#link or Dotgraph#timelink
     def initialize(graph, src, dest, attrs={})
       @graph = graph
       @src = src
@@ -565,14 +580,17 @@ class DotGraph
       @timeline = []
     end
 
+    # increases link weight by _w_.
     def addweight(w)
       @weight += w
     end
 
+    # sets link weight to the maximum of the old link weight and _w_.
     def maxweight(w)
       @weight = w if w>@weight
     end
 
+    # String representation of this Link in dotfile syntax.
     def to_dot
       s = "  \"#{nid(@src)}\" #{edgesymbol} \"#{nid(@dest)}\" "
       s << "[#{@attrs.join(',')}]" unless @attrs.empty?
@@ -585,28 +603,36 @@ class DotGraph
       s
     end
     
+    # link symbol in dotfile syntax.
     def edgesymbol
       directed ? '->' : '--'
     end
     
-    def nid(o)
+    def nid(o) # :nodoc:
       DotGraph::nid(o)
     end
     
-    def linkcount
+    def linkcount # :nodoc:
       @graph.linkcount
     end
     
-    def directed
+    def directed # :nodoc:
       @graph.directed
     end
     
+    # weight label of this Link in dotfile syntax
     def weightlabel(count)
     "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"
     end
 
+    # add a time to the timeline
     def <<(t)
       @timeline << t
+    end
+
+    # sort the timeline
+    def sort_times
+      @timeline.sort!
     end
   end
 end

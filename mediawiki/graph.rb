@@ -59,16 +59,16 @@ module Mediawiki
     end
 
     # :call-seq:
-    # interlockingresponsegraph(filter=@filter, counts=:add) { |n| ... }
-    # interlockingresponsegraph(filter=@filter) { |n| ... }
-    # interlockingresponsegraph(counts=:add) { |n| ... }
+    # interlockingresponsegraph(filter=@wiki.filter, :counts=>:add) { |n| ... }
+    # interlockingresponsegraph(filter=@wiki.filter) { |n| ... }
+    # interlockingresponsegraph(counts => :add) { |n| ... }
     # interlockingresponsegraph() { |n| ... }
     #
     # Luhmann communication graph. Any revision is considered as an answer
     # to the last revisions of other users before.
     #
     # _filter_:: the Filter to use.
-    # _counts_:: 
+    # <i>:counts</i>:: 
     #   a Symbol indicating how links are counted:
     #   <i>:add</i>::
     #     for any pair of users _a_, _b_ the link weight of the link from
@@ -76,8 +76,10 @@ module Mediawiki
     #     _a_ and _b_ for each page.
     #   <i>:log</i>::
     #     for any pair of users _a_, _b_ the link weight of the link from
-    #     _a_ to _b_ is the logarithm of the product of all 
-    #     Page#interlockingresponses between _a_ to _b_ for each page.
+    #     _a_ to _b_ is 
+    #     <tt>sum_{<i>p</i>\in P}\log(il_<i>p</i>(_a_->_b_)+1)</tt> with
+    #     <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
+    #     _a_ to _b_ on page _p_ (see Page#interlockingresponses).
     #   <i>:max</i>::
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the maximum of all Page#interlockingresponses between
@@ -96,7 +98,11 @@ module Mediawiki
         case par
         when Filter : filter = par
         when Symbol : counts = par
-        else warn "Ignoring parameter #{par.inspect}"
+        when Hash
+          filter = par[:filter] || filter
+          counts = par[:counts] || counts
+        else
+          raise ArgumentError.new("Wrong argument: #{par.inspect}")
         end }
       us = users(filter)
       if block
@@ -114,7 +120,7 @@ module Mediawiki
       when :log
         pages(filter).each do |p| 
           p.interlockingresponses(filter).each_pair { |u,to|
-            to.each_pair { |v,n| g.link(u,v,Math.log(n)) }
+            to.each_pair { |v,n| g.link(u,v,Math.log(n+1)) }
           }
         end
       when :max

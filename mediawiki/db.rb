@@ -14,7 +14,7 @@
 # password fields.
 #
 # Additionally the tables <tt>wio_genres</tt> and <tt>wio_roles</tt> are
-# read (TODO: if existent):
+# read (if they exist):
 #
 # <tt>wio_genres</tt>::
 #    You may manually annotate some or all pages (we use
@@ -24,7 +24,10 @@
 #    with the pid of the annotated page in the first column and a
 #    comma-separated list of strings representing the genres in the
 #    second.  If a Page is in this table, Page#genres is a Set 
-#    containing all genres found.  
+#    containing all genres found.
+#
+#    If your tables have a prefix "<i>prefix_</i>" in the database use
+#    "<i>prefix_</i><tt>wio_genres</tt>".
 #
 #    TODO: better in Revision?
 # <tt>wio_roles</tt>::
@@ -35,6 +38,9 @@
 #    comma-separated list of strings representing her roles in the
 #    second.  If a User is in this table, User#roles is a Set 
 #    containing all roles found.  
+#
+#    If your tables have a prefix "<i>prefix_</i>" in the database use
+#    "<i>prefix_</i><tt>wio_roles</tt>".
 
 require 'set'
 
@@ -53,20 +59,23 @@ module Mediawiki
 
   class DB
 
-    def initialize(db, host, user, pw, dbengine='Mysql', version=1.8)
+    def initialize(db, host, user, pw, options={})
       @db = db
       @host = host
       @dbuser = user
       @dbpassword = pw
-      @dbengine = dbengine
-      @version = version
+      @dbengine = options[:engine] || 'Mysql'
+      @version = options[:version] || 1.8
+      @prefix = options[:prefix] || ''
     end
     
     def connect
       require 'dbi'      # generic database engine
 
       DBI.connect("DBI:#{@dbengine}:#{@db}:#{@host}", 
-                  @dbuser, @dbpassword) { |dbh| yield(MWDBI.new(dbh)) }
+                  @dbuser, @dbpassword) do |dbh| 
+        yield(MWDBI.new(dbh, @prefix))
+      end
     end
     
     def to_s
@@ -75,8 +84,9 @@ module Mediawiki
    
 
     class MWDBI
-      def initialize(dbh)
+      def initialize(dbh, prefix)
         @dbh = dbh
+        @prefix = prefix
         @tables = @dbh.tables.to_set # What tables are there?
       end
       
@@ -94,15 +104,15 @@ module Mediawiki
       end
       
       def usergroups(&block)
-        select_all("user_groups", %w{ug_user ug_group}, &block)
+        select_all('user_groups', %w{ug_user ug_group}, &block)
       end
       
       def texts(&block)
-        select_all("text", %w{old_id old_text old_flags}, &block)
+        select_all('text', %w{old_id old_text old_flags}, &block)
       end
       
       def pages(&block)
-        select_all("page", 
+        select_all('page', 
                    %w{page_id page_namespace page_title page_restrictions 
                       page_counter page_is_redirect page_is_new page_random 
                       page_touched page_latest page_len}, 
@@ -110,18 +120,18 @@ module Mediawiki
       end
       
       def revisions(&block)
-        select_all("revision", 
+        select_all('revision', 
                    %w{rev_id rev_page rev_text_id rev_comment rev_user 
                       rev_user_text rev_timestamp rev_minor_edit rev_deleted},
                    &block)
       end
       
       def genres(&block) 
-        select_all("wio_genres", %w{page_id genres}, &block)
+        select_all('wio_genres', %w{page_id genres}, &block)
       end
       
       def roles(&block) 
-        select_all("wio_roles", %w{user_id roles}, &block)
+        select_all('wio_roles', %w{user_id roles}, &block)
       end
             
       # Select a set of columns from table _table_. 
@@ -129,6 +139,7 @@ module Mediawiki
       # As we have to cope with very different Mediawiki database layouts
       # we do our very best in ignoring missing columns and tables.
       def select_all(table, fields=nil, &block)
+        table = @prefix + table
         # Let's see if our table exists in the DB:
         if @tables.include?(table) # is it there?
           if fields
