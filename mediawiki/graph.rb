@@ -59,15 +59,14 @@ module Mediawiki
     end
 
     # :call-seq:
-    # interlockingresponsegraph(filter=@wiki.filter, :counts=>:add) { |n| ... }
-    # interlockingresponsegraph(filter=@wiki.filter) { |n| ... }
-    # interlockingresponsegraph(counts => :add) { |n| ... }
-    # interlockingresponsegraph() { |n| ... }
+    # interlockingresponsegraph(filter=@wiki.filter, params={}) { |n| ... }
+    # interlockingresponsegraph(params={}) { |n| ... }
     #
     # Luhmann communication graph. Any revision is considered as an answer
     # to the last revisions of other users before.
     #
     # _filter_:: the Filter to use.
+    # _params_:: a Hash of named parameters:
     # <i>:counts</i>:: 
     #   a Symbol indicating how links are counted:
     #   <i>:add</i>::
@@ -80,6 +79,14 @@ module Mediawiki
     #     <tt>sum_{<i>p</i>\in P}\log(il_<i>p</i>(_a_->_b_)+1)</tt> with
     #     <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
     #     _a_ to _b_ on page _p_ (see Page#interlockingresponses).
+    #   <i>:squares</i>::
+    #     for any pair of users _a_, _b_ the link weight of the link from
+    #     _a_ to _b_ is 
+    #     <tt>(sum_{<i>p</i>\in P}(il_<i>p</i>(_a_->_b_)^k))^(1/k)</tt> with
+    #     <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
+    #     _a_ to _b_ on page _p_ (see Page#interlockingresponses) and
+    #     _k_=2 (default), can be changed with <i>:k</i>. The function
+    #     kind of reverts for _k_<1.
     #   <i>:max</i>::
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the maximum of all Page#interlockingresponses between
@@ -88,22 +95,28 @@ module Mediawiki
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the number of pages having a interlockingresponse 
     #     _a_ to _b_.
+    # <i>:k</i>::
+    #   exponent used for <i>:count</i> => <i>:squares</i>
     # See Page#interlockingresponses for discussion.
     #
     # If a block is given it is passed to DotGraph::new (see there)
     def interlockingresponsegraph(*params, &block)
       filter=@filter
       counts=:add
-      params.each { |par|
+      k = 2.0
+      params.each do |par|
         case par
         when Filter : filter = par
         when Symbol : counts = par
+        when Numeric : k = par
         when Hash
           filter = par[:filter] || filter
           counts = par[:counts] || counts
+          k = par[:k] || k
         else
           raise ArgumentError.new("Wrong argument: #{par.inspect}")
-        end }
+        end
+      end
       us = users(filter)
       if block
         g = DotGraph.new(us, :directed => true, &block)
@@ -123,6 +136,14 @@ module Mediawiki
             to.each_pair { |v,n| g.link(u,v,Math.log(n+1)) }
           }
         end
+      when :squares
+        pages(filter).each do |p| 
+          p.interlockingresponses(filter).each_pair { |u,to|
+            to.each_pair { |v,n| g.link(u,v,n**k) }
+          }
+        end
+        kk = 1.0/k
+        g.links.each_value { |l| l.weight = l.weight**kk}
       when :max
         pages(filter).each do |p|
           p.interlockingresponses(filter).each_pair { |u,to|

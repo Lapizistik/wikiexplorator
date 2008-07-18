@@ -563,7 +563,7 @@ class DotGraph
     # the destination Node of this Link
     attr_reader :dest
     # the weight of this Link
-    attr_reader :weight
+    attr_accessor :weight
     # anny further Link attributes
     attr_reader :attrs
     # the Link timeline (used e.g. for Sonia)
