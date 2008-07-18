@@ -1,28 +1,32 @@
 #! /usr/bin/ruby -w
 
 A = [
-     [8,0,0,0],
-     [7,1,0,0],
-     [6,2,0,0],
-     [6,1,1,0],
-     [5,3,0,0],
-     [5,2,1,0],
+#     [8,0,0,0],
+#     [7,1,0,0],
+#     [6,2,0,0],
+#     [6,1,1,0],
+#     [5,3,0,0],
+#     [5,2,1,0],
      [5,1,1,1],
-     [4,4,0,0],
-     [4,3,1,0],
-     [4,2,2,0],
+#     [4,4,0,0],
+#     [4,3,1,0],
+#     [4,2,2,0],
      [4,2,1,1],
-     [3,3,2,0],
+#     [3,3,2,0],
      [3,3,1,1],
      [3,2,2,1],
      [2,2,2,2],
-     [0,0,0,0],
+#     [0,0,0,0],
      [4,4,4,4],
      [4,2,2,2],
-     [4,4,0,0],
-     [4,0,0,0],
+ #    [4,4,0,0],
+  #   [4,0,0,0],
      [1,1,1,1]
     ]
+
+def Math.logn(x,n)
+  Math.log(x)/Math.log(n)
+end
 
 def measures(aaa)
   s = ''
@@ -31,13 +35,16 @@ def measures(aaa)
     s << ' :: '
     s << "%7.3f (%s),  " % aa.sum
     s << "%7.3f (%s),  " % aa.maxx
+    s << "%7.3f (%s),  " % aa.log
     s << "%7.3f (%s),  " % aa.log1
-    s << " [[ "
-    s << "%7.3f (%s),  " % aa.log_exp
+    s << "%7.3f (%s),  " % aa.explog
+    s << "%7.3f (%s),  " % aa.logexp
+#    s << " [[ "
+#    s << "%7.3f (%s),  " % aa.log_exp
     s << "%7.3f (%s),  " % aa.exp_log
-    s << " ]] [[ "
-    s << "%7.3f (%s),  " % aa.square_root
-    s << "%7.3f (%s),  " % aa.square_root(0.5)
+#    s << " ]] [[ "
+#    s << "%7.3f (%s),  " % aa.square_root
+#    s << "%7.3f (%s),  " % aa.square_root(0.5)
     s << " ]] "
 #    s << "%7.3f (%s),  " % aa.geom
     s << "\n"
@@ -55,15 +62,24 @@ module Enumerable
   end
 
   def log
-    [inject(0) { |s,i| s+Math.log(i+0.0000000001) }, 'log(i)']
+    [inject(0) { |s,i| s+Math.log(i) }, 'log(i)']
   end
 
   def log1
     [inject(0) { |s,i| s+Math.log(i+1) }, 'log(i+1)']
   end
 
+  def explog
+    [Math.log(inject(0) { |s,i| s+Math.exp(i) }), 'log(exp(i))']
+  end
+
+  def logexp
+    [Math.log(inject(0) { |s,i| s+Math.exp(i+1) }), 'log(exp(i+1))']
+  end
+
+
   def exp_log
-    [Math.exp(inject(0) { |s,i| s+Math.log(i+1) }-1), 'e^(log(i+1)-1)']
+    [Math.log(inject(0) { |s,i| s+Math.exp(i-1)+1 }), 'log(exp(i-1)+1)']
   end
 
   def log_exp
