@@ -41,12 +41,12 @@ Namespace 0).
 
 % subsection wiki_statistics (end)
 
-\subsection{User Statistics} % (fold)
-\label{sub:user_statistics}
+%\subsection{User Statistics} % (fold)
+%\label{sub:user_statistics}
 
-<%
-LaTeX::table(wiki.userstats)
-%>
+%<%=
+%::LaTeX::table(wiki.userstats.collect { |k,v| [ k.name, v ] })
+%%>
 
 % subsection user_statistics (end)
 
