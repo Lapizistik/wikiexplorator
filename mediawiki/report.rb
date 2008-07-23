@@ -29,6 +29,11 @@ module Mediawiki
 
     # Base class for all reports. Not to be used directly.
     class Base
+      # the Wiki of this Report.
+      attr_reader :wiki
+      # the parameters the Report was created with.
+      attr_reader :params
+
       # creates a Report
       #
       # Dont use this class directly but one of the subclasses shaped for
@@ -51,20 +56,23 @@ module Mediawiki
       #   the report type.
       # If the template file for the selected language does not exist,
       # <i>templatedir/template.ttype</i> is tried.
+      #
+      # All parameters are visible within the report template file through
+      # _params_
       def initialize(wiki, params={})
         @wiki = wiki
-        params = {
+        @params = {
           :templatedir => TemplateDir,
           :template => 'default',
           :language => @wiki.language,
         }.merge(params)
 
-        @type = params[:type]
-        ttype = params[:ttype] || @type
+        @type = @params[:type]
+        ttype = @params[:ttype] || @type
 
         # searching for the template ...
-        tmpl = "#{params[:template]}.#{params[:language]}.#{ttype}"
-        tmpl_dir = params[:templatedir]
+        tmpl = "#{@params[:template]}.#{@params[:language]}.#{ttype}"
+        tmpl_dir = @params[:templatedir]
         lang = true
         tmpl_full_l = File.join(tmpl_dir, tmpl)
         tmpl_full = tmpl_full_l
@@ -72,7 +80,7 @@ module Mediawiki
           @erb = ERB.new(File.read(tmpl_full))
         rescue Errno::ENOENT
           if lang
-            tmpl = "#{params[:template]}.#{ttype}"
+            tmpl = "#{@params[:template]}.#{ttype}"
             tmpl_full = File.join(tmpl_dir, tmpl)
             warn "Reading '#{tmpl_full_l}' failed. Trying '#{tmpl_full}'."
             lang = false
@@ -88,7 +96,17 @@ module Mediawiki
       # and subclasses may return a filename instead of the full report, 
       # see there)
       def generate
-        @erb.result(binding) 
+        call_erb 
+      end
+
+      def call_erb
+        wikifilter = @wiki.filter
+        if reportfilter = @params[:filter]
+          @wiki.filter = reportfilter
+        end
+        result = @erb.result(binding)
+        @wiki.filter = wikifilter
+        return result
       end
 
       def inspect
@@ -144,11 +162,11 @@ module Mediawiki
       # For all further parameters see Base#new
       def initialize(wiki, params={})
         super(wiki, params)
-        @basedir = params[:basedir] || Dir.tmpdir
-        @filename = params[:filename] || ('report.' + @type)
-        mode = params[:mode] || 0700
+        @basedir = @params[:basedir] || Dir.tmpdir
+        @filename = @params[:filename] || ('report.' + @type)
+        mode = @params[:mode] || 0700
         mode = mode.oct if mode.kind_of?(String)
-        if @outputdir = params[:outputdir]
+        if @outputdir = @params[:outputdir]
           @outputdir = File.join(@basedir, @outputdir) unless @outputdir[0]==?/
         else
           # create an uniq directory 
@@ -175,7 +193,7 @@ module Mediawiki
       # generates the report and returns its full filename.
       def generate
         Dir.chdir(@outputdir) do
-          File.open(@filename, 'w') { |f| f << @erb.result(binding) }
+          File.open(@filename, 'w') { |f| f << call_erb }
         end
         File.join(@outputdir, @filename)
       end
@@ -208,23 +226,59 @@ module Mediawiki
         @texname = TeXname
       end
 
-      # generates a pdf report and returns its full filename.
+      PDFLATEX = 'pdflatex' # name of the pdflatex binary
+
+      # generates a pdf report and returns its full filename. Returns _nil_
+      # if calling pdflatex was not successful (pdflatex was not found or
+      # there was an error in the texfile). 
       #
-      # _loops_ gives the number of times pdflatex is run on the LaTeXfile
-      # (you may need this if you want to generate a table of contents).
-      # You can alternatively set the number of loops to some value _x_ by 
-      # setting <tt>@loops=</tt>_x_ in the report template file.
-      def generate(loops=nil)
+      # _params_:
+      # <i>:loops</i>:: 
+      #   the number of times pdflatex is run on the LaTeXfile
+      #   (you may need this if you want to generate a table of contents).
+      #   You can alternatively set the number of loops to some value _x_ by 
+      #   setting <tt>@loops=</tt>_x_ in the report template file.
+      # <i>:pdflatexmode</i>::
+      #   By default pdflatex is run in +batchmode+, giving no visual output.
+      #   You may change this by setting :pdflatexmode => 'nonstopmode' here
+      #   or at Report creation, e.g.:
+      #     wiki.report(:pdf, :pdflatexmode => 'nonstopmode')
+      def generate(*params)
+        pdflatexmode = @params[:pdflatexmode] || 'batchmode'
+        params.each do |par|
+          case par
+          when Numeric : loops = par
+          when Hash
+            loops = par[:loops] || par
+            pdflatexmode = par[:pdflatexmode] || pdflatexmode
+          else
+            raise ArgumentError.new("Wrong argument: #{par.inspect}")
+          end
+        end
+
+        destfile = File.join(@outputdir, @filename)
         Dir.chdir(@outputdir) do
-          File.open(@texname, 'w') { |f| f << @erb.result(binding) }
+          File.open(@texname, 'w') { |f| f << call_erb }
           pdfname = @filename.sub(/\.pdf$/,'') # as pdflatex wants no extension
           loops ||= @loops || 1
           loops.times do
-            system('pdflatex', '-jobname', pdfname, 
-                   '-interaction', 'batchmode', @texname)
+            if !system(PDFLATEX, '-jobname', pdfname, 
+                       '-interaction', pdflatexmode, 
+                       '-halt-on-error', @texname)
+              case $?.exitstatus
+              when 126 # on Unix: file found but not executable.
+                warn "Error: Program file #{PDFLATEX} is not executable."
+              when 127 # on Unix: Executable not found.
+                warn "Error: Program file #{PDFLATEX} is not found."
+              else
+                warn "Error running #{PDFLATEX} (#{$?}). See #{File.join(@outputdir, pdfname)}.log for details."
+              end
+              destfile = nil
+              break
+            end
           end
         end
-        File.join(@outputdir, @filename)
+        destfile
       end
     end
   end
@@ -232,7 +286,20 @@ module Mediawiki
     # Generates a report for the wiki. Returns a String with the report
     # for plain report formats and a String with a filename for complex
     # report formats. See Report.new for a description of parameters.
-    def report(type=:txt, params={})
+    def report(*options)
+      type=:txt
+      params={}
+      filter = nil
+      options.each do |par|
+        case par
+        when Symbol : type = par
+        when Hash   : params = par
+        when Filter : filter = par
+        else
+          raise ArgumentError.new("Wrong argument: #{par.inspect}")
+        end
+      end
+      params[:filter] = filter    if filter
       Report.new(self, type, params).generate
     end
   end

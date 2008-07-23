@@ -1,5 +1,5 @@
 <%# some convenience definitions %>
-<% wiki = @wiki %>
+<%# wiki = @wiki %>
 <% full = wiki.filter.clone; full.include_all_namespaces %>
 <% wiki.filter.namespace=0 %>
 <% users = @wiki.users %>
@@ -32,21 +32,55 @@ Namespace 0).
 \subsection{Wiki Statistics} % (fold)
 \label{sub:wiki_statistics}
 
-\begin{tabular}{>{\bfseries}lrrrrr}
-  &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min} &\textbf{max}\\
-  <% wiki.global_userstats.each do |a| %>%
-  <%=a.shift%> & <%=a.collect { |d| "%.2f" % d}.join('&') %>\\
-  <% end %>%
+\begin{tabular}{>{\bfseries}lrrrrr}\toprule
+  &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min}
+  &\textbf{max}\\
+\midrule
+<%= 
+wiki.global_userstats.collect { |a|
+  a.collect { |v| 
+    if v.kind_of?(String)
+      v
+    elsif v.integer? 
+      '%5i' % v
+    elsif v.nan?
+      '---'
+    else
+      '%7.2f' % v
+    end
+  }.join('&')
+}.join('\\\\')
+%>      
+\\\bottomrule
 \end{tabular}
 
 % subsection wiki_statistics (end)
 
-%\subsection{User Statistics} % (fold)
-%\label{sub:user_statistics}
+\subsection{User Statistics} % (fold)
+\label{sub:user_statistics}
 
-%<%=
-%::LaTeX::table(wiki.userstats.collect { |k,v| [ k.name, v ] })
-%%>
+\begin{tabular}{>{\bfseries}llrrrrr}\toprule
+\textbf{User} & & \textbf{\#edits} & \textbf{\#pages} &
+\textbf{edits/page} & \textbf{\#self edits} & \textbf{\#foreign
+  edits}\\
+\midrule
+<%= 
+wiki.userstats.sort_by { |u,| u.name }.collect { |u,values| 
+  ([u.name, u.node_id] + values[0..4].collect { |v|
+     if v.kind_of?(String)
+       v
+     elsif v.integer? 
+       '%5i' % v
+     elsif v.nan?
+       '---'
+     else
+       '%7.2f' % v
+     end
+   }).join('&')
+}.join('\\\\')
+%>
+\\\bottomrule
+\end{tabular}
 
 % subsection user_statistics (end)
 
@@ -61,10 +95,11 @@ Namespace 0).
 % Authors vs. Revisions
 <%
 ur = users.collect { |u| u.revisions.length }
-ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "revisions", :png=>'cdfar.png', :size => '480,480')
+ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors",
+ :ylabel => "revisions", :png => 'cdfar.png', :size => '480,480')
 %>
 \begin{center}
-  \includegraphics[scale=0.5]{cdfar.png}
+  \includegraphics[width=\textwidth]{cdfar.png}
 \end{center}
 
 % Authors vs. Pages
@@ -73,7 +108,7 @@ up = users.collect { |u| u.pages.length }
 up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pages", :png=>'cdfap.png', :size => '480,480')
 %>
 \begin{center}
-  \includegraphics[scale=0.5]{cdfap.png}
+  \includegraphics[width=\textwidth]{cdfap.png}
 \end{center}
 
 % Revisions vs. Pages
@@ -83,7 +118,7 @@ pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revi
 pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", :png=>'cdfpr.png', :size => '480,480')
 %>
 \begin{center}
-  \includegraphics[scale=0.5]{cdfpr.png}
+  \includegraphics[width=\textwidth]{cdfpr.png}
 \end{center}
 
 % section cummulative_distribution_functions (end)
@@ -120,7 +155,7 @@ Gnuplot.new do |gp|
 end
 %>
 \begin{center}
-  \includegraphics[scale=0.5]{crpm.png}
+  \includegraphics[width=\textwidth]{crpm.png}
 \end{center}
 
 % Revisions per Month (RPM)
@@ -146,13 +181,13 @@ Gnuplot.new do |gp|
 end
 %>
 \begin{center}
-  \includegraphics[scale=0.5]{rpm.png}
+  \includegraphics[width=\textwidth]{rpm.png}
 \end{center}
 
 % section revision_history (end)
 
 \section{Author Participation} % (fold)
-\label{sec:author_participation}
+\label{sec:author_participation}#
 
 % Author Participation
 <%
@@ -186,7 +221,7 @@ Gnuplot.new do |gp|
 end
 %>
 \begin{center}
-  \includegraphics[scale=0.5]{rap.png}
+  \includegraphics[width=\textwidth]{rap.png}
 \end{center}
 
 % section author_participation (end)
@@ -200,7 +235,7 @@ wiki.coauthorgraph.r_plot(:filename => "coauthorgraph.png")
 %>
 \begin{figure}
 	\centering
-	\includegraphics[scale=0.5]{coauthorgraph.png}
+	\includegraphics[width=\textwidth]{coauthorgraph.png}
 	\caption{Co-Authorship Network}
 	\label{fig:co-authorship_network}
 \end{figure}
@@ -212,7 +247,7 @@ wiki.pagegraph.r_plot(:filename => "pagegraph.png")
 
 \begin{figure}
 	\centering
-	\includegraphics[scale=0.5]{pagegraph.png}
+	\includegraphics[width=\textwidth]{pagegraph.png}
 	\caption{Document Network}
 	\label{fig:document_network}
 \end{figure}

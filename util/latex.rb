@@ -13,6 +13,7 @@ module LaTeX
     #       rows and columns.
     def table(a, params={})
       width=0
+      headline = params[:headline] || ''   # take care for the \\ !
       vspace = params[:vspace]
       vspace &&= "[#{vspace}]"
       body = a.collect do |row|
@@ -22,7 +23,7 @@ module LaTeX
       format = params[:format] || ('l'*width)
       pos = params[:pos] || 't'
       '  \begin{tabular}['+pos+']{' + format + '}
-' + body + '
+' + headline + body + '
   \end{tabular}
 '
     end
