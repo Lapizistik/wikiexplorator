@@ -7,6 +7,10 @@ require 'util/dotgraph'    # generic dotfile graph class
 # = The Mediawiki Namespace
 module Mediawiki
   class Wiki
+    # Pages link graph. Returns a DotGraph with pages as nodes and references
+    # from one page to another as links.
+    #
+    # If a block is given it is passed to DotGraph::new (see there)
     def pagegraph(filter=@filter, &block)
       ps = pages(filter)
       if block
@@ -22,6 +26,12 @@ module Mediawiki
       g
     end
 
+    # Coauthor graph. Returns a DotGraph with users as nodes. For each page
+    # edited by user _a_ and _b_ a link from _a_ to _b_ is added (i.e. the
+    # link weight corresponds to the number of pages where _a_ and _b_ are 
+    # coauthors).
+    #
+    # If a block is given it is passed to DotGraph::new (see there)
     def coauthorgraph(filter=@filter, &block)
       us = users(filter)
       if block
@@ -29,17 +39,35 @@ module Mediawiki
       else
         g = DotGraph.new(us, :directed => false) { |n| n.name }
       end
+      nodes = l = n = i = j = nil
       pages(filter).each do |p| 
-        nodes = p.users(filter)
-        nodes.each do |n| 
-          nodes.each do |m| 
-            g.link(n,m) if n.uid < m.uid
+        nodes = p.users(filter).to_a
+        l = nodes.length-1
+        nodes.each_with_index do |n,i|
+          (i+1).upto(l) do |j|
+            g.link(n,nodes[j])
           end
         end
       end
       g
     end
+    # # Plain implementation  of inner loop of coauthorgraph (simple but slow):
+    #pages(filter).each do |p| 
+    #  nodes = p.users(filter)
+    #  nodes.each do |n| 
+    #    nodes.each do |m| 
+    #      g.link(n,m) if n.uid < m.uid
+    #    end
+    #  end
+    #end
 
+
+    # Copages graph. Returns a DotGraph with pages as nodes. For each user
+    # editing pages _p_ and _q_ a link from _p_ to _q_ is added (i.e. the
+    # link weight corresponds to the number of users editing pages 
+    # _p_ and _q_).
+    #
+    # If a block is given it is passed to DotGraph::new (see there)
     def copagesgraph(filter=@filter, &block)
       ps = pages(filter)
       if block
@@ -47,16 +75,29 @@ module Mediawiki
       else
         g = DotGraph.new(ps, :directed => false) { |n| n.pid }
       end
+      nodes = l = n = i = j = nil
       users(filter).each do |u| 
-        nodes = u.pages(filter)
-        nodes.each do |n| 
-          nodes.each do |m| 
-            g.link(n,m) if n.pid < m.pid
+        nodes = u.pages(filter).to_a
+        l = nodes.length-1
+        nodes.each_with_index do |n,i|
+          (i+1).upto(l) do |j|
+            g.link(n,nodes[j])
           end
         end
       end
       g
     end
+    # # Plain implementation of inner loop of copagesgraph (simple but slow):
+    #users(filter).each do |u| 
+    #  nodes = u.pages(filter)
+    #  nodes.each do |n| 
+    #    nodes.each do |m| 
+    #      g.link(n,m) if n.pid < m.pid
+    #    end
+    #  end
+    #end
+
+
 
     # :call-seq:
     # interlockingresponsegraph(filter=@wiki.filter, params={}) { |n| ... }

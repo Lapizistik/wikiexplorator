@@ -65,7 +65,7 @@ else
 
       # We believe in all nodes being the same class:
       if (node = @nodes.first).respond_to?(:network_attributes)
-        node.network_attributes. each do |name, method|
+        node.network_attributes.each do |name, method|
           R.set_vertex_attribute(n, name, @nodes.collect { |k| k.send(method)})
         end
       end
@@ -246,6 +246,11 @@ else
 
     # Close the R plot device number _i_.
     def r_plot_close(i)
+      R.dev_off(i)
+    end
+
+    # Close the R plot device number _i_.
+    def DotGraph.r_plot_close(i)
       R.dev_off(i)
     end
 

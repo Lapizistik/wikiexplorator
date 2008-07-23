@@ -578,7 +578,13 @@ module Mediawiki
 
     # id string for dotfile creation
     def node_id
-      "u#{uid}"
+      if @uid >= 0
+        "u#{@uid}"
+      elsif @uid == Default_IP_UID
+        "ipX"
+      else
+        "ip#{@name}"
+      end
     end
 
     def set_roles_from_string(roles) # :nodoc:
@@ -650,7 +656,7 @@ module Mediawiki
     # Used e.g. for creating network attributes in Dotnet#to_r_network
     def network_attributes
       { 'roles' => :roles_to_a,
-        'uid'   => :uid,
+        'uid'   => :node_id,
         'name'  => :name }
     end
 
