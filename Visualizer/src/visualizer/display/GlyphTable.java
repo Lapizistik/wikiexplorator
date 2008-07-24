@@ -20,70 +20,138 @@ import visualizer.StringConstants;
  */
 public class GlyphTable extends VisualTable
 {
-	protected String data, xAxisTitle, yAxisTitle, zAxisTitle;
-	protected int[] x;
-	protected int[] y;
-	protected int width, height, xAxisCount, yAxisCount, zAxisCount;
-	protected String[] pixelDesc;
+	protected String title, xAxisTitle, yAxisTitle, zAxisTitle;
+	protected int[] pixelX;
+	protected int[] pixelY;
+	protected int glyphWidth, glyphHeight, xAxisCount, yAxisCount, zAxisCount;
+	protected String[] xAxisDesc, yAxisDesc, zAxisDesc;
 	
 	public GlyphTable(Visualization vis, String str)
 	{
 		super(vis, str);
 	}
 	
-	public void init(String dat, int xAxis, int yAxis, int zAxis)
+	public boolean isCube()
 	{
-		data = dat;
+		if (zAxisCount > 0)
+			return true;
+		else
+			return false;
+	}
+	
+	public void init(int xAxis, int yAxis, int zAxis)
+	{
 		xAxisCount = xAxis;
 		yAxisCount = yAxis;
 		zAxisCount = zAxis;
-		int numberOfValues;
-		if (data.equals(StringConstants.Data3D))
-			numberOfValues = zAxisCount;
-		else
-			numberOfValues = xAxisCount;
-		x = new int[numberOfValues];
-		y = new int[numberOfValues];
-		pixelDesc = new String[numberOfValues];
-		
-		for (int i = 0; i < numberOfValues; i++)
+		xAxisDesc = new String[xAxis];
+		yAxisDesc = new String[yAxis];
+		if (zAxis > 0) // cube
 		{
-			x[i] = 0;
-			y[i] = 0;
-			pixelDesc[i] = "";
+			pixelX = new int[zAxisCount];
+			pixelY = new int[zAxisCount];
+			zAxisDesc = new String[zAxis];
 		}
-		width = 0;
-		height = 0;
+		else // table
+		{
+			pixelX = new int[xAxisCount];
+			pixelY = new int[xAxisCount];
+		}
+		glyphWidth = 0;
+		glyphHeight = 0;
 	}
 	
-	public void setXAt(int val, int index)
+	public void setAxisTitles(String xTitle, String yTitle)
 	{
-		x[index] = val;
+		xAxisTitle = xTitle;
+		yAxisTitle = yTitle;
 	}
 	
-	public int getXAt(int index)
+	public void setAxisTitles(String xTitle, String yTitle, String zTitle)
 	{
-		return x[index];
+		setAxisTitles(xTitle, yTitle);
+		zAxisTitle = zTitle;
 	}
 	
-	public void setYAt(int val, int index)
+	public String getXAxisTitle()
 	{
-		y[index] = val;
+		return xAxisTitle;
 	}
 	
-	public int getYAt(int index)
+	public String getYAxisTitle()
 	{
-		return y[index];
+		return yAxisTitle;
 	}
 	
-	public void setDescAt(String desc, int index)
+	public String getZAxisTitle()
 	{
-		pixelDesc[index] = desc;
+		return zAxisTitle;
 	}
 	
-	public String getZDescAt(int index)
+	public void setXCorAt(int val, int index)
 	{
-		return pixelDesc[index];
+		pixelX[index] = val;
+	}
+	
+	public int getXCorAt(int index)
+	{
+		return pixelX[index];
+	}
+	
+	public void setYCorAt(int val, int index)
+	{
+		pixelY[index] = val;
+	}
+	
+	public int getYCorAt(int index)
+	{
+		return pixelY[index];
+	}
+	
+	public void setXAxisDescAt(String desc, int index)
+	{
+		xAxisDesc[index] = desc;
+	}
+	
+	public String getXAxisDescAt(int index)
+	{
+		return xAxisDesc[index];
+	}
+	
+	public void setYAxisDescAt(String desc, int index)
+	{
+		yAxisDesc[index] = desc;
+	}
+	
+	public String getYAxisDescAt(int index)
+	{
+		return yAxisDesc[index];
+	}
+	
+	public void setZAxisDescAt(String desc, int index)
+	{
+		zAxisDesc[index] = desc;
+	}
+	
+	public String getZAxisDescAt(int index)
+	{
+		return zAxisDesc[index];
+	}
+	
+	public void setPixelDescAt(String desc, int index)
+	{
+		if (isCube())
+			zAxisDesc[index] = desc;
+		else
+			xAxisDesc[index] = desc;
+	}
+	
+	public String getPixelDescAt(int index)
+	{
+		if (isCube())
+			return zAxisDesc[index];
+		else
+			return xAxisDesc[index];
 	}
 	
 	public int getXAxisCount()
@@ -103,17 +171,30 @@ public class GlyphTable extends VisualTable
 	
 	public int getPixelCount()
 	{
-		return pixelDesc.length;
+		if (isCube())
+			return zAxisDesc.length;
+		else
+			return xAxisDesc.length;
 	}
 	
-	public void setWidth(int w)
+	public void setGlyphWidth(int w)
 	{
-		width = w;
+		glyphWidth = w;
 	}
 	
-	public int getWidth()
+	public int getGlyphWidth()
 	{
-		return width;
+		return glyphWidth;
+	}
+	
+	public void setGlyphHeight(int h)
+	{
+		glyphHeight = h;
+	}
+	
+	public int getGlyphHeight()
+	{
+		return glyphHeight;
 	}
 	
 	public void updateSize(int start, int stop)
@@ -122,28 +203,13 @@ public class GlyphTable extends VisualTable
 		
 		for (int i = start; i <= stop; i++)
 		{
-			if (getXAt(i) > highestX)
-				highestX = getXAt(i);
-			else if (getYAt(i) > highestY)
-				highestY = getYAt(i);
+			if (getXCorAt(i) > highestX)
+				highestX = getXCorAt(i);
+			else if (getYCorAt(i) > highestY)
+				highestY = getYCorAt(i);
 		}
-		width = highestX + 1;
-		height = highestY + 1;
-	}
-	
-	public void setHeight(int h)
-	{
-		height = h;
-	}
-	
-	public int getHeight()
-	{
-		return height;
-	}
-	
-	public String getDataType()
-	{
-		return data;
+		glyphWidth = highestX + 1;
+		glyphHeight = highestY + 1;
 	}
 	
 	public void updateMeans(int start, int stop)

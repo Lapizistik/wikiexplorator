@@ -4,6 +4,7 @@ package visualizer.display;
 
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import prefuse.action.layout.SpecifiedLayout;
@@ -30,7 +31,7 @@ public class Layouts
 	 * represent the size of the items that shall be placed.
 	 * This algorithm tries to create a square matrix.
 	*/
-	public static void createRowLayout(Vector v, int startX, int startY, int itemWidth,
+	public static void createRowLayout(ArrayList v, int startX, int startY, int itemWidth,
 			int itemHeight)
 	{
 		int squareWidth = (int)(Math.ceil(Math.sqrt(v.size())));
@@ -49,7 +50,7 @@ public class Layouts
 	 * matrixWidth and matrixHeight define the desired size
 	 * of the whole matrix.
 	 */
-	public static void createRowLayout(Vector v, int startX, int startY, int itemWidth,
+	public static void createRowLayout(ArrayList v, int startX, int startY, int itemWidth,
 			int itemHeight, int matrixWidth, int matrixHeight)
 	{
 		if (matrixWidth <= 0 && matrixHeight <= 0)
@@ -89,7 +90,7 @@ public class Layouts
 	 * matrixWidth and matrixHeight define the desired size
 	 * of the whole matrix.
 	 */
-	public static void createColumnLayout(Vector v, int startX, int startY, int itemWidth,
+	public static void createColumnLayout(ArrayList v, int startX, int startY, int itemWidth,
 			int itemHeight, int matrixWidth, int matrixHeight)
 	{
 		if (matrixWidth <= 0 && matrixHeight <= 0)
@@ -124,7 +125,7 @@ public class Layouts
 	 * The meaning of the parameters is the same as for the 
 	 * method createSimpleLayout.
 	 */
-	public static void createZLayout(Vector v, int startX, int startY,
+	public static void createZLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
 		// how many space is needed for the whole
@@ -135,13 +136,13 @@ public class Layouts
 		// four quarters by recursion
 		if (v.size() > 4)
 		{
-			Vector[] newVec = new Vector[4];
+			ArrayList[] newVec = new ArrayList[4];
 			int currentIndex = 0;
 			int vecSize = squareWidth * squareWidth / 4;
 			
 			for (int i = 0; i < 4; i++)
 			{
-				newVec[i] = new Vector();
+				newVec[i] = new ArrayList();
 				
 				for (int j = 0; j < vecSize; j++)
 				{
@@ -194,13 +195,13 @@ public class Layouts
 	 * The meaning of the parameters is the same as for the 
 	 * method createSimpleLayout.
 	 */
-	public static void createFlexibleZLayout(Vector v, int startX, int startY,
+	public static void createFlexibleZLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
 		createFlexibleZLayout(v, startX, startY, itemWidth, itemHeight, 0, 0);
 	}
 	
-	private static void createFlexibleZLayout(Vector v, int startX, int startY,
+	private static void createFlexibleZLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight, int desiredWidth, int desiredHeight)
 	{
 		// get the desired size of each VisualItem
@@ -220,7 +221,7 @@ public class Layouts
 		// four quarters by recursion
 		if (v.size() > 9)
 		{
-			Vector[] newVec = new Vector[4];
+			ArrayList[] newVec = new ArrayList[4];
 			int[] width = new int[4];
 			int[] height = new int[4];
 			width[0] = (int)(Math.ceil(desiredWidth / 2d));
@@ -235,7 +236,7 @@ public class Layouts
 			int currentIndex = 0;
 			for (int i = 0; i < 4; i++)
 			{
-				newVec[i] = new Vector();
+				newVec[i] = new ArrayList();
 				
 				for (int j = 0; j < width[i] * height[i]; j++)
 				{
@@ -285,10 +286,10 @@ public class Layouts
 	 * The meaning of the parameters is the same as for the 
 	 * method createSimpleLayout.
 	 */
-	public static void createLineLayout(Vector v, int startX, int startY,
+	public static void createLineLayout(ArrayList v, int startX, int startY,
 			int itemHeight, int itemWidth)
 	{
-		int pixelsPerBlock = 4;
+		int pixelsPerBlock = 7; // one week
 		// get the desired size of each VisualItem
 		//itemWidth += abstand;
 		//itemHeight += abstand;
@@ -296,10 +297,10 @@ public class Layouts
 		// set of items?
 		int width = (int)(Math.ceil(Math.sqrt(v.size())));
 		int height = width;
-		if (v.size() <= 16)
+		if (v.size() <= Math.pow(pixelsPerBlock, 2))
 		{
-			width = 4;
-			height = 4;
+			width = pixelsPerBlock;
+			height = pixelsPerBlock;
 		}
 		else
 		{
@@ -334,7 +335,7 @@ public class Layouts
 	/**
 	 * At the moment not implemented correctly.
 	 */
-	public static void createRecursiveLayout(Vector v, int startX, int startY,
+	public static void createRecursiveLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
 		// first level: 7 in a row (one week)
@@ -381,13 +382,13 @@ public class Layouts
 	 * The meaning of the parameters is the same as for the 
 	 * method createSimpleLayout.
 	 */
-	public static void createHilbertLayout(Vector v, int startX, int startY,
+	public static void createHilbertLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
 		createHilbertLayout(v, startX, startY, itemWidth, itemHeight, "up");
 	}
 	
-	private static void createHilbertLayout(Vector v, int startX, int startY,
+	private static void createHilbertLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight, String dir)
 	{
 		int width = curveSize(v.size());
@@ -444,11 +445,11 @@ public class Layouts
 		}
 		else // Recursion
 		{
-			Vector[] newVec = new Vector[4];
+			ArrayList[] newVec = new ArrayList[4];
 			int currentIndex = 0;
 			for (int i = 0; i < 4; i++)
 			{
-				newVec[i] = new Vector();
+				newVec[i] = new ArrayList();
 				int start = currentIndex;
 				for (int j = currentIndex; j < start + ((width/2)*(width/2)); j++)
 				{
@@ -503,42 +504,6 @@ public class Layouts
 				    	createHilbertLayout(newVec[3], startX, startY + squareHeight, itemWidth, itemHeight, "left");
 			}
 		} 
-	}
-	
-	/**
-	 * Create a layout for the labeling of the glyphs.
-	 * At the moment this doesn't work correctly.
-	 */
-	public static void createLabelLayout(Vector label, Vector data, int abstand)
-	{
-		VisualItem first;
-		first = (VisualItem)data.get(0);
-		int headerX = ((Integer)first.get("xCor")).intValue();
-		int headerY = ((Integer)first.get("yCor")).intValue();
-		int itemWidth = ((Integer)first.get("width")).intValue() + abstand;
-		int itemHeight = ((Integer)first.get("height")).intValue() + abstand;
-		int sideX = headerX;
-		int sideY = headerY + itemHeight / 2;
-		int currentIndex = 0;
-		VisualItem actItem = (VisualItem)label.get(currentIndex);
-		// place headers
-		while (((VisualItem)label.get(currentIndex)).get("position").equals("header"))
-		{
-			actItem = (VisualItem)label.get(currentIndex);
-			actItem.set("xCor", new Integer(headerX));
-			actItem.set("yCor", new Integer(headerY));
-			headerX += itemWidth;
-			currentIndex++;
-		}
-		// place left side labeling
-		while (currentIndex < label.size())
-		{
-			actItem = (VisualItem)label.get(currentIndex);
-			actItem.set("xCor", new Integer(sideX - itemWidth));
-			actItem.set("yCor", new Integer(sideY));
-			sideY += itemHeight;
-			currentIndex++;
-		}
 	}
 	
 	/**

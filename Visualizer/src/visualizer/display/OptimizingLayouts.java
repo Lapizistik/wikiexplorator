@@ -5,6 +5,7 @@ package visualizer.display;
 
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import prefuse.visual.VisualItem;
@@ -20,69 +21,94 @@ import prefuse.visual.VisualItem;
  */
 public class OptimizingLayouts 
 {
-	public static void createOrderedTableLayout(Vector v, int startX, int startY, 
+	public static void createOrderedTableLayout(ArrayList v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
-		int tableWidth = gt.getXAxisCount();
+		int tableWidth;
+		if (gt.isCube())
+			tableWidth = gt.getXAxisCount();
+		else
+			tableWidth = 1;
 		int tableHeight = gt.getYAxisCount();
 		
 		// bubblesort the rows
-		/*for (int i = 0; i < tableHeight; i++)
-			for (int j = 0; j < tableHeight - 1; j++)
+		for (int i = 0; i < tableHeight; i++)
+			for (int j = 0; j < tableHeight - 2; j++)
 			{
-				double val1 = getRowMean(v, j, tableWidth);
-				double val2 = getRowMean(v, j + 1, tableWidth);
-				if (val1 > val2)
+				double val1, val2;
+				val1 = getRowMean(v, j, tableWidth);
+				val2 = getRowMean(v, j + 1, tableWidth);
+				
+				if (val1 < val2)
 				{
 					moveRow(v, j, j + 1, tableWidth);
-					moveColumn(v, j, j + 1, tableWidth, tableHeight);
+					if (gt.isCube())
+						moveColumn(v, j, j + 1, tableWidth, tableHeight);
 				}
-			}*/
+			}
 		
-		// optimize the layout by moving rows/columns
-		int accuracy = 3;
-		int maxLoops = 100;//v.size() * accuracy;
-		double maxDistImprovement, distBefor, distAfter,
-		distImprovement;
-		int rowToMove = 0, newIndex = 0;
-		for (int loop = 0; loop < maxLoops; loop++)
+		if (gt.isCube())
 		{
-			maxDistImprovement = 0;
-			for (int y = 0; y < tableHeight; y++)
+			// optimize the layout by moving rows/columns
+			int accuracy = 2;
+			int maxLoops = v.size() * accuracy;
+			double maxDistImprovement, distBefor, distAfter,
+			distImprovement;
+			int rowToMove = 0, newIndex = 0;
+			//boolean moveRow = true;
+			for (int loop = 0; loop < maxLoops; loop++)
 			{
-			//int y = (int)(Math.random() * tableHeight);
-				distBefor = getRowDistortion(v, tableWidth, tableHeight, y);
-				// move where?
-				for (int newY = 0; newY < tableHeight; newY++)
+				maxDistImprovement = 0;
+				distBefor = getTableDistortion(v, tableWidth, tableHeight);
+				//for (int y = 0; y < tableHeight; y++)
+				//{
+				int y = (int)(Math.random() * tableHeight);
+					// move where?
+					//for (int newY = 0; newY < tableHeight; newY++)
+					//{
+						int newY = (int)(Math.random() * tableHeight);
+						//double distBefor2 = 0;
+						//if (newY < tableHeight - 1)
+						//	distBefor2 = getRowEuclidianDistance(v, newY, newY + 1, tableWidth);
+						//distBefor += distBefor2;
+						moveRow(v, y, newY, tableWidth);
+						moveColumn(v, y, newY, tableWidth, tableHeight);
+						//if (newY < y)
+						//{
+						//	distAfter = getRowDistortion(v, tableWidth, tableHeight, newY + 1);
+						//	if (y + 2 < tableHeight)
+						//		distAfter += getRowEuclidianDistance(v, y + 1, y + 2, tableWidth);
+						//}
+						//else
+						//{
+						//	distAfter = getRowDistortion(v, tableWidth, tableHeight, newY);
+						//	if (y > 1)
+						//		distAfter += getRowEuclidianDistance(v, y - 1, y - 2, tableWidth);
+						//}
+						distAfter = getTableDistortion(v, tableWidth, tableHeight);
+						distImprovement = distBefor - distAfter;
+						if (distImprovement > maxDistImprovement)
+						{
+							maxDistImprovement = distImprovement;
+							rowToMove = y;
+							newIndex = newY;
+						}
+						// undo the changes
+						moveRow(v, newY, y, tableWidth);
+						moveColumn(v, newY, y, tableWidth, tableHeight);
+					//}
+				//}
+				
+				// now perform the best action
+				if (maxDistImprovement > 0)
 				{
-					moveRow(v, y, newY, tableWidth);
-					moveColumn(v, y, newY, tableWidth, tableHeight);
-					if (newY < y)
-						distAfter = getRowDistortion(v, tableWidth, tableHeight, newY + 1);
-					else	
-						distAfter = getRowDistortion(v, tableWidth, tableHeight, newY);
-					distImprovement = distBefor - distAfter;
-					if (distImprovement > maxDistImprovement)
-					{
-						maxDistImprovement = distImprovement;
-						rowToMove = y;
-						newIndex = newY;
-					}
-					// undo the changes
-					moveRow(v, newY, y, tableWidth);
-					moveColumn(v, newY, y, tableWidth, tableHeight);
+					moveRow(v, rowToMove, newIndex, tableWidth);
+					moveColumn(v, rowToMove, newIndex, tableWidth, tableHeight);
 				}
-			}
-		
-			// now perform the best action
-			if (maxDistImprovement > 0)
-			{
-				moveRow(v, rowToMove, newIndex, tableWidth);
-				moveColumn(v, rowToMove, newIndex, tableWidth, tableHeight);
-			}
-			//else // no improvement was possible
-				//break;
-		} // loop
+				//else // no improvement was possible
+					//break;
+			} // loop
+		} // if gt.isCube()
 		
 		// position update
 		for (int y = 0; y < tableHeight; y++)
@@ -94,7 +120,7 @@ public class OptimizingLayouts
 			}
 	}
 	
-	public static void createMDSLayout(Vector v, int itemWidth, int itemHeight, GlyphTable gt)
+	public static void createMDSLayout(ArrayList v, int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		// create the matrices
 		double[][] dissimilarities;
@@ -183,16 +209,16 @@ public class OptimizingLayouts
 	 * newIndex: the index of the row under which it will
 	 * be moved
 	 */
-	public static void moveRow(Vector table, int oldIndex, int newIndex,
+	public static void moveRow(ArrayList table, int oldIndex, int newIndex,
 			int tableWidth)
 	{
-		Vector store = new Vector();
+		ArrayList store = new ArrayList();
 		// remove the row and store it in a vector
 		for (int i = 0; i < tableWidth; i++)
 			store.add(table.remove(oldIndex * tableWidth));
 		// insert the row at the right place
 		for (int i = 0; i < tableWidth; i++)
-			table.insertElementAt(store.get(i), newIndex * tableWidth + i);
+			table.add/*table.insertElementAt*/(newIndex * tableWidth + i, store.get(i));
 	}
 	
 	/**
@@ -201,22 +227,22 @@ public class OptimizingLayouts
 	 * newIndex: the index of the column where it will
 	 * be moved
 	 */
-	public static void moveColumn(Vector table, int oldIndex, int newIndex,
+	public static void moveColumn(ArrayList table, int oldIndex, int newIndex,
 			int tableWidth, int tableHeight)
 	{
-		Vector store = new Vector();
+		ArrayList store = new ArrayList();
 		// remove the column and store it in a vector
 		for (int i = 0; i < tableHeight; i++)
 			store.add(table.remove(oldIndex + i * tableWidth - i));
 		// insert the column at the right place
 		for (int i = 0; i < tableHeight; i++)
-			table.insertElementAt(store.get(i), newIndex + i * tableWidth);
+			table.add(newIndex + i * tableWidth, store.get(i));
 	}
 	
 	/**
 	 * Returns the mean difference between two rows.
 	 */
-	public static double getRowDiff(Vector table, int index1, 
+	public static double getRowDiff(ArrayList table, int index1, 
 			int index2, int tableWidth)
 	{
 		return Math.abs((getRowMean(table, index1, tableWidth)) -
@@ -226,7 +252,7 @@ public class OptimizingLayouts
 	/**
 	 * Returns the mean difference between two columns.
 	 */
-	public static double getColumnDiff(Vector table, int index1, 
+	public static double getColumnDiff(ArrayList table, int index1, 
 			int index2, int tableWidth, int tableHeight)
 	{
 		return Math.abs((getColumnMean(table, index1, tableWidth, tableHeight)) -
@@ -236,7 +262,7 @@ public class OptimizingLayouts
 	/**
 	 * Returns the mean value of a row.
 	 */
-	public static double getRowMean(Vector table, int index,
+	public static double getRowMean(ArrayList table, int index,
 			int tableWidth)
 	{
 		double val = 0;
@@ -253,7 +279,7 @@ public class OptimizingLayouts
 	/**
 	 * Returns the mean value of a column.
 	 */
-	public static double getColumnMean(Vector table, int index,
+	public static double getColumnMean(ArrayList table, int index,
 			int tableWidth, int tableHeight)
 	{
 		double val = 0;
@@ -267,7 +293,27 @@ public class OptimizingLayouts
 		return val;
 	}
 	
-	public static double getRowDistortion(Vector table, int tableWidth,
+	public static double getTableDistortion(ArrayList table, int tableWidth,
+			int tableHeight)
+	{
+		double distortion = 0;
+		for (int index1 = 0; index1 < tableHeight - 1; index1++)
+		{
+			int counter = 0;
+			for (int index2 = index1 + 1; index2 < tableHeight; index2++)
+			{
+				counter++;
+				distortion += getRowEuclidianDistance(table, index1, index2,
+					tableWidth) / Math.abs(index2 - index1);
+				if (counter == 1)
+					break;
+			}
+		}
+		return distortion;
+	}
+
+	
+	public static double getRowDistortion(ArrayList table, int tableWidth,
 			int tableHeight, int index)
 	{
 		double distortion = 0;
@@ -312,27 +358,44 @@ public class OptimizingLayouts
 			return false;
 	}
 	
-	public static double getRowEuclidianDistance(Vector table, int index1, int index2,
+	public static double getRowEuclidianDistance(ArrayList table, int index1, int index2,
 			int tableWidth)
 	{
-		Vector v1 = new Vector();
-		Vector v2 = new Vector();
+		ArrayList v1 = new ArrayList();
+		ArrayList v2 = new ArrayList();
 		for (int i = 0; i < tableWidth; i++)
 		{
 			VisualItem item1 = (VisualItem)table.get(index1 * tableWidth + i);
 			VisualItem item2 = (VisualItem)table.get(index2 * tableWidth + i);
 			double mean1 = ((Double)item1.get("scaledMean")).doubleValue();
 			double mean2 = ((Double)item2.get("scaledMean")).doubleValue();
-			v1.add(new Double(mean1 * mean1));
-			v2.add(new Double(mean2 * mean2));
+			v1.add(new Double(PixelRenderer.getGammaCorrectedValue(mean1)));
+			v2.add(new Double(PixelRenderer.getGammaCorrectedValue(mean2)));
+		}
+		return getEuclidianDistance(v1, v2);
+	}
+	
+	public static double getColumnEuclidianDistance(ArrayList table, int index1, int index2,
+			int tableWidth, int tableHeight)
+	{
+		ArrayList v1 = new ArrayList();
+		ArrayList v2 = new ArrayList();
+		for (int i = 0; i < tableHeight; i++)
+		{
+			VisualItem item1 = (VisualItem)table.get(index1 + tableWidth * i);
+			VisualItem item2 = (VisualItem)table.get(index2 + tableWidth * i);
+			double mean1 = ((Double)item1.get("scaledMean")).doubleValue();
+			double mean2 = ((Double)item2.get("scaledMean")).doubleValue();
+			v1.add(new Double(mean1));
+			v2.add(new Double(mean2));
 		}
 		return getEuclidianDistance(v1, v2);
 	}
 	
 	public static double getEuclidianDistance(VisualItem item1, VisualItem item2)
 	{
-		Vector v1 = new Vector();
-		Vector v2 = new Vector();
+		ArrayList v1 = new ArrayList();
+		ArrayList v2 = new ArrayList();
 		double[] values1 = ((double[])item1.get("scaledValue"));
 		double[] values2 = ((double[])item2.get("scaledValue"));
 		for (int i = 0; i < values1.length; i++)
@@ -343,7 +406,7 @@ public class OptimizingLayouts
 		return getEuclidianDistance(v1, v2);
 	}
 	
-	public static double getEuclidianDistance(Vector v1, Vector v2)
+	public static double getEuclidianDistance(ArrayList v1, ArrayList v2)
 	{
 		double dist = 0;
 		for (int i = 0; i < v1.size(); i++)
@@ -362,7 +425,7 @@ public class OptimizingLayouts
 				+ (double)Math.pow(p1.getY() - p2.getY(), 2));
 	}
 	
-	public static double[][] getDissimMatrix(Vector authors)
+	public static double[][] getDissimMatrix(ArrayList authors)
 	{
 		// first fill the similarities with the 
 		// euclidian distances which are dissimilarities 

@@ -8,6 +8,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Shape;
+import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -68,21 +69,31 @@ public class PixelRenderer extends LabelRenderer
 	{
 			int startX = ((Integer)item.get("xCor")).intValue();
 	        int startY = ((Integer)item.get("yCor")).intValue();
-	        int w = gt.getWidth() + 1;
-	        int h = gt.getHeight() + 1;
-	        // draw a rectangle
-	        if (frame.isBorderOn())
+	        int w = gt.getGlyphWidth() + 2;
+	        int h = gt.getGlyphHeight() + 2;
+	        // fill it with the pixels or mark it as
+	        // self answers
+	        if (gt.isCube() && ((String)item.get("x-desc")).equals((String)item.get("y-desc")))
 	        {
-	        	g.setColor(Color.black);
-	        	g.drawRect(startX - 1, startY - 1, w, h);
-	        }
-	        // fill it with the pixels
-	        for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
+	        	g.setColor(Color.DARK_GRAY);
+	        	g.drawLine(startX + 2, startY + 2, startX + w - 4, startY + h - 4);
+	        	g.drawLine(startX + 2, startY + h - 4, startX + w - 4, startY + 2);
+		    }
+	        else
 	        {
-	        	int pixelX = gt.getXAt(i);
-	        	int pixelY = gt.getYAt(i);
-	        	double val = ((double[])item.get("scaledValue"))[i];
-	        	drawPixel(g, val, startX + pixelX, startY + pixelY);
+	        	// draw a bounding rectangle
+		        if (frame.isBorderOn())
+		        {
+		        	g.setColor(Color.black);
+		        	g.fillRect(startX - 1, startY - 1, w, h);
+		        }
+		        for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
+	        	{
+	        		int pixelX = gt.getXCorAt(i);
+	        		int pixelY = gt.getYCorAt(i);
+	        		double val = ((double[])item.get("scaledValue"))[i];
+	        		drawPixel(g, val, startX + pixelX, startY + pixelY);
+	        	}
 	        }
 	        // now draw a label 
 	        if (frame.getGlyphLayout().equals(StringConstants.TableLayout) ||
@@ -92,35 +103,33 @@ public class PixelRenderer extends LabelRenderer
         		int y = ((Integer)item.get("yCor")).intValue();
         		// does this item belong to the first row?
         		int fontHeight;
-        		if (gt.getWidth() < gt.getHeight())
-        			fontHeight = gt.getWidth() - 2;
+        		if (gt.getGlyphWidth() < gt.getGlyphHeight())
+        			fontHeight = gt.getGlyphWidth() - 2;
         		else
-        			fontHeight = gt.getHeight() - 2;
+        			fontHeight = gt.getGlyphHeight() - 2;
         		if (fontHeight < 0)
         			fontHeight = 0;
-        		if (y == 0)
+        		if (y == 0 && gt.isCube())
 	        	{
 	        		AffineTransform fontAT = new AffineTransform();
 	        		fontAT.rotate(Math.toRadians(270));
 	        		Font font = (new Font("ARIAL", Font.PLAIN, fontHeight)).deriveFont(fontAT);
 	        		String desc;
-	        		desc = (String)(item.get("desc"));
-	        		desc = desc.substring(0, desc.indexOf(","));
-			      	g.setColor(Color.black);
+	        		desc = (String)(item.get("x-desc"));
+	        		g.setColor(Color.black);
 			       	g.setFont(font);
-			       	g.drawString(desc, x + fontHeight/2 + gt.getWidth()/2, y - 2);
+			       	g.drawString(desc, x + fontHeight/2 + gt.getGlyphWidth()/2, y - 2);
 		       	}
 	        	// does this item belong to the left column?
 	        	if (x == 0)
 	        	{
 	        		Font font =  new Font("Arial", Font.PLAIN, fontHeight);
 	        		String desc;
-	        		desc = (String)(item.get("desc"));
-	        		desc = desc.substring(desc.indexOf(",") + 2, desc.length());
-			       	g.setColor(Color.black);
+	        		desc = (String)(item.get("y-desc"));
+	        		g.setColor(Color.black);
 			       	g.setFont(font);
 			       	int stringWidth = (int)(font.getStringBounds(desc, g.getFontRenderContext())).getWidth();
-			       	g.drawString(desc, x - stringWidth - 2, y + fontHeight/2 + gt.getHeight()/2);
+			       	g.drawString(desc, x - stringWidth - 2, y + fontHeight/2 + gt.getGlyphHeight()/2);
 		       	}
 	        }
 	}
@@ -134,6 +143,8 @@ public class PixelRenderer extends LabelRenderer
 	{
 		int red, green, blue;
 		double a1, a2, a3;
+		//v = getGammaCorrectedValue(v);
+		
 		if (colorMode.equals(StringConstants.HeatScale))
 		{
 			if (v <= 0.333d)
@@ -157,21 +168,37 @@ public class PixelRenderer extends LabelRenderer
 			red = (int)(255 * a1);
 			green = (int)(255 * a2);
 			blue = (int)(255 * a3);
+			if (red < 0)
+				red = 0;
+			if (green < 0)
+				green = 0;
+			if (blue < 0)
+				blue = 0;
+			gr.setColor(new Color(red, green, blue));
 		}
 		else //if (colorMode.equals(StringConstants.GrayScale))
 		{
+			gr.setColor(getColor(v));
 			red = 255 - (int)(v * 255);
 			green = 255 - (int)(v * 255);
 			blue = 255 - (int)(v * 255);
 		}
-		if (red < 0)
-			red = 0;
-		if (green < 0)
-			green = 0;
-		if (blue < 0)
-			blue = 0;
-		gr.setColor(new Color(red, green, blue));
+		
 		gr.fillRect(pX, pY, pixelSize, pixelSize);
+	}
+	
+	public Color getColor(double val)
+	{
+		Color c = new Color((int)(255 * val), (int)(255 * val), (int)(255 * val));
+		float[] arr = new float[3];
+		// val -> cie
+		arr[0] = (float)getGammaCorrectedValue(val);
+		arr[1] = (float)getGammaCorrectedValue(val);
+		arr[2] = (float)getGammaCorrectedValue(val);
+		// cie -> rgb
+		arr = new Color(0, 0, 0).getColorSpace().fromCIEXYZ(arr);
+		Color c1 = new Color(arr[0], arr[1], arr[2]);
+		return c;		
 	}
 	
 	 protected Shape getRawShape(VisualItem item) 
@@ -179,12 +206,18 @@ public class PixelRenderer extends LabelRenderer
 		 int x = 0, y = 0, width = 0, height = 0;
 		 x = ((Integer)item.get("xCor")).intValue();
 		 y = ((Integer)item.get("yCor")).intValue();
-		 width = gt.getWidth();
-		 height = gt.getHeight();
+		 width = gt.getGlyphWidth();
+		 height = gt.getGlyphHeight();
 		 // get bounding box dimensions
 	     m_bbox.setFrame(x, y, width, height);
 	     
 	     return m_bbox;
+	 }
+	 
+	 public static double getGammaCorrectedValue(double val)
+	 {
+		 double gamma = 0.5;
+		 return Math.pow(val, gamma);
 	 }
 	 
 	 public void setColorMode(String s)
