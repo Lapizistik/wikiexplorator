@@ -193,7 +193,7 @@ module Mediawiki
       uid = Mediawiki.ip2uid(ip)
       uid = @uid_aliases[uid] || uid # aliasing
       if !@ips && (uid<0)    # all IPs (anonymous edits) to one user
-        uid = @uid_aliases[Default_IP_UID] || uid  # aliasing
+        uid = @uid_aliases[Default_IP_UID] || Default_IP_UID # aliasing
       end
       user = @users_id[uid]
       if !user && create
