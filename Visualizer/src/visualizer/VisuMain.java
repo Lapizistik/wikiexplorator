@@ -5,6 +5,7 @@ package visualizer;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import prefuse.Display;
@@ -20,6 +21,7 @@ import visualizer.display.GlyphTable;
 import visualizer.display.Layouts;
 import visualizer.display.OptimizingLayouts;
 import visualizer.display.PixelRenderer;
+import visualizer.ruby.FileLoader;
 import visualizer.userInterface.PixelFrame;
 import visualizer.userInterface.PixelSelector;
 import visualizer.userInterface.ZoomControler;
@@ -47,6 +49,14 @@ public class VisuMain
      protected PixelRenderer r;
      protected String pixelLayout, glyphLayout, glyphSorting;
      protected PixelFrame frame;
+     
+     
+     public void init(String file)
+     {
+    	 DataSet set = FileLoader.load(file);
+    	 if (set != null)
+    		 init(set);
+     }
      
      /**
       * Initialize the whole visualization. All that is needed
@@ -84,7 +94,8 @@ public class VisuMain
 	     // zoom with mousewheel
 	     dis.addControlListener(new ZoomControler(dis, glyphTable));
 	     
-	     frame = new PixelFrame("PixelBased Data Visualization");
+	     if (frame == null)
+	    	 frame = new PixelFrame("Visualisierung");
 	     r.setFrame(frame);
 	     // add a control listener
 	     dis.addControlListener(new PixelSelector(frame, glyphTable, this, dis));
@@ -135,7 +146,7 @@ public class VisuMain
 		int startY = 0;
 		int space = 3;
 		glyphLayout = layout;
-		Vector v = new Vector();
+		ArrayList v = new ArrayList();
 		if (!layout.equals(StringConstants.OptimizedTableLayout)
 				&& !layout.equals(StringConstants.MDSLayout))
 		    for (int i = 0; i < glyphTable.getRowCount(); i++)
@@ -146,27 +157,32 @@ public class VisuMain
 		    	v.add(glyphTable.getItem(i));
 		//Sort.sort(v, glyphSorting);
 	    if (layout.equals(StringConstants.ZLayout))
-	    	Layouts.createZLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
+	    	Layouts.createZLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space);
 	    else if (layout.equals(StringConstants.MyZLayout))
-	    	Layouts.createFlexibleZLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space);
+	    	Layouts.createFlexibleZLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space);
 	    else if (layout.equals(StringConstants.RowLayout) || 
 	    		layout.equals(StringConstants.TableLayout))
 	    {	
-	    	if (glyphTable.getDataType().equals(StringConstants.Data3D))
-	    		Layouts.createRowLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space,
+	    	if (glyphTable.isCube())
+	    		Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space,
 	   			glyphTable.getXAxisCount(), glyphTable.getYAxisCount());
 	    	else
-	    		Layouts.createRowLayout(v, startX, startY, glyphTable.getWidth() + space, glyphTable.getHeight() + space, 0, 0);
+	    	{
+	    		if (layout.equals(StringConstants.RowLayout)) 
+	    			Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space, 0, 0);
+	    		else
+	    			Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space, 1, 0);
+	    	}
 	    }
 	    else if (layout.equals(StringConstants.OptimizedTableLayout))
 	    {
-	    	OptimizingLayouts.createOrderedTableLayout(v, startX, startY, glyphTable.getWidth() + space, 
-	    			glyphTable.getHeight() + space, glyphTable);
+	    	OptimizingLayouts.createOrderedTableLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, 
+	    			glyphTable.getGlyphHeight() + space, glyphTable);
 	    }
 	    else if (layout.equals(StringConstants.MDSLayout))
 	    {
-	    	OptimizingLayouts.createMDSLayout(v, glyphTable.getWidth() + space, 
-	    			glyphTable.getHeight() + space, glyphTable);
+	    	OptimizingLayouts.createMDSLayout(v, glyphTable.getGlyphWidth() + space, 
+	    			glyphTable.getGlyphHeight() + space, glyphTable);
 	    }
 	    if (!layout.equals(StringConstants.OptimizedTableLayout)
 	    		&& !layout.equals(StringConstants.MDSLayout))
@@ -196,9 +212,9 @@ public class VisuMain
 	public void updatePixelLayout(String layout)
 	{
 		if (layout.equals(StringConstants.RowLayout))
-			updatePixelLayout(layout, glyphTable.getWidth(), 0);
+			updatePixelLayout(layout, glyphTable.getGlyphWidth(), 0);
 		else if (layout.equals(StringConstants.ColumnLayout))
-			updatePixelLayout(layout, 0, glyphTable.getHeight());
+			updatePixelLayout(layout, 0, glyphTable.getGlyphHeight());
 		else
 			updatePixelLayout(layout, 0, 0);
 	}
@@ -208,12 +224,12 @@ public class VisuMain
 		pixelLayout = layout;
 		// create a Vector of Points which represent the 
 		// pixels
-		Vector pixels = new Vector();
+		ArrayList pixels = new ArrayList();
 		for (int i = 0; i < glyphTable.getPixelCount(); i++)
 		{
 			if (i >= frame.getStartIndex() && i <= frame.getStopIndex())
-				pixels.add(new Point(glyphTable.getXAt(i),
-					glyphTable.getYAt(i)));
+				pixels.add(new Point(glyphTable.getXCorAt(i),
+					glyphTable.getYCorAt(i)));
 		}
 		
 		// assign the layout
@@ -240,8 +256,8 @@ public class VisuMain
 		for (int i = 0; i < pixels.size(); i++)
 		{
 			Point p = ((Point)pixels.get(i));
-			glyphTable.setXAt((int)p.getX(), frame.getStartIndex() + i);
-			glyphTable.setYAt((int)p.getY(), frame.getStartIndex() + i);
+			glyphTable.setXCorAt((int)p.getX(), frame.getStartIndex() + i);
+			glyphTable.setYCorAt((int)p.getY(), frame.getStartIndex() + i);
 		}
 	}
 	
@@ -274,7 +290,6 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	DataSet test = new TestCube();
-    	visuMain1.init(test);
+    	visuMain1.init(new TestTable());
     }
 }

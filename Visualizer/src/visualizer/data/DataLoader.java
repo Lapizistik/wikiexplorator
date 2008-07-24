@@ -41,10 +41,11 @@ public class DataLoader
         squareWidth *= pixelSize;
         // add all columns
         gt.addColumn("index", int.class);
-        gt.addColumn("desc", String.class);
+        gt.addColumn("y-desc", String.class);
         gt.addColumn("xCor", int.class);
         gt.addColumn("yCor", int.class);
         gt.addColumn("mean", double.class);
+        gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
         gt.addColumn("scaledValue", double[].class);
         // first create all Glyphs  
@@ -61,12 +62,12 @@ public class DataLoader
         {
         	VisualItem newItem = gt.addItem();
         	newItem.set("index", new Integer(currentIndex));
-        	newItem.set("desc", dt.getYAxisNameAt(y));
+        	newItem.set("y-desc", dt.getYAxisNameAt(y));
         	newItem.set("xCor", new Integer(0));
         	newItem.set("yCor", new Integer(0));
         	
         	double[] val, scalVal;
-        	double sum = 0;
+        	double sum = 0, scalMean = 0;
         	val = new double[dt.getXAxisCount()];
         	scalVal = new double[dt.getXAxisCount()];
         	
@@ -78,22 +79,27 @@ public class DataLoader
 	        	val[x] = dt.getValueAt(x, y);
 	        	scalVal[x] = val[x] / highest;
 	        	sum += val[x];
+	        	scalMean += scalVal[x];
 		    }
            	sum /= (double)dt.getXAxisCount();
-        	newItem.set("value", val);
+        	scalMean /= (double)dt.getXAxisCount();
+           	newItem.set("value", val);
 	        newItem.set("scaledValue", scalVal);
 	        newItem.set("mean", new Double(sum));
+	        newItem.set("scaledMean", new Double(sum));
 	        	
 	        currentIndex++;
 	     }
          
-         // create z axis description
-	     gt.init(StringConstants.Data2D, dt.getXAxisCount(), dt.getYAxisCount(), 0);
-	     for (int x = 0; x < dt.getXAxisCount(); x++)
-	     {
-	    	 gt.setDescAt(dt.getXAxisNameAt(x), x);
-	     }
-    }
+        // create z axis description
+        gt.setAxisTitles(dt.getXAxisTitle(), dt.getYAxisTitle());
+	    
+	    gt.init(dt.getXAxisCount(), dt.getYAxisCount(), 0);
+	    for (int x = 0; x < dt.getXAxisCount(); x++)
+	    	gt.setXAxisDescAt(dt.getXAxisNameAt(x), x);
+	    for (int y = 0; y < dt.getYAxisCount(); y++)	
+	    	gt.setYAxisDescAt(dt.getYAxisNameAt(y), y);
+	}
 	
 	
 	/**
@@ -111,7 +117,8 @@ public class DataLoader
         squareWidth *= pixelSize;
         // add all columns
         gt.addColumn("index", int.class);
-        gt.addColumn("desc", String.class);
+        gt.addColumn("x-desc", String.class);
+        gt.addColumn("y-desc", String.class);
         gt.addColumn("xCor", int.class);
         gt.addColumn("yCor", int.class);
         gt.addColumn("mean", double.class);
@@ -138,7 +145,8 @@ public class DataLoader
         	{
 	        	VisualItem newItem = gt.addItem();
 	        	newItem.set("index", new Integer(currentIndex));
-	        	newItem.set("desc", dc.getXAxisNameAt(x) + ", " + dc.getYAxisNameAt(y));
+	        	newItem.set("x-desc", dc.getXAxisNameAt(x));
+	        	newItem.set("y-desc", dc.getYAxisNameAt(y));
 	        	newItem.set("xCor", new Integer(0));
 	        	newItem.set("yCor", new Integer(0));
 	        	// create pixels for this glyph
@@ -192,11 +200,15 @@ public class DataLoader
 	         newItem.set("position", "side");
 	         newItem.set("text", dc.getYAxisNameAt(i));
 	     }*/
-	     // create z axis description
-	     gt.init(StringConstants.Data3D, dc.getXAxisCount(), dc.getYAxisCount(), dc.getZAxisCount());
+        gt.setAxisTitles(dc.getXAxisTitle(), dc.getYAxisTitle(),
+        		dc.getZAxisTitle());
+	     // create axis description
+	     gt.init(dc.getXAxisCount(), dc.getYAxisCount(), dc.getZAxisCount());
+	     for (int x = 0; x < dc.getXAxisCount(); x++)
+	     	 gt.setXAxisDescAt(dc.getXAxisNameAt(x), x);
+	     for (int y = 0; y < dc.getYAxisCount(); y++)
+	     	 gt.setYAxisDescAt(dc.getYAxisNameAt(y), y);
 	     for (int z = 0; z < dc.getZAxisCount(); z++)
-	     {
-	    	 gt.setDescAt(dc.getZAxisNameAt(z), z);
-	     }
-    } // end of loadCube
+	     	 gt.setZAxisDescAt(dc.getZAxisNameAt(z), z);
+	} // end of loadCube
 }

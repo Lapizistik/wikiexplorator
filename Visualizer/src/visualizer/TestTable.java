@@ -45,6 +45,16 @@ public class TestTable extends DataTable
 		return "Tabelle mit Testwerten";
 	}
 	
+    public String getXAxisTitle()
+    {
+    	return "X-Achse";
+    }
+    
+    public String getYAxisTitle()
+    {
+    	return "Y-Achse";
+    }
+    
     public int getXAxisCount()
 	{
 		return 200;
