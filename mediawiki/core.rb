@@ -745,7 +745,7 @@ module Mediawiki
       RevisionsView.new(@revisions, filter) # Reuse views?
     end
 
-    # current revision
+    # current revision. Maybe _nil_ if all revisions are filtered.
     def revision(filter=@wiki.filter)
       #      @current_revision
       revisions(filter).last
@@ -769,7 +769,11 @@ module Mediawiki
 
     # links of current revision
     def links(filter=@filter)
-      revision(filter).links(filter)
+      if r=revision(filter)
+        r.links(filter)
+      else
+        EmptyView.instance
+      end
     end
 
     # view on users through _filter_
@@ -1349,7 +1353,7 @@ module Mediawiki
       select_methods
     end
 
-    # Returns the number of objects in the view.
+    # Returns the number of objects seen through the view.
     def size
       l=0
       each { l+=1 }
@@ -1413,6 +1417,15 @@ module Mediawiki
       end
     end
 
+  end
+
+  # A view on an empty list singleton.
+  class EmptyView < View
+    include Singleton
+    def initialize
+      @list = []
+    end
+    alias each each_item
   end
   
   # A view on an Enumerable of users.
