@@ -748,7 +748,7 @@ module Mediawiki
     # current revision
     def revision(filter=@wiki.filter)
       #      @current_revision
-      RevisionsView.new(@revisions, filter).last
+      revisions(filter).last
     end
 
     # The plain text of the current revision of the page
@@ -1392,6 +1392,7 @@ module Mediawiki
     def last
       if @list.respond_to?(:reverse_each)
         @list.reverse_each { |i| return i if allowed?(i) }
+        return nil
       else
         first
       end
