@@ -10,6 +10,7 @@ require 'set'         # the Set class
 require 'mediawiki/db'
 require 'parsedate'
 require 'yaml'
+require 'singleton'
 
 # = The Mediawiki Namespace
 module Mediawiki
