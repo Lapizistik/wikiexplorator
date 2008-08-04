@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.Shape;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
@@ -14,6 +15,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
 
 import prefuse.Constants;
 import prefuse.data.Edge;
@@ -46,6 +48,8 @@ public class PixelRenderer extends LabelRenderer
 	protected GlyphTable gt;
 	protected String colorMode = StringConstants.GrayScale;
 	protected PixelFrame frame;
+	protected float XYZn[];
+	protected int[] color;
 	
 	public PixelRenderer(String n, GlyphTable tab, int ps, int ts)
 	{
@@ -53,6 +57,11 @@ public class PixelRenderer extends LabelRenderer
 		gt = tab;
 		pixelSize = ps;
 		textSize = ts;
+		// create reference white
+		float white[] = new float[] {1f, 1f, 1f};
+		XYZn = new Color(0, 0, 0).getColorSpace().toCIEXYZ(white);
+		color = new int[101];
+		createColorList();
 	}
 	
 	public void setFrame(PixelFrame pf)
@@ -104,9 +113,9 @@ public class PixelRenderer extends LabelRenderer
         		// does this item belong to the first row?
         		int fontHeight;
         		if (gt.getGlyphWidth() < gt.getGlyphHeight())
-        			fontHeight = gt.getGlyphWidth() - 2;
+        			fontHeight = gt.getGlyphWidth() - 1;
         		else
-        			fontHeight = gt.getGlyphHeight() - 2;
+        			fontHeight = gt.getGlyphHeight() - 1;
         		if (fontHeight < 0)
         			fontHeight = 0;
         		if (y == 0 && gt.isCube())
@@ -129,7 +138,7 @@ public class PixelRenderer extends LabelRenderer
 	        		g.setColor(Color.black);
 			       	g.setFont(font);
 			       	int stringWidth = (int)(font.getStringBounds(desc, g.getFontRenderContext())).getWidth();
-			       	g.drawString(desc, x - stringWidth - 2, y + fontHeight/2 + gt.getGlyphHeight()/2);
+			       	g.drawString(desc, x - stringWidth - 3, y + fontHeight/2 + gt.getGlyphHeight()/2 + 1);
 		       	}
 	        }
 	}
@@ -143,8 +152,9 @@ public class PixelRenderer extends LabelRenderer
 	{
 		int red, green, blue;
 		double a1, a2, a3;
-		//v = getGammaCorrectedValue(v);
-		
+		double test = v;
+		v = (double)color[(int)Math.round(v * 100d)] / 100d;
+		v = getGammaCorrectedValue(v);
 		if (colorMode.equals(StringConstants.HeatScale))
 		{
 			if (v <= 0.333d)
@@ -178,10 +188,12 @@ public class PixelRenderer extends LabelRenderer
 		}
 		else //if (colorMode.equals(StringConstants.GrayScale))
 		{
+			//gr.setColor(getColor(v));
+			//red = (int)(v * 255);
+			//green = (int)(v * 255);
+			//blue = (int)(v * 255);
+			//Color c = new Color(red, green, blue);
 			gr.setColor(getColor(v));
-			red = 255 - (int)(v * 255);
-			green = 255 - (int)(v * 255);
-			blue = 255 - (int)(v * 255);
 		}
 		
 		gr.fillRect(pX, pY, pixelSize, pixelSize);
@@ -189,16 +201,36 @@ public class PixelRenderer extends LabelRenderer
 	
 	public Color getColor(double val)
 	{
-		Color c = new Color((int)(255 * val), (int)(255 * val), (int)(255 * val));
-		float[] arr = new float[3];
-		// val -> cie
-		arr[0] = (float)getGammaCorrectedValue(val);
-		arr[1] = (float)getGammaCorrectedValue(val);
-		arr[2] = (float)getGammaCorrectedValue(val);
-		// cie -> rgb
-		arr = new Color(0, 0, 0).getColorSpace().fromCIEXYZ(arr);
-		Color c1 = new Color(arr[0], arr[1], arr[2]);
-		return c;		
+		float v = (float) val;
+		// define matching grey color in lab space
+		float l = v * 100f;
+		float a = 0;
+		float b = 0;
+		// convert lab --> xyz
+		float delta = 0;//6f / 29f;
+		float fY = (l + 16f) / 116f;
+		float fX = fY + (a / 55f);
+		float fZ = fY - (b / 200f);
+		float X, Y, Z;
+		// Y
+		if (fY > delta)
+			Y = XYZn[1] * (float)Math.pow(fY, 3);
+		else
+			Y = fY - (16f / 116f) * 3 * delta * delta * XYZn[1];
+		// X
+		if (fX > delta)
+			X = XYZn[0] * (float)Math.pow(fX, 3);
+		else
+			X = fX - (16f / 116f) * 3 * delta * delta * XYZn[0];
+		// Z
+		if (fZ > delta)
+			Z = XYZn[2] * (float)Math.pow(fZ, 3);
+		else
+			Z = fZ - (16f / 116f) * 3 * delta * delta * XYZn[2];
+		// convert XYZ --> RGB
+		float RGB[];
+		RGB = ColorSpace.getInstance(ColorSpace.CS_CIEXYZ).toRGB(new float[] {X, Y, Z});
+		return new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB), RGB, 1);
 	}
 	
 	 protected Shape getRawShape(VisualItem item) 
@@ -216,12 +248,64 @@ public class PixelRenderer extends LabelRenderer
 	 
 	 public static double getGammaCorrectedValue(double val)
 	 {
-		 double gamma = 0.5;
+		 double gamma = 0.4;
 		 return Math.pow(val, gamma);
 	 }
 	 
 	 public void setColorMode(String s)
 	 {
 		 colorMode = s;
+	 }
+	 
+	 public void createColorList()
+	 {
+		 ArrayList<Point> colorList = new ArrayList<Point>();
+		 int[] dist = gt.getDistribution();
+		 //for (int i = 0; i < dist.length; i++)
+			// System.out.println("Wert " + i + ": " + dist[i]);
+		  // initialize linear list
+		 for (int i = 0; i < dist.length; i++)
+			 if (dist[i] > 0)
+				 colorList.add(new Point(i, i));
+		  // calculate new distances
+		 double[] distanceX = new double[colorList.size() - 1];
+		 double sum = 0;
+		 for (int i = 1; i < colorList.size(); i++)
+		 {
+			 distanceX[i - 1] = getDesiredDistance(colorList.get(i - 1), colorList.get(i)); 
+			 sum += distanceX[i - 1];
+		 }
+		 // calculate new positions
+		 double counter = 0;
+		 for (int i = 1; i < colorList.size() - 1; i++)
+		 {
+			 double x, y;
+			 y = (int)colorList.get(i).getY();
+			 counter += distanceX[i - 1];
+			 x = (counter / sum) * 100;
+			 colorList.get(i).setLocation(x, y);
+		 }
+		 
+		 for (int i = 0; i < colorList.size(); i++)
+		 {
+			 double x, y;
+			 y = (int)colorList.get(i).getY();
+			 x = (int)colorList.get(i).getX();
+			 color[(int)y] = (int)x;
+		 }
+		 
+		 for (int i = 1; i < color.length; i++)
+		 {
+			 if (color[i] == 0)
+				 color[i] = color[i - 1];
+		 }
+		 // Test
+		 //for (int i = 0; i < color.length; i++)
+		//	 System.out.println("Wert " + i + " liegt bei Farbe " + color[i]);
+	 }
+	 
+	 protected double getDesiredDistance(Point a, Point b)
+	 {
+		 return (Math.sqrt(b.getX() - a.getX()));
 	 }
 } // end of class LabelRenderer

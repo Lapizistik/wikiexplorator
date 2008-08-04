@@ -25,10 +25,12 @@ public class GlyphTable extends VisualTable
 	protected int[] pixelY;
 	protected int glyphWidth, glyphHeight, xAxisCount, yAxisCount, zAxisCount;
 	protected String[] xAxisDesc, yAxisDesc, zAxisDesc;
+	protected int[] distribution;
 	
 	public GlyphTable(Visualization vis, String str)
 	{
 		super(vis, str);
+		distribution = new int[101];
 	}
 	
 	public boolean isCube()
@@ -228,5 +230,16 @@ public class GlyphTable extends VisualTable
 			item.set("mean", new Double(val));
 			item.set("scaledMean", new Double(scalVal));
 		}
+	}
+	
+	public void addToDistribution(double val)
+	{
+		 int index = (int)Math.round(val * 100d);
+		 distribution[index]++;
+	}
+	
+	public int[] getDistribution()
+	{
+		return distribution;
 	}
 }
