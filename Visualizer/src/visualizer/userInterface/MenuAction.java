@@ -4,6 +4,7 @@ package visualizer.userInterface;
  */
 
 
+import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -44,7 +45,23 @@ public class MenuAction implements ActionListener
 	{
 		String source = ((JMenuItem)e.getSource()).getParent().getName();
 		String selection = ((JMenuItem)e.getSource()).getText();
-		if (source.equals("glyphMenu"))
+		if (source.equals("fileMenu"))
+		{
+			if (selection.equals("Als Bilddatei exportieren"))
+				frame.export();
+			else if (selection.equals("Datei laden"))
+			{
+				FileDialog dialog = new FileDialog(frame, "Datei öffnen");
+				dialog.setVisible(true);
+				String filename = dialog.getFile();
+				if (filename != null) 
+				{
+					frame.initReload(dialog.getDirectory() + filename);
+				}
+				dialog.dispose();
+			}
+		}
+		else if (source.equals("glyphMenu"))
 		{
 			frame.setGlyphLayout(selection);
 			frame.updateGlyphLayout();

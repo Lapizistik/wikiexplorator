@@ -31,7 +31,7 @@ public class PixelSelector extends SubtreeDragControl
 {
 	protected PixelFrame frame;
 	protected String selection = StringConstants.Nothing;
-	protected GlyphTable at;
+	protected GlyphTable gt;
 	protected int select1, select2;
 	protected VisuMain vis;
 	protected Display dis;
@@ -40,7 +40,7 @@ public class PixelSelector extends SubtreeDragControl
 	{
 		super();
 		frame = pf;
-		at = tab;
+		gt = tab;
 		vis = v;
 		dis = d;
 		select1 = -1;
@@ -55,7 +55,7 @@ public class PixelSelector extends SubtreeDragControl
 			selection = StringConstants.Nothing;
 			select1 = -1;
 			select2 = -1;
-			frame.setPixelDesc(selection);
+			frame.setZDesc(selection);
 		}
 		else
 		{
@@ -71,14 +71,14 @@ public class PixelSelector extends SubtreeDragControl
 			int pixel = -1;
 			for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 			{
-				if (at.getXAt(i) == absX && at.getYAt(i) == absY)
+				if (gt.getXCorAt(i) == absX && gt.getYCorAt(i) == absY)
 					pixel = i;
 			}
 			//frame.setInfo("Clicked pixel: " + pixel);//clickX + ", " + clickY + " - abs: " + p.getX() + ", " + p.getY());
 			if (selection.equals(StringConstants.Nothing) && pixel > -1)
 			{
-				frame.setPixelDesc("Von " + at.getZDescAt(pixel) + " bis ");
-				selection = (at.getZDescAt(pixel));
+				frame.setZDesc(gt.getPixelDescAt(pixel) + " - ");
+				selection = (gt.getPixelDescAt(pixel));
 				select1 = pixel;
 			}
 			else if (pixel > -1)
@@ -97,10 +97,10 @@ public class PixelSelector extends SubtreeDragControl
 				}
 				
 				selection = StringConstants.Nothing;
-				frame.setPixelDesc(selection);
+				frame.setZDesc(selection);
 				select1 = -1;
 				select2 = -1;
-				at.updateMeans(startIndex, stopIndex);
+				gt.updateMeans(startIndex, stopIndex);
 				frame.setRange(startIndex, stopIndex);
 				frame.updatePixelLayout();
 				frame.updateGlyphLayout();
@@ -113,8 +113,10 @@ public class PixelSelector extends SubtreeDragControl
             java.awt.event.MouseEvent e)
 	{
 		Display d = (Display)e.getSource();
-        frame.setGlyphDesc((String)item.get("desc"));
-        d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		frame.setYDesc((String)item.get("y-desc"));
+		if (gt.isCube())
+			frame.setXDesc((String)item.get("x-desc"));
+		d.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
         int clickX = e.getX();
 		int clickY = e.getY();
 		Point2D p = dis.getAbsoluteCoordinate(new Point(clickX, clickY), null);
@@ -125,16 +127,16 @@ public class PixelSelector extends SubtreeDragControl
 		int pixel = -1;
 		for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 		{
-			if (at.getXAt(i) == absX && at.getYAt(i) == absY)
+			if (gt.getXCorAt(i) == absX && gt.getYCorAt(i) == absY)
 				pixel = i;
 		}
 		if (selection.equals(StringConstants.Nothing) && pixel > -1)
         {
-        	frame.setPixelDesc(at.getZDescAt(pixel));
+        	frame.setPixelValue(((double[])item.get("value"))[pixel]);
         }
         else if (pixel > -1)
         {
-        	frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
+        	frame.setZDesc(selection + " - " + gt.getPixelDescAt(pixel));
         }
     }
 	
@@ -153,16 +155,18 @@ public class PixelSelector extends SubtreeDragControl
 		int pixel = -1;
 		for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 		{
-			if (at.getXAt(i) == absX && at.getYAt(i) == absY)
+			if (gt.getXCorAt(i) == absX && gt.getYCorAt(i) == absY)
 				pixel = i;
 		}
 		if (selection.equals(StringConstants.Nothing) && pixel > -1)
         {
-        	frame.setPixelDesc(at.getZDescAt(pixel));
+        	frame.setZDesc(gt.getPixelDescAt(pixel));
+        	frame.setPixelValue(((double[])item.get("value"))[pixel]);
         }
         else if (pixel > -1)
         {
-        	frame.setPixelDesc("Von " + selection + " bis " + at.getZDescAt(pixel));
+        	frame.setZDesc(selection + " - " + gt.getPixelDescAt(pixel));
+        	frame.setPixelValue(((double[])item.get("value"))[pixel]);
         }
     }
 	
@@ -171,11 +175,14 @@ public class PixelSelector extends SubtreeDragControl
 	{
 		Display d = (Display)e.getSource();
 	   	d.setCursor(Cursor.getDefaultCursor());
-	   	frame.setGlyphDesc(StringConstants.Nothing);
+	   	frame.setXDesc(StringConstants.Nothing);
+	   	frame.setYDesc(StringConstants.Nothing);
+	   	frame.setZDesc(StringConstants.Nothing);
+	   	frame.setPixelValue(0);
 	    if (selection.equals(StringConstants.Nothing))
-        	frame.setPixelDesc(StringConstants.Nothing);
+        	frame.setZDesc(StringConstants.Nothing);
         else
-        	frame.setPixelDesc("Von " + selection + " bis ");
+        	frame.setZDesc(selection + " - ");
     }
 	
 	public void mouseClicked(java.awt.event.MouseEvent e)
@@ -185,7 +192,7 @@ public class PixelSelector extends SubtreeDragControl
 			select1 = -1;
 			select2 = -1;
 			selection = StringConstants.Nothing;
-			frame.setPixelDesc(selection);
+			frame.setZDesc(selection);
 		}
 	}
 }
