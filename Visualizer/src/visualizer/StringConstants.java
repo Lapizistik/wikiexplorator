@@ -25,7 +25,7 @@ public class StringConstants
 		FatRowLayout = "Schlangenlinien",
 		MatrixLayout = "Matrix",
 		GrayScale = "Grauwertskala",
-		HeatScale = "Hitzeskala",
+		HeatScale = "Temperaturskala",
 		GlyphBorders = "Glyphenumrandung",
 		Data2D = "Tabelle",
 		Data3D = "Wuerfel",

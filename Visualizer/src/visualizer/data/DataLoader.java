@@ -33,7 +33,7 @@ public class DataLoader
 	 *(currently not in use!) for the labels. 
 	 */
 	public static void loadTable(DataTable dt, GlyphTable gt,
-			VisualTable label, int pixelSize, int textSize) 
+			int pixelSize, int textSize) 
     {
         // size in pixels needed to show all
         // values of one author as Z or Hilbert Layout
@@ -49,8 +49,8 @@ public class DataLoader
         gt.addColumn("value", double[].class);
         gt.addColumn("scaledValue", double[].class);
         // first create all Glyphs  
-        double highest = 0;
-    	for (int x = 0; x < dt.getXAxisCount(); x++)
+        double highest = dt.getValueAt(0, 0);
+        for (int x = 0; x < dt.getXAxisCount(); x++)
      	{
       	    for (int y = 0; y < dt.getYAxisCount(); y++)
       	    	if (dt.getValueAt(x, y) > highest)
@@ -78,7 +78,8 @@ public class DataLoader
 	        	// in the z-axis
 	        	val[x] = dt.getValueAt(x, y);
 	        	scalVal[x] = val[x] / highest;
-	        	sum += val[x];
+	        	gt.addToDistribution(scalVal[x]);
+      	    	sum += val[x];
 	        	scalMean += scalVal[x];
 		    }
            	sum /= (double)dt.getXAxisCount();
@@ -91,10 +92,9 @@ public class DataLoader
 	        currentIndex++;
 	     }
          
-        // create z axis description
+        gt.init(dt.getXAxisCount(), dt.getYAxisCount(), 0);
+        // create axis description
         gt.setAxisTitles(dt.getXAxisTitle(), dt.getYAxisTitle());
-	    
-	    gt.init(dt.getXAxisCount(), dt.getYAxisCount(), 0);
 	    for (int x = 0; x < dt.getXAxisCount(); x++)
 	    	gt.setXAxisDescAt(dt.getXAxisNameAt(x), x);
 	    for (int y = 0; y < dt.getYAxisCount(); y++)	
@@ -109,7 +109,7 @@ public class DataLoader
 	 *(currently not in use!) for the labels. 
 	 */
 	public static void loadCube(DataCube dc, GlyphTable gt,
-			VisualTable label, int pixelSize, int textSize) 
+			int pixelSize, int textSize) 
     {
         // size in pixels needed to show all
         // z values
@@ -129,15 +129,15 @@ public class DataLoader
     	// to create a value for the color that's between
     	// 0 and 1, we need to know the highest value
     	// of all pixels
-    	double highest = 0;
+    	double highest = dc.getValueAt(0, 0, 0);
     	for (int x = 0; x < dc.getXAxisCount(); x++)
      	{
       	    for (int y = 0; y < dc.getYAxisCount(); y++)
       	    	for (int z = 0; z < dc.getZAxisCount(); z++)
-      	    		if (dc.getValueAt(x, y, z) > highest)
+      	    		if (dc.getValueAt(x, y, z) > highest && (x != y))
       	    			highest = dc.getValueAt(x, y, z);
       	}
-    	
+    	  	
         int currentIndex = 0;
         for (int y = 0; y < dc.getYAxisCount(); y++)
         {
@@ -160,6 +160,8 @@ public class DataLoader
 		       	{
 	            	val[z] = dc.getValueAt(x, y, z);
 	        		scalVal[z] = val[z] / highest;
+	        		if (x != y)
+	        			gt.addToDistribution(scalVal[z]);
 	        		sum += val[z];
 	        		scaledMean += scalVal[z];
 		       	}
@@ -174,33 +176,7 @@ public class DataLoader
 	     	}// end of for y
         }// end of for x
         
-         // create the labeling table
-	     /*label.addColumn("xCor", int.class);
-	     label.addColumn("yCor", int.class);
-	     label.addColumn("type", String.class);
-	     label.addColumn("text", String.class);
-	     label.addColumn("position", String.class);
-	     // create headers
-	     for (int i = 0; i < dc.getXAxisCount(); i++)
-	     {
-	    	 VisualItem newItem = label.addItem();
-	         newItem.set("xCor", new Integer(0));
-	         newItem.set("yCor", new Integer(0));
-	         newItem.set("type", "label");
-	         newItem.set("position", "header");
-	         newItem.set("text", dc.getXAxisNameAt(i));
-	     }
-	     // create labeling on left side
-	     for (int i = 0; i < dc.getYAxisCount(); i++)
-	     {
-	    	 VisualItem newItem = label.addItem();
-	         newItem.set("xCor", new Integer(0));
-	         newItem.set("yCor", new Integer(0));
-	         newItem.set("type", "label");
-	         newItem.set("position", "side");
-	         newItem.set("text", dc.getYAxisNameAt(i));
-	     }*/
-        gt.setAxisTitles(dc.getXAxisTitle(), dc.getYAxisTitle(),
+         gt.setAxisTitles(dc.getXAxisTitle(), dc.getYAxisTitle(),
         		dc.getZAxisTitle());
 	     // create axis description
 	     gt.init(dc.getXAxisCount(), dc.getYAxisCount(), dc.getZAxisCount());

@@ -21,19 +21,11 @@ public class TestTable extends DataTable
 		val = new double[getXAxisCount()][getYAxisCount()];
 		for (int author = 0; author < getYAxisCount(); author++)
 		{
-			double d = Math.random();
-			if (d > 0.9)
-				for (int time = 0; time < getXAxisCount(); time++)
-					val[time][author] = 0.9 + Math.random() / 10;
-			else if (d > 0.7)
-				for (int time = 0; time < getXAxisCount(); time++)
-					val[time][author] = Math.random() / 3;
-			else if (d > 0.4)
-				for (int time = 0; time < getXAxisCount(); time++)
-					val[time][author] = (double)time / (double)getXAxisCount() + Math.random() / 5;
-			else
-				for (int time = 0; time < getXAxisCount(); time++)
-					val[time][author] = 1 - (double)time / (double)getXAxisCount() + Math.random() / 5;
+			for (int time = 0; time < getXAxisCount(); time++)
+				//if (time < 15)
+					val[time][author] = time;//Math.random();
+				//else
+					//val[time][author] = 20 + Math.random();
 		}
 	}
 	
@@ -57,12 +49,12 @@ public class TestTable extends DataTable
     
     public int getXAxisCount()
 	{
-		return 200;
+		return 100;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 50;
+		return 4;
 	}
 	
     /**

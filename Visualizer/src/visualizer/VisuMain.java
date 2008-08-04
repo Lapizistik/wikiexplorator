@@ -41,7 +41,7 @@ public class VisuMain
 {
 	 protected Visualization vis;
 	 protected GlyphTable glyphTable;
-	 protected VisualTable labelTable;
+	 //protected VisualTable labelTable;
 	 protected DataSet ds = new DataSet();
 	 protected Display dis;
 	 protected int textSize = 0;
@@ -74,9 +74,9 @@ public class VisuMain
 	     // load data and create the glyph and pixel tables
 	     ds = data;
 	     if (ds instanceof DataTable)
-	    	 DataLoader.loadTable((DataTable)ds, glyphTable, labelTable, pixelSize, textSize);
+	    	 DataLoader.loadTable((DataTable)ds, glyphTable, pixelSize, textSize);
 	     else if (ds instanceof DataCube)
-	    	 DataLoader.loadCube((DataCube)ds, glyphTable, labelTable, pixelSize, textSize);
+	    	 DataLoader.loadCube((DataCube)ds, glyphTable, pixelSize, textSize);
 	        
 	     // setup renderer
 	     r = new PixelRenderer("label", glyphTable, pixelSize,
@@ -144,7 +144,7 @@ public class VisuMain
 	{
 		int startX = 0;
 		int startY = 0;
-		int space = 3;
+		int space = 0;//3;
 		glyphLayout = layout;
 		ArrayList v = new ArrayList();
 		if (!layout.equals(StringConstants.OptimizedTableLayout)
@@ -290,6 +290,6 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	visuMain1.init(new TestTable());
+    	visuMain1.init("cube4.txt");
     }
 }
