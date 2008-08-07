@@ -27,6 +27,11 @@ public class StringConstants
 		GrayScale = "Grauwertskala",
 		HeatScale = "Temperaturskala",
 		GlyphBorders = "Glyphenumrandung",
+		GlyphSpaces = "Glyphenabstand", 
+		BackgroundColor = "Hintergrundfarbe",
+		BackWhite = "Weiss",
+		BackGray = "Grau",
+		BackBlue = "Blau",
 		Data2D = "Tabelle",
 		Data3D = "Wuerfel",
 		Nothing = "Nichts gewaehlt";

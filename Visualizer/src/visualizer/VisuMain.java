@@ -144,7 +144,7 @@ public class VisuMain
 	{
 		int startX = 0;
 		int startY = 0;
-		int space = 0;//3;
+		int space = frame.getSpace();
 		glyphLayout = layout;
 		ArrayList v = new ArrayList();
 		if (!layout.equals(StringConstants.OptimizedTableLayout)
@@ -290,6 +290,6 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	visuMain1.init("cube4.txt");
+    	visuMain1.init(new TestTable());
     }
 }
