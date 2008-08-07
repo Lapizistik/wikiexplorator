@@ -70,6 +70,7 @@ public class PixelFrame extends JFrame
 	protected String glyph, pixel, pref;
 	protected GlyphTable gt;
 	protected boolean bordersOn = true;
+	protected int  space = 3;
 	protected CellConstraints cc;
 	
 	public PixelFrame(String title)
@@ -148,7 +149,7 @@ public class PixelFrame extends JFrame
 		JMenuItem[] fileItem = new JMenuItem[3];
 		JMenuItem[] glyphItem = new JMenuItem[6];
 		JMenuItem[] pixelItem = new JMenuItem[5];
-		JMenuItem[] prefItem = new JMenuItem[3];
+		JMenuItem[] prefItem = new JMenuItem[5];
 		fileItem[0] = new JMenuItem("Als Bilddatei exportieren");
 		fileItem[1] = new JMenuItem("Datei laden");
 		fileItem[2] = new JMenuItem("Beenden");
@@ -185,6 +186,19 @@ public class PixelFrame extends JFrame
 		prefItem[0].setSelected(true);
 		prefItem[2] = new JCheckBoxMenuItem(StringConstants.GlyphBorders);
 		prefItem[2].setSelected(true);
+		prefItem[3] = new JMenu(StringConstants.GlyphSpaces);
+		((JMenu)prefItem[3]).getPopupMenu().setName("spaceMenu");
+		addItemTo(new JMenuItem("0"), (JMenu)prefItem[3], false);
+		addItemTo(new JMenuItem("1"), (JMenu)prefItem[3], false);
+		addItemTo(new JMenuItem("2"), (JMenu)prefItem[3], false);
+		addItemTo(new JMenuItem("3"), (JMenu)prefItem[3], false);
+		addItemTo(new JMenuItem("4"), (JMenu)prefItem[3], false);
+		addItemTo(new JMenuItem("5"), (JMenu)prefItem[3], false);
+		prefItem[4] = new JMenu(StringConstants.BackgroundColor);
+		((JMenu)prefItem[4]).getPopupMenu().setName("backgroundMenu");
+		addItemTo(new JMenuItem(StringConstants.BackWhite), (JMenu)prefItem[4], false);
+		addItemTo(new JMenuItem(StringConstants.BackGray), (JMenu)prefItem[4], false);
+		addItemTo(new JMenuItem(StringConstants.BackBlue), (JMenu)prefItem[4], false);
 		for (int i = 0; i < glyphItem.length; i++)
 			addItemTo(glyphItem[i], glyphMenu, i < glyphItem.length - 1);
 		for (int i = 0; i < pixelItem.length; i++)
@@ -464,6 +478,21 @@ public class PixelFrame extends JFrame
 	{
 		vis.init(filename);
 		//dispose();
+	}
+	
+	public void setSpace(int s)
+	{
+		space = s;
+	}
+	
+	public int getSpace()
+	{
+		return space;
+	}
+	
+	public void setBackColor(Color c)
+	{
+		gt.getVisualization().getDisplay(0).setBackground(c);
 	}
 }
 

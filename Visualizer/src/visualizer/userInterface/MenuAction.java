@@ -4,6 +4,7 @@ package visualizer.userInterface;
  */
 
 
+import java.awt.Color;
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -101,6 +102,25 @@ public class MenuAction implements ActionListener
 				frame.updateColors();
 				frame.updateVisu();
 			}
+		}
+		else if (source.equals("spaceMenu"))
+		{
+			int space = Integer.parseInt(selection);
+			frame.setSpace(space);
+			frame.updateGlyphLayout();
+			frame.updateVisu();
+		}
+		else if (source.equals("backgroundMenu"))
+		{
+			Color c;
+			if (selection.equals(StringConstants.BackWhite))
+				c = Color.white;
+			else if (selection.equals(StringConstants.BackGray))
+				c = Color.lightGray;
+			else 
+				c = new Color(50, 150, 250);
+			frame.setBackColor(c);
+			frame.updateVisu();
 		}
 	}
 }
