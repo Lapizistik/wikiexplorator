@@ -96,6 +96,12 @@ public class MenuAction implements ActionListener
 				frame.setBorders(((JCheckBoxMenuItem)e.getSource()).isSelected());
 				frame.updateVisu();
 			}
+			else if (selection.equals(StringConstants.ColorsInverted))
+			{
+				frame.setInverted(((JCheckBoxMenuItem)e.getSource()).isSelected());
+				frame.updateColorPanel();
+				frame.updateVisu();
+			}
 			else
 			{
 				frame.setPref(selection);

@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
@@ -61,7 +62,9 @@ public class PixelFrame extends JFrame
 			  startLabel, stopLabel, place;
 	protected JTextField  xValue, yValue, zValue, pixelValue;
 	protected JRangeSlider timeSlider;
+	protected JSlider gammaSlider;
 	protected JScrollPane panel;
+	protected ColorPanel colorPanel;
 	protected PixelRenderer render;
 	protected int startIndex, stopIndex;
 	protected JMenuBar menuBar;
@@ -70,6 +73,7 @@ public class PixelFrame extends JFrame
 	protected String glyph, pixel, pref;
 	protected GlyphTable gt;
 	protected boolean bordersOn = true;
+	protected boolean inverted = true;
 	protected int  space = 3;
 	protected CellConstraints cc;
 	
@@ -114,8 +118,11 @@ public class PixelFrame extends JFrame
 		place = new JLabel("Informationen:");
 		
 		timeSlider = new JRangeSlider(0, stopIndex, 0, stopIndex, SwingConstants.VERTICAL);
+		gammaSlider = new JSlider(0, 100, 50);
 		zoomButton = new JButton("zoom 1:1 <--> 4:1");
 		panel = new JScrollPane();
+		colorPanel = new ColorPanel();
+		colorPanel.setPreferredSize(new Dimension(202, 40));
 		
 		add(xHeader, cc.xy(6, 8));
 		add(xValue, cc.xy(6, 10));
@@ -125,6 +132,8 @@ public class PixelFrame extends JFrame
 		add(zValue, cc.xy(6, 18));
 		add(pixelHeader, cc.xy(6, 20));
 		add(pixelValue, cc.xy(6, 22));
+		add(gammaSlider, cc.xy(6, 26));
+		add(colorPanel, cc.xy(6, 24));
 		add(zoomButton, cc.xy(2, 2));
 		add(panel, cc.xywh(2, 4, 3, 22));
 		add(place, cc.xy(6, 6));
@@ -149,7 +158,7 @@ public class PixelFrame extends JFrame
 		JMenuItem[] fileItem = new JMenuItem[3];
 		JMenuItem[] glyphItem = new JMenuItem[6];
 		JMenuItem[] pixelItem = new JMenuItem[5];
-		JMenuItem[] prefItem = new JMenuItem[5];
+		JMenuItem[] prefItem = new JMenuItem[6];
 		fileItem[0] = new JMenuItem("Als Bilddatei exportieren");
 		fileItem[1] = new JMenuItem("Datei laden");
 		fileItem[2] = new JMenuItem("Beenden");
@@ -199,6 +208,8 @@ public class PixelFrame extends JFrame
 		addItemTo(new JMenuItem(StringConstants.BackWhite), (JMenu)prefItem[4], false);
 		addItemTo(new JMenuItem(StringConstants.BackGray), (JMenu)prefItem[4], false);
 		addItemTo(new JMenuItem(StringConstants.BackBlue), (JMenu)prefItem[4], false);
+		prefItem[5] = new JCheckBoxMenuItem(StringConstants.ColorsInverted);
+		prefItem[5].setSelected(true);
 		for (int i = 0; i < glyphItem.length; i++)
 			addItemTo(glyphItem[i], glyphMenu, i < glyphItem.length - 1);
 		for (int i = 0; i < pixelItem.length; i++)
@@ -241,6 +252,7 @@ public class PixelFrame extends JFrame
 		render = ren;
 		gt = tab;
 		final Display display = dis;
+		colorPanel.setRenderer(render);
 		xHeader.setText(gt.getXAxisTitle());
 		yHeader.setText(gt.getYAxisTitle());
 		zHeader.setText(gt.getZAxisTitle());
@@ -254,7 +266,7 @@ public class PixelFrame extends JFrame
 		timeSlider.setSize(startIndex, stopIndex);
 		timeSlider.setMaximum(stopIndex);
 		timeSlider.setHighValue(stopIndex);
-		// the slider
+		// the time slider
 		timeSlider.addMouseListener(new MouseAdapter() 
 		{
             public void mousePressed(MouseEvent e) 
@@ -280,6 +292,19 @@ public class PixelFrame extends JFrame
             	setStopIndex(timeSlider.getHighValue());
             }
         });
+		// gamma slider
+		gammaSlider.addMouseListener(new MouseAdapter() 
+		{
+            public void mousePressed(MouseEvent e) 
+            {
+            }
+
+            public void mouseReleased(MouseEvent e) 
+            {
+              	vis.updateVisu();
+              	updateColorPanel();
+        	}
+        });
 		// Buttons for zooming
 		zoomButton.addActionListener(new ActionListener() 
 		{
@@ -296,6 +321,15 @@ public class PixelFrame extends JFrame
 		});
 		// Panel that holds the display
 		panel.getViewport().add(dis);
+		// reset some values
+		resetFrame();
+	}
+	
+	public void resetFrame()
+	{
+		glyphMenu.getItem(0).setSelected(true);
+		pixelMenu.getItem(0).setSelected(true);
+		prefMenu.getItem(0).setSelected(true);
 	}
 	
 	/**
@@ -339,6 +373,11 @@ public class PixelFrame extends JFrame
 		vis.updateVisu();
 	}
 	
+	public void updateColorPanel()
+	{
+		colorPanel.repaint();
+	}
+	
 	/**
 	 * Re-arrange the glyphs.
 	 */
@@ -371,6 +410,7 @@ public class PixelFrame extends JFrame
 	public void updateColors()
 	{
 		render.setColorMode(pref);
+		updateColorPanel();
 	}
 	
 	/**
@@ -493,6 +533,21 @@ public class PixelFrame extends JFrame
 	public void setBackColor(Color c)
 	{
 		gt.getVisualization().getDisplay(0).setBackground(c);
+	}
+	
+	public void setInverted(boolean inv)
+	{
+		inverted = inv;
+	}
+	
+	public boolean getInverted()
+	{
+		return inverted;
+	}
+	
+	public double getGamma()
+	{
+		return (gammaSlider.getValue() / 100d);
 	}
 }
 
