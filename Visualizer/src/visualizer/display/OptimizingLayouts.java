@@ -31,9 +31,9 @@ public class OptimizingLayouts
 			tableWidth = 1;
 		int tableHeight = gt.getYAxisCount();
 		
-		// bubblesort the rows
+		// sort the rows
 		for (int i = 0; i < tableHeight; i++)
-			for (int j = 0; j < tableHeight - 2; j++)
+			for (int j = 0; j < tableHeight - 1; j++)
 			{
 				double val1, val2;
 				val1 = getRowMean(v, j, tableWidth);
@@ -46,12 +46,12 @@ public class OptimizingLayouts
 						moveColumn(v, j, j + 1, tableWidth, tableHeight);
 				}
 			}
-		
+		/*
 		if (gt.isCube())
 		{
 			// optimize the layout by moving rows/columns
 			int accuracy = 2;
-			int maxLoops = v.size() * accuracy;
+			int maxLoops = 0;//v.size() * accuracy;
 			double maxDistImprovement, distBefor, distAfter,
 			distImprovement;
 			int rowToMove = 0, newIndex = 0;
@@ -108,7 +108,7 @@ public class OptimizingLayouts
 				//else // no improvement was possible
 					//break;
 			} // loop
-		} // if gt.isCube()
+		} // if gt.isCube()*/
 		
 		// position update
 		for (int y = 0; y < tableHeight; y++)
@@ -369,8 +369,8 @@ public class OptimizingLayouts
 			VisualItem item2 = (VisualItem)table.get(index2 * tableWidth + i);
 			double mean1 = ((Double)item1.get("scaledMean")).doubleValue();
 			double mean2 = ((Double)item2.get("scaledMean")).doubleValue();
-			v1.add(new Double(PixelRenderer.getGammaCorrectedValue(mean1)));
-			v2.add(new Double(PixelRenderer.getGammaCorrectedValue(mean2)));
+			v1.add(new Double(mean1));//PixelRenderer.getGammaCorrectedValue(mean1)));
+			v2.add(new Double(mean2));//PixelRenderer.getGammaCorrectedValue(mean2)));
 		}
 		return getEuclidianDistance(v1, v2);
 	}

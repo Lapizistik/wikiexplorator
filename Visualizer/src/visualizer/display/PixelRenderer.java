@@ -80,29 +80,55 @@ public class PixelRenderer extends LabelRenderer
 	        int startY = ((Integer)item.get("yCor")).intValue();
 	        int w = gt.getGlyphWidth() + 2;
 	        int h = gt.getGlyphHeight() + 2;
-	        // fill it with the pixels or mark it as
-	        // self answers
-	        if (gt.isCube() && ((String)item.get("x-desc")).equals((String)item.get("y-desc")))
+	    	// if self answer than mark it with 'x'
+	    	if (gt.isCube() && ((String)item.get("x-desc")).equals((String)item.get("y-desc")))
 	        {
+	        	g.setColor(Color.white);
+	        	g.fillRect(startX, startY, w - 2, h - 2);
 	        	g.setColor(Color.DARK_GRAY);
 	        	g.drawLine(startX + 2, startY + 2, startX + w - 4, startY + h - 4);
 	        	g.drawLine(startX + 2, startY + h - 4, startX + w - 4, startY + 2);
-		    }
-	        else
+		    }  
+	        // draw a bounding rectangle
+	    	else 
 	        {
-	        	// draw a bounding rectangle
-		        if (frame.isBorderOn())
-		        {
-		        	g.setColor(Color.black);
-		        	g.fillRect(startX - 1, startY - 1, w, h);
-		        }
-		        for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
+	    		if (frame.isBorderOn())
+	    		{
+	    			boolean startRowBlack = true;
+		        	boolean black;
+		        	int notFilled = (w - 2) * (h - 2) - frame.getStopIndex();
+		        	//System.out.println(notFilled);
+		        	for (int j = startY - 1; j < startY + h - 1; j++)
+		        	{
+		        		black = startRowBlack;
+		        		for (int i = startX - 1; i < startX + w - 1; i++)
+		        		{
+		        			if (colorMode.equals(StringConstants.HeatScale))
+		    	       			g.setColor(Color.lightGray);
+		    	       		else
+		    	       		{
+		    	       			if (black)
+		    	       				g.setColor(Color.black);
+		    	       			else
+		    	       				g.setColor(new Color(130, 130, 130));
+		    	       		}
+	        			
+		        			if (j < (startY + h - 2) || i < startX + w - notFilled ||
+		        				!frame.getPixelLayout().equals(StringConstants.RowLayout))//||
+	    	       				//gt.isCube() && ((String)item.get("x-desc")).equals((String)item.get("y-desc")))
+		        				g.fillRect(i, j, 1, 1);
+		        			black = !black;
+		        		}
+		        		startRowBlack = !startRowBlack;
+		        	}
+	    		}
+	        	for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 	        	{
 	        		int pixelX = gt.getXCorAt(i);
 	        		int pixelY = gt.getYCorAt(i);
 	        		double val = ((double[])item.get("scaledValue"))[i];
 	        		drawPixel(g, val, startX + pixelX, startY + pixelY);
-	        	}
+		    	}
 	        }
 	        // now draw a label 
 	        if (frame.getGlyphLayout().equals(StringConstants.TableLayout) ||
@@ -150,11 +176,23 @@ public class PixelRenderer extends LabelRenderer
 	
 	private void drawPixel(Graphics2D gr, double v, int pX, int pY)
 	{
+		gr.setColor(getColor(v));
+		gr.fillRect(pX, pY, pixelSize, pixelSize);
+	}
+	
+	public Color getColor(double v)
+	{
 		int red, green, blue;
 		double a1, a2, a3;
-		double test = v;
-		v = (double)color[(int)Math.round(v * 100d)] / 100d;
+		Color c;
+		
+		// first adjust the value according to gamma
+		// and other optimizations
+		// v = (double)color[(int)Math.round(v * 100d)] / 100d;
 		v = getGammaCorrectedValue(v);
+		if (frame.getInverted())
+			v = 1d - v;
+		
 		if (colorMode.equals(StringConstants.HeatScale))
 		{
 			if (v <= 0.333d)
@@ -184,53 +222,41 @@ public class PixelRenderer extends LabelRenderer
 				green = 0;
 			if (blue < 0)
 				blue = 0;
-			gr.setColor(new Color(red, green, blue));
+			c = new Color(red, green, blue);
 		}
 		else //if (colorMode.equals(StringConstants.GrayScale))
 		{
-			//gr.setColor(getColor(v));
-			//red = (int)(v * 255);
-			//green = (int)(v * 255);
-			//blue = (int)(v * 255);
-			//Color c = new Color(red, green, blue);
-			gr.setColor(getColor(v));
+			// define matching grey color in lab space
+			float l = (float)v * 100f;
+			float a = 0;
+			float b = 0;
+			// convert lab --> xyz
+			float delta = 0;//6f / 29f;
+			float fY = (l + 16f) / 116f;
+			float fX = fY + (a / 55f);
+			float fZ = fY - (b / 200f);
+			float X, Y, Z;
+			// Y
+			if (fY > delta)
+				Y = XYZn[1] * (float)Math.pow(fY, 3);
+			else
+				Y = fY - (16f / 116f) * 3 * delta * delta * XYZn[1];
+			// X
+			if (fX > delta)
+				X = XYZn[0] * (float)Math.pow(fX, 3);
+			else
+				X = fX - (16f / 116f) * 3 * delta * delta * XYZn[0];
+			// Z
+			if (fZ > delta)
+				Z = XYZn[2] * (float)Math.pow(fZ, 3);
+			else
+				Z = fZ - (16f / 116f) * 3 * delta * delta * XYZn[2];
+			// convert XYZ --> RGB
+			float RGB[];
+			RGB = ColorSpace.getInstance(ColorSpace.CS_CIEXYZ).toRGB(new float[] {X, Y, Z});
+			c = new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB), RGB, 1);
 		}
-		
-		gr.fillRect(pX, pY, pixelSize, pixelSize);
-	}
-	
-	public Color getColor(double val)
-	{
-		float v = (float) val;
-		// define matching grey color in lab space
-		float l = v * 100f;
-		float a = 0;
-		float b = 0;
-		// convert lab --> xyz
-		float delta = 0;//6f / 29f;
-		float fY = (l + 16f) / 116f;
-		float fX = fY + (a / 55f);
-		float fZ = fY - (b / 200f);
-		float X, Y, Z;
-		// Y
-		if (fY > delta)
-			Y = XYZn[1] * (float)Math.pow(fY, 3);
-		else
-			Y = fY - (16f / 116f) * 3 * delta * delta * XYZn[1];
-		// X
-		if (fX > delta)
-			X = XYZn[0] * (float)Math.pow(fX, 3);
-		else
-			X = fX - (16f / 116f) * 3 * delta * delta * XYZn[0];
-		// Z
-		if (fZ > delta)
-			Z = XYZn[2] * (float)Math.pow(fZ, 3);
-		else
-			Z = fZ - (16f / 116f) * 3 * delta * delta * XYZn[2];
-		// convert XYZ --> RGB
-		float RGB[];
-		RGB = ColorSpace.getInstance(ColorSpace.CS_CIEXYZ).toRGB(new float[] {X, Y, Z});
-		return new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB), RGB, 1);
+		return c;
 	}
 	
 	 protected Shape getRawShape(VisualItem item) 
@@ -246,10 +272,9 @@ public class PixelRenderer extends LabelRenderer
 	     return m_bbox;
 	 }
 	 
-	 public static double getGammaCorrectedValue(double val)
+	 public double getGammaCorrectedValue(double val)
 	 {
-		 double gamma = 0.4;
-		 return Math.pow(val, gamma);
+		 return Math.pow(val, frame.getGamma());
 	 }
 	 
 	 public void setColorMode(String s)
