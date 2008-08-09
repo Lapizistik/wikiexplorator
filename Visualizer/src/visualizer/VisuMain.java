@@ -290,6 +290,6 @@ public class VisuMain
     public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	visuMain1.init(new TestTable());
+    	visuMain1.init("test.table");//new TestTable());
     }
 }

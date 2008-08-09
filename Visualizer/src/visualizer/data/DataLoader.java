@@ -37,7 +37,7 @@ public class DataLoader
     {
         // size in pixels needed to show all
         // values of one author as Z or Hilbert Layout
-        int squareWidth = Layouts.curveSize(dt.getXAxisCount());
+        int squareWidth = Layouts.curveSize(dt.getYAxisCount());
         squareWidth *= pixelSize;
         // add all columns
         gt.addColumn("index", int.class);
@@ -48,7 +48,7 @@ public class DataLoader
         gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
         gt.addColumn("scaledValue", double[].class);
-        // first create all Glyphs  
+        // first get highest value  
         double highest = dt.getValueAt(0, 0);
         for (int x = 0; x < dt.getXAxisCount(); x++)
      	{
@@ -57,33 +57,34 @@ public class DataLoader
       	    		highest = dt.getValueAt(x, y);
       	}
     	
+        // create the glyphs
     	int currentIndex = 0;
-        for (int y = 0; y < dt.getYAxisCount(); y++)
+        for (int x = 0; x < dt.getXAxisCount(); x++)
         {
         	VisualItem newItem = gt.addItem();
         	newItem.set("index", new Integer(currentIndex));
-        	newItem.set("y-desc", dt.getYAxisNameAt(y));
+        	newItem.set("y-desc", dt.getXAxisNameAt(x));
         	newItem.set("xCor", new Integer(0));
         	newItem.set("yCor", new Integer(0));
         	
         	double[] val, scalVal;
         	double sum = 0, scalMean = 0;
-        	val = new double[dt.getXAxisCount()];
-        	scalVal = new double[dt.getXAxisCount()];
+        	val = new double[dt.getYAxisCount()];
+        	scalVal = new double[dt.getYAxisCount()];
         	
-        	for (int x = 0; x < dt.getXAxisCount(); x++)
+        	for (int y = 0; y < dt.getYAxisCount(); y++)
         	{
 	        	// create pixels for this glyph
 	        	// the values for the pixels are assumed to be stored
 	        	// in the z-axis
-	        	val[x] = dt.getValueAt(x, y);
-	        	scalVal[x] = val[x] / highest;
-	        	gt.addToDistribution(scalVal[x]);
-      	    	sum += val[x];
-	        	scalMean += scalVal[x];
+	        	val[y] = dt.getValueAt(x, y);
+	        	scalVal[y] = val[y] / highest;
+	        	gt.addToDistribution(scalVal[y]);
+      	    	sum += val[y];
+	        	scalMean += scalVal[y];
 		    }
-           	sum /= (double)dt.getXAxisCount();
-        	scalMean /= (double)dt.getXAxisCount();
+           	sum /= (double)dt.getYAxisCount();
+        	scalMean /= (double)dt.getYAxisCount();
            	newItem.set("value", val);
 	        newItem.set("scaledValue", scalVal);
 	        newItem.set("mean", new Double(sum));
@@ -92,13 +93,13 @@ public class DataLoader
 	        currentIndex++;
 	     }
          
-        gt.init(dt.getXAxisCount(), dt.getYAxisCount(), 0);
+        gt.init(dt.getYAxisCount(), dt.getXAxisCount(), 0);
         // create axis description
         gt.setAxisTitles(dt.getXAxisTitle(), dt.getYAxisTitle());
 	    for (int x = 0; x < dt.getXAxisCount(); x++)
-	    	gt.setXAxisDescAt(dt.getXAxisNameAt(x), x);
+	    	gt.setYAxisDescAt(dt.getXAxisNameAt(x), x);
 	    for (int y = 0; y < dt.getYAxisCount(); y++)	
-	    	gt.setYAxisDescAt(dt.getYAxisNameAt(y), y);
+	    	gt.setXAxisDescAt(dt.getYAxisNameAt(y), y);
 	}
 	
 	
