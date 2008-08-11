@@ -195,8 +195,8 @@ class DotGraph
       i = ni[s]
       j = ni[d]
       if i!=j
-        matrix[i][j] = 1 
-        matrix[j][i] = 1 unless @directed
+        matrix[i][j] += 1 
+        matrix[j][i] += 1 unless @directed
       end
     end
     matrix
