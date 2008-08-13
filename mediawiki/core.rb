@@ -658,7 +658,8 @@ module Mediawiki
     def network_attributes
       { 'roles' => :roles_to_a,
         'uid'   => :node_id,
-        'name'  => :name }
+        'name'  => :name
+      }
     end
 
     # changes all links to Revision Objects into the corresponding rid.

@@ -47,19 +47,21 @@ else
 
     # create an R matrix object representing this graph
     #
-    # r_attr is a Hash of attributes for R network generation.
-    def to_r_network(r_attr={})
-      r_attr = r_attr.dup # we use a copy, as we wanna modify it.
-      r_attr[:directed] = !!@directed  unless r_attr.has_key?(:directed)
-      r_attr[:loops] = false           unless r_attr.has_key?(:loops)
-      r_attr[:matrix_type] = 'edgelist'
+    # r_params is a Hash of parameters (attributes) for R network generation.
+    # If a block is given it is evaluated on each node and the result is 
+    # assigned to the special R vertex attribute "attr".
+    def to_r_network(r_params={})
+      r_params = r_params.dup # we use a copy, as we wanna modify it.
+      r_params[:directed] = !!@directed  unless r_params.has_key?(:directed)
+      r_params[:loops] = false           unless r_params.has_key?(:loops)
+      r_params[:matrix_type] = 'edgelist'
       c = R.array.conversion
       R.array.conversion = RSRuby::NO_CONVERSION
       nc = R.network.conversion
       R.network.conversion = RSRuby::NO_CONVERSION
       el = flat_edgelist
 #      n = R.network(to_r_matrix, :loops => true, :directed => !!@directed)
-      n = R.network(R.array(el, [el.length/3, 3]), r_attr)
+      n = R.network(R.array(el, [el.length/3, 3]), r_params)
       R.add_vertices(n, @nodes.size-R.network_size(n)) # correct Nr of nodes.
       R.network_vertex_names__(n, @nodes.collect { |k| nodelabel(k) })
 
@@ -69,6 +71,12 @@ else
           R.set_vertex_attribute(n, name, @nodes.collect { |k| k.send(method)})
         end
       end
+      if block_given?
+        R.set_vertex_attribute(n, "attr", @nodes.collect { |k| yield(k) })
+      end
+
+      #      R.set_edge_attribute(n, "weight", @links.collect { |l| l.weight })
+
       R.network.conversion = nc
       R.array.conversion = c
       n
@@ -218,16 +226,16 @@ else
 
     # Use R to plot the DotGraph.
     #
-    # If he attribute :filename is set to a filename with extension
+    # If the param :filename is set to a filename with extension
     # .ps, .pdf, .png we plot to this file in the corresponding mode.
-    # All other attributes are passed to the R plot and the R network
+    # All other params are passed to the R plot and the R network
     # command.
     #
     # If the plot device is not a file it stays open and its device
     # number _i_ is returned. It can be savely closed using r_plot_close(_i_).
-    def r_plot(r_attr={})
+    def r_plot(r_params={})
       in_file = true
-      fn = r_attr[:filename] || ''
+      fn = r_params[:filename] || ''
       case File.extname(fn)
       when '.ps'  : R.postscript(fn)
       when '.pdf' : R.pdf(fn)
@@ -235,7 +243,7 @@ else
       else in_file = false;  R.eval_R('dev.new()')
       end
 
-      R.plot_network(to_r_network(r_attr), r_attr)
+      R.plot_network(to_r_network(r_params), r_params)
       
       if in_file
         R.eval_R('dev.off()') 
@@ -255,11 +263,11 @@ else
     end
 
     # Save R network representation of the graph to file _filename_.
-    # All attributes are passed to <i>to_r_network</i>.
+    # All params are passed to <i>to_r_network</i>.
     #
     # The R name of the saved object is set to _nw_.
-    def to_r_network_file(filename, r_attr={})
-      R.assign('nw', to_r_network(r_attr))
+    def to_r_network_file(filename, r_params={})
+      R.assign('nw', to_r_network(r_params))
       R.eval_R("save(nw, file='#{filename}')")
     end
 
