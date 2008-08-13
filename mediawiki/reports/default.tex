@@ -127,40 +127,40 @@ pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revi
 %%% Set Filter and Time Raster %%%
 <%
 filter = wiki.filter.clone # clone filter
-raster = wiki.timeraster(:zero => :month, :step => :month) # set time raster to monthly spells
+raster = wiki.timeraster(:zero => :week, :step => :week) # set time raster to weekly spells
 %>
 
 \section{Revision History} % (fold)
 \label{sec:revision_history}
 
-% Cummulative Revisions per Month (CRPM)
+% Cummulative Revisions per Week (CRPW)
 <% 
-crpm = raster[1..-2].collect { |e| filter.endtime = e 
+crpw = raster[1..-2].collect { |e| filter.endtime = e 
 	[ e, wiki.revisions(filter).length ]
 	}
 Gnuplot.new do |gp|
 	gp.set('xdata', 'time')
 	gp.set('timefmt', '%Y-%m-%d', true)
 	gp.set('format x', '%b %y', true)
-	gp.add(crpm, :timefmt => '%Y-%m-%d', 
+	gp.add(crpw, :timefmt => '%Y-%m-%d', 
 		:with => 'linespoints', 
 		:title => 'revisions')
 	gp.set('nokey')
 	gp.set('xtics rotate')
-	gp.set('title "Cummulative Revisions per Month"')
+	gp.set('title "Cummulative Revisions per Week"')
 	gp.set('xlabel "month"')
 	gp.set('ylabel "cummulative number of revisions"')
-	gp.plot(:svg => 'crpm.svg')
-	gp.plot(:png => 'crpm.png', :size => '640,480')
+	gp.plot(:svg => 'crpw.svg')
+	gp.plot(:png => 'crpw.png', :size => '640,480')
 end
 %>
 \begin{center}
-  \includegraphics[width=\textwidth]{crpm.png}
+  \includegraphics[width=\textwidth]{crpw.png}
 \end{center}
 
-% Revisions per Month (RPM)
+% Revisions per Week (RPW)
 <% 
-rpm = raster[1..-2].enum_cons(2).collect { |s,e| 
+rpw = raster[1..-2].enum_cons(2).collect { |s,e| 
 	filter.revision_timespan = (s..e)
 	[ e, wiki.revisions(filter).length ]
 	}
@@ -168,20 +168,20 @@ Gnuplot.new do |gp|
 	gp.set('xdata', 'time')
 	gp.set('timefmt', '%Y-%m-%d', true)
 	gp.set('format x', '%b %y', true)
-	gp.add(rpm, :timefmt => '%Y-%m-%d',
+	gp.add(rpw, :timefmt => '%Y-%m-%d',
 		:with => 'lines', 
 		:title => 'revisions' )
 	gp.set('xtics rotate')
-	gp.set('title "Revisions per Month"')
+	gp.set('title "Revisions per Week"')
 	gp.set('xlabel "month"')
 	gp.set('ylabel "number of revisions"')
 	gp.fit(:title => 'trend')
-	gp.plot(:svg => 'rpm.svg')
-	gp.plot(:png => 'rpm.png', :size => '640,480')
+	gp.plot(:svg => 'rpw.svg')
+	gp.plot(:png => 'rpw.png', :size => '640,480')
 end
 %>
 \begin{center}
-  \includegraphics[width=\textwidth]{rpm.png}
+  \includegraphics[width=\textwidth]{rpw.png}
 \end{center}
 
 % section revision_history (end)
@@ -189,7 +189,7 @@ end
 \section{Author Participation} % (fold)
 \label{sec:author_participation}
 
-% Author Participation
+% Relative Author Participation
 <%
 # events
 events = wiki.users.collect{ |u| 
@@ -231,7 +231,7 @@ end
 
 % Co-Authorship Network
 <%
-wiki.coauthorgraph.r_plot(:filename => "coauthorgraph.png")
+wiki.coauthorgraph.remove_self_links.r_plot(:filename => "coauthorgraph.png")
 %>
 \begin{figure}
 	\centering
@@ -240,9 +240,17 @@ wiki.coauthorgraph.r_plot(:filename => "coauthorgraph.png")
 	\label{fig:co-authorship_network}
 \end{figure}
 
+%%% TO DO %%%
+% Top 5 Authors in terms of Revisions, Degree, Betweenness, Closeness
+% wiki.coauthorgraph.nodes.sort_by { |n| -n.revisions.length }.collect { |n| [ n.name, n.revisions.length ] }[0..4]
+% wiki.coauthorgraph.degrees.collect { |k,v| [ k, v[0] + v[1] ] }.sort_by { |k,v| -v }.collect { |k,v| [ k.name, v ] }[0..4]
+% wiki.coauthorgraph.betweenness.sort_by { |k,v| -v }.collect { |k,v| [ k.name, v ] }[0..4]
+% wiki.coauthorgraph.closeness.sort_by { |k,v| -v }.collect { |k,v| [ k.name, v ] }[0..4]
+%%% TO DO %%%
+
 % Document Network
 <%
-wiki.pagegraph.r_plot(:filename => "pagegraph.png")
+wiki.pagegraph.remove_self_links.r_plot(:filename => "pagegraph.png")
 %>
 
 \begin{figure}
@@ -254,9 +262,21 @@ wiki.pagegraph.r_plot(:filename => "pagegraph.png")
 
 Figure~\ref{fig:document_network} displays the wiki's document network. Nodes are wiki pages, edges are hyperlinks from one to another page. 
 
-% wiki.pagegraph.degrees.collect {|k,v| [ k, v[1]/1 ]}.sort_by { |k,v| -v }.collect { |k,v| [ k.title, v] }[0..4]
+%%% TO DO %%%
+% Top 10 Pages (Indegree)
+% wiki.pagegraph.degrees.collect {|k,v| [ k, v[0] ] }.sort_by { |k,v| -v }.collect { |k,v| [ k.title, k.revisions.length, v ] }[0..9]
+%\begin{tabular}{>{\bfseries}llrrrrr}
+%	\toprule
+%	\textbf{Title} & \textbf{Indegree} & \textbf{Revisions} &
+%...
 
-
+% Top 10 Pages (Outdegree)
+% wiki.pagegraph.degrees.collect {|k,v| [ k, v[1] ] }.sort_by { |k,v| -v }.collect { |k,v| [ k.title, k.revisions.length, v ] }[0..9]
+%\begin{tabular}{>{\bfseries}llrrrrr}
+%	\toprule
+%	\textbf{Title} & \textbf{Outdegree} & \textbf{Revisions} &
+%...
+%%% TO DO %%%
 
 % section network_visualization (end)
 
