@@ -231,9 +231,11 @@ else
     # All other params are passed to the R plot and the R network
     # command.
     #
+    # If a block is given, it is passed to #to_r_network.
+    #
     # If the plot device is not a file it stays open and its device
     # number _i_ is returned. It can be savely closed using r_plot_close(_i_).
-    def r_plot(r_params={})
+    def r_plot(r_params={}, &r_attr)
       in_file = true
       fn = r_params[:filename] || ''
       case File.extname(fn)
