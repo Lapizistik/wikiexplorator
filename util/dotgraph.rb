@@ -208,13 +208,11 @@ class DotGraph
     @nodes.each_with_index { |n,i| ni[n]=i+1 }
     sa = []
     da = []
-    va = []
     @links.each_value do |l| 
       sa << ni[l.src]
       da << ni[l.dest]
-      va << l.weight
     end
-    sa + da + va
+    sa + da
   end
 
   # compute distance matrix for all nodes

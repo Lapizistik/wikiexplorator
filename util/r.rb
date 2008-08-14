@@ -61,7 +61,7 @@ else
       R.network.conversion = RSRuby::NO_CONVERSION
       el = flat_edgelist
 #      n = R.network(to_r_matrix, :loops => true, :directed => !!@directed)
-      n = R.network(R.array(el, [el.length/3, 3]), r_params)
+      n = R.network(R.array(el, [el.length/2, 2]), r_params)
       R.add_vertices(n, @nodes.size-R.network_size(n)) # correct Nr of nodes.
       R.network_vertex_names__(n, @nodes.collect { |k| nodelabel(k) })
 
@@ -75,7 +75,7 @@ else
         R.set_vertex_attribute(n, "attr", @nodes.collect { |k| yield(k) })
       end
 
-      #      R.set_edge_attribute(n, "weight", @links.collect { |l| l.weight })
+      R.set_edge_attribute(n, "weight", @links.collect { |k,l| l.weight })
 
       R.network.conversion = nc
       R.array.conversion = c
@@ -228,10 +228,21 @@ else
     #
     # If the param :filename is set to a filename with extension
     # .ps, .pdf, .png we plot to this file in the corresponding mode.
-    # All other params are passed to the R plot and the R network
-    # command.
+    #
+    # The parameters are passed to the R network command.
+    #
+    # If any parameter points to a proc object (lambda expression), the
+    # block is called with the network object as first and the R instance as
+    # second parameter and is replaced by the result of this call. 
+    #
+    # Finally all params are passed to the R plot command.
     #
     # If a block is given, it is passed to #to_r_network.
+    #
+    # So try e.g.
+    #
+    #   g.r_plot(:label => lambda { |nw,r| r.get_vertex_attribute(nw, "attr")},
+    #            :displaylabels => TRUE) { |u| u.name }
     #
     # If the plot device is not a file it stays open and its device
     # number _i_ is returned. It can be savely closed using r_plot_close(_i_).
@@ -245,7 +256,14 @@ else
       else in_file = false;  R.eval_R('dev.new()')
       end
 
-      R.plot_network(to_r_network(r_params, &r_attr), r_params)
+      nw = to_r_network(r_params.reject { |key, val| val.kind_of?(Proc) }, 
+                        &r_attr)
+
+      r_params.each_pair do |key, val|
+        r_params[key] = val.call(nw, R)  if val.kind_of?(Proc)
+      end
+
+      R.plot_network(nw, r_params)
       
       if in_file
         R.eval_R('dev.off()') 
