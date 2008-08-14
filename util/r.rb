@@ -245,7 +245,7 @@ else
       else in_file = false;  R.eval_R('dev.new()')
       end
 
-      R.plot_network(to_r_network(r_params), r_params)
+      R.plot_network(to_r_network(r_params, &r_attr), r_params)
       
       if in_file
         R.eval_R('dev.off()') 
