@@ -1,4 +1,4 @@
-package visualizer;
+ package visualizer;
 
 
 
@@ -128,13 +128,6 @@ public class VisuMain
 	     updateVisu();
 	 }
 	 
-	/*public void sort(String sort)
-	{
-		Vector v = new Vector();
-		for (int i = 0; i < glyphTable.getRowCount(); i++)
-	       	v.add(glyphTable.getItem(i));
-	    Sort.sort(v, sort);
-	}*/
 	public void setSort(String s)
 	{
 		glyphSorting = s;
@@ -147,16 +140,22 @@ public class VisuMain
 		int space = frame.getSpace();
 		glyphLayout = layout;
 		ArrayList v = new ArrayList();
+		// Layouts contained in OptimizedLayouts need depend
+		// on the data and thus need the VisualItems themselves.
+		// The other layouts like z-curve don't need any data
+		// and are performed on points representing the
+		// the VisualItems.
 		if (!layout.equals(StringConstants.OptimizedTableLayout)
-				&& !layout.equals(StringConstants.MDSLayout))
+				&& !layout.equals(StringConstants.MDSLayout)
+				&& !layout.equals(StringConstants.JigsawLayout))
 		    for (int i = 0; i < glyphTable.getRowCount(); i++)
-		    	v.add(new Point(((Integer)glyphTable.getItem(i).get("xCor")).intValue(), 
-		    			((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
+		    	v.add(new Point(0, 0));//((Integer)glyphTable.getItem(i).get("xCor")).intValue(), 
+		    			//((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
 		else
 		    for (int i = 0; i < glyphTable.getRowCount(); i++)
 		    	v.add(glyphTable.getItem(i));
-		//Sort.sort(v, glyphSorting);
-	    if (layout.equals(StringConstants.ZLayout))
+		
+		if (layout.equals(StringConstants.ZLayout))
 	    	Layouts.createZLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space);
 	    else if (layout.equals(StringConstants.MyZLayout))
 	    	Layouts.createFlexibleZLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space);
@@ -171,7 +170,8 @@ public class VisuMain
 	    		if (layout.equals(StringConstants.RowLayout)) 
 	    			Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space, 0, 0);
 	    		else
-	    			Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space, 1, 0);
+	    			Layouts.createTable2D(v, startX, startY, glyphTable.getGlyphWidth() + space, 
+	    					glyphTable.getGlyphHeight() + space, glyphTable);
 	    	}
 	    }
 	    else if (layout.equals(StringConstants.OptimizedTableLayout))
@@ -179,34 +179,25 @@ public class VisuMain
 	    	OptimizingLayouts.createOrderedTableLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, 
 	    			glyphTable.getGlyphHeight() + space, glyphTable);
 	    }
+	    else if (layout.equals(StringConstants.JigsawLayout))
+	    {
+	    	OptimizingLayouts.createJigsawLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, 
+	    			glyphTable.getGlyphHeight() + space, glyphTable);
+	    }
 	    else if (layout.equals(StringConstants.MDSLayout))
 	    {
 	    	OptimizingLayouts.createMDSLayout(v, glyphTable.getGlyphWidth() + space, 
-	    			glyphTable.getGlyphHeight() + space, glyphTable);
+	    			glyphTable.getGlyphHeight() + space, 0, 0, glyphTable);
 	    }
 	    if (!layout.equals(StringConstants.OptimizedTableLayout)
-	    		&& !layout.equals(StringConstants.MDSLayout))
+	    		&& !layout.equals(StringConstants.MDSLayout)
+	    		&& !layout.equals(StringConstants.JigsawLayout))
 		    for (int i = 0; i < v.size(); i++)
 			{
 				Point p = ((Point)v.get(i));
 				glyphTable.getItem(i).set("xCor", new Integer((int)p.getX()));
 				glyphTable.getItem(i).set("yCor", new Integer((int)p.getY()));
 			}
-	    // update the labeling:
-	    // if data is ordered by author names and layout
-	    // is simple layout, we have got a table layout
-	    // which means we show the labeling!
-	    //if (glyphSorting.equals("author") && layout.equals("Simple Layout"))
-	    //{
-	    	//Vector v2 = new Vector();
-	    	//for (int i = 0; i < labelTable.getRowCount(); i++)
-		    //  	v2.add(labelTable.getItem(i));
-		    //Sort.sort(v2, "author");
-		    //Layouts.createLabelLayout(v2, v, space);
-		    //r.setTableLabeling(true);
-	    //}
-	    //else
-	        //r.setTableLabeling(false);
 	}
 	
 	public void updatePixelLayout(String layout)

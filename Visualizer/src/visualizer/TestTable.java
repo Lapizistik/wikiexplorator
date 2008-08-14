@@ -18,12 +18,12 @@ public class TestTable extends DataTable
 	
 	public TestTable()
 	{
-		val = new double[getXAxisCount()][getYAxisCount()];
+		val = new double[getYAxisCount()][getXAxisCount()];
 		for (int author = 0; author < getYAxisCount(); author++)
 		{
 			for (int time = 0; time < getXAxisCount(); time++)
 				//if (time < 15)
-					val[time][author] = time;//Math.random();
+					val[author][time] = 100 - author;//Math.random();
 				//else
 					//val[time][author] = 20 + Math.random();
 		}
@@ -49,12 +49,12 @@ public class TestTable extends DataTable
     
     public int getXAxisCount()
 	{
-		return 100;
+		return 4;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 4;
+		return 100;
 	}
 	
     /**
@@ -62,7 +62,7 @@ public class TestTable extends DataTable
      */
     public double getValueAt(int x, int y)
 	{
-    	return val[x][y];
+    	return val[y][x];
 	}
 	
    /**
