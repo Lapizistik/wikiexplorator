@@ -156,7 +156,7 @@ public class PixelFrame extends JFrame
 		helpMenu = new JMenu("Hilfe");
 		helpMenu.getPopupMenu().setName("helpMenu");
 		JMenuItem[] fileItem = new JMenuItem[3];
-		JMenuItem[] glyphItem = new JMenuItem[6];
+		JMenuItem[] glyphItem = new JMenuItem[7];
 		JMenuItem[] pixelItem = new JMenuItem[5];
 		JMenuItem[] prefItem = new JMenuItem[6];
 		fileItem[0] = new JMenuItem("Als Bilddatei exportieren");
@@ -171,6 +171,7 @@ public class PixelFrame extends JFrame
 		glyphItem[3] = new JRadioButtonMenuItem(StringConstants.TableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
 		glyphItem[4] = new JRadioButtonMenuItem(StringConstants.OptimizedTableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
 		glyphItem[5] = new JRadioButtonMenuItem(StringConstants.MDSLayout);
+		glyphItem[6] = new JRadioButtonMenuItem(StringConstants.JigsawLayout);
 		ButtonGroup glyphGroup = new ButtonGroup();
 		for (int i = 0; i < glyphItem.length; i++)
 			glyphGroup.add(glyphItem[i]);
