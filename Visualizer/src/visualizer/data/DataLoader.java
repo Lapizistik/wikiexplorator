@@ -168,11 +168,17 @@ public class DataLoader
 		       	}
 	        	sum /= (double)dc.getZAxisCount();
 	        	scaledMean /= (double)dc.getZAxisCount();
-	        	newItem.set("value", val);
-	        	newItem.set("scaledValue", scalVal);
-	        	newItem.set("mean", new Double(sum));
-	        	newItem.set("scaledMean", new Double(scaledMean));
-	        	
+	        	if (x == y)
+	        	{
+	        		val = new double[dc.getZAxisCount()];
+		        	scalVal = new double[dc.getZAxisCount()];
+	        		sum = 0;
+	        		scaledMean = 0;
+	        	}
+		        newItem.set("value", val);
+		        newItem.set("scaledValue", scalVal);
+		        newItem.set("mean", new Double(sum));
+		        newItem.set("scaledMean", new Double(scaledMean));
 	        	currentIndex++;
 	     	}// end of for y
         }// end of for x
