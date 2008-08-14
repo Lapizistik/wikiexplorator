@@ -2,6 +2,7 @@ package visualizer.display;
 
 
 
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -76,6 +77,34 @@ public class Layouts
 				actItem.setLocation(startX + x * itemWidth, 
 						startY + y * itemHeight);
 				currentIndex++;
+			}
+	}
+	
+	public static void createTable2D(ArrayList v, int startX, int startY, 
+			int itemWidth, int itemHeight, GlyphTable gt)
+	{
+		int tableWidth;
+		int tableHeight;
+		
+		tableWidth = (int)Math.sqrt(v.size());
+		tableHeight = (int)Math.ceil(v.size() / tableWidth);
+		
+		// determine how much space is needed to show
+		// the labels (authors' names)
+		int space = gt.getMaxStringLength() + 10;
+		itemWidth += space;
+		
+		// set positions
+		int next = 0;
+		for (int x = 0; x < tableWidth; x++)
+			for (int y = 0; y < tableHeight; y++)
+			{
+				if (next >= v.size())
+					break;
+				Point point = (Point)v.get(next);
+				point.setLocation(startX + x * itemWidth,
+						startY + y * itemHeight);
+				next++;
 			}
 	}
 	

@@ -3,6 +3,9 @@ package visualizer.display;
  * 
  */
 
+import java.awt.Font;
+import java.awt.Graphics2D;
+
 import prefuse.Visualization;
 import prefuse.visual.AggregateTable;
 import prefuse.visual.VisualItem;
@@ -61,6 +64,24 @@ public class GlyphTable extends VisualTable
 		}
 		glyphWidth = 0;
 		glyphHeight = 0;
+	}
+	
+	// return the maximum amount of pixels needed to
+	// display alle authors' names
+	public int getMaxStringLength()
+	{
+		int fontHeight = getGlyphHeight() - 1;
+		int space = 0;
+		for (int y = 0; y < yAxisCount; y++)
+		{
+			String desc = yAxisDesc[y];
+			Font font =  new Font("Arial", Font.PLAIN, fontHeight);
+			Graphics2D g = (Graphics2D)getVisualization().getDisplay(0).getGraphics();
+			int stringWidth = (int)(font.getStringBounds(desc, g.getFontRenderContext())).getWidth();
+			if (stringWidth > space)
+				space = stringWidth;
+		}
+		return space;
 	}
 	
 	public void setAxisTitles(String xTitle, String yTitle)

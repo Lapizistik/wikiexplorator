@@ -136,7 +136,6 @@ public class PixelRenderer extends LabelRenderer
 	        {
 	        	int x = ((Integer)item.get("xCor")).intValue();
         		int y = ((Integer)item.get("yCor")).intValue();
-        		// does this item belong to the first row?
         		int fontHeight;
         		if (gt.getGlyphWidth() < gt.getGlyphHeight())
         			fontHeight = gt.getGlyphWidth() - 1;
@@ -156,7 +155,7 @@ public class PixelRenderer extends LabelRenderer
 			       	g.drawString(desc, x + fontHeight/2 + gt.getGlyphWidth()/2, y - 2);
 		       	}
 	        	// does this item belong to the left column?
-	        	if (x == 0)
+	        	if (x == 0 || !gt.isCube())
 	        	{
 	        		Font font =  new Font("Arial", Font.PLAIN, fontHeight);
 	        		String desc;
