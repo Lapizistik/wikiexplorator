@@ -245,7 +245,8 @@ else
     #            :displaylabels => TRUE) { |u| u.name }
     #
     # If the plot device is not a file it stays open and its device
-    # number _i_ is returned. It can be savely closed using r_plot_close(_i_).
+    # number _i_ is returned. It can be savely closed using 
+    # r_plot_close(_i_) or DotGraph::r_plot_close(_i_).
     def r_plot(r_params={}, &r_attr)
       in_file = true
       fn = r_params[:filename] || ''

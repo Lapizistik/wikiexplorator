@@ -15,7 +15,7 @@ class DotGraph
   # value being the Link object itself.
   attr_reader :links
   # boolean indicating whether the link count should be included in the output
-  attr_reader :linkcount
+  attr_accessor :linkcount
   # boolean indicating whether this is a directed graph 
   # (currently this has to be set at graph creation time. May change later).
   attr_reader :directed
@@ -36,7 +36,11 @@ class DotGraph
     @lproc = lproc || lambda { |n| n.node_id }
     @links = Hash.new
     @directed = attrs[:directed]
-    @linkcount = attrs[:linkcount]
+    if attrs.has_key?(:linkcount)
+      @linkcount = attrs[:linkcount]
+    else
+      @linkcount = true
+    end
   end
   
   # sets the block to be used to generate note labels for each node.
