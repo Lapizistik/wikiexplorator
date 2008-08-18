@@ -33,8 +33,9 @@ class DotGraph
   #    DotGraph.new(nodes) { |n| ["label=#{n.name}", 'style=filled', "fillcolor=#{n.size}"] }
   def initialize(nodes, attrs={}, &lproc)
     @nodes = nodes.to_a
-    @lproc = lproc || lambda { |n| n.node_id }
     @links = Hash.new
+
+    @lproc = lproc || lambda { |n| n.node_id }
     @directed = attrs[:directed]
     if attrs.has_key?(:linkcount)
       @linkcount = attrs[:linkcount]
