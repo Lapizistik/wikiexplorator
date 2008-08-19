@@ -23,7 +23,7 @@ public class TestTable extends DataTable
 		{
 			for (int time = 0; time < getXAxisCount(); time++)
 				//if (time < 15)
-					val[author][time] = 100 - author;//Math.random();
+					val[author][time] = 100 - time;//Math.random();
 				//else
 					//val[time][author] = 20 + Math.random();
 		}
@@ -49,12 +49,12 @@ public class TestTable extends DataTable
     
     public int getXAxisCount()
 	{
-		return 4;
+		return 100;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 100;
+		return 4;
 	}
 	
     /**

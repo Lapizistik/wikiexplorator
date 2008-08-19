@@ -39,248 +39,192 @@ import visualizer.userInterface.ZoomControler;
  */
 public class VisuMain 
 {
-	 protected Visualization vis;
-	 protected GlyphTable glyphTable;
-	 //protected VisualTable labelTable;
+	 protected ArrayList<Visualization> vis;
+	 protected ArrayList<GlyphTable> glyphTable;
 	 protected DataSet ds = new DataSet();
-	 protected Display dis;
-	 protected int textSize = 0;
-     protected int pixelSize = 1;
-     protected PixelRenderer r;
-     protected String pixelLayout, glyphLayout, glyphSorting;
-     protected PixelFrame frame;
+	 protected ArrayList<Display> dis;
+	 protected ArrayList<PixelRenderer> render;
+     protected ArrayList<PixelFrame> frame;
+     protected int frameCount = 0;
      
      
-     public void init(String file)
+     public int getNumberOfFrames()
+     {
+    	 return frameCount;
+     }
+     
+     public void initNew()
+     {
+    	 vis = new ArrayList<Visualization>();
+    	 glyphTable = new ArrayList<GlyphTable>();
+    	 dis = new ArrayList<Display>();
+    	 render = new ArrayList<PixelRenderer>();
+         frame = new ArrayList<PixelFrame>(); 	 
+     }
+     
+     public void init(String file, int index)
      {
     	 DataSet set = FileLoader.load(file);
     	 if (set != null)
-    		 init(set);
+    		 init(set, index);
      }
      
      /**
       * Initialize the whole visualization. All that is needed
       * is a DataCube or DataTable.  
       */
-	 public void init(DataSet data)
+	 public void init(DataSet data, int index)
 	 {
+		 // is this the first initialization?
+		 if (vis == null) 
+			 initNew();
+		 // if the new visualization is put into an already
+		 // existing frame (which means a new file is loaded),
+		 // there is an old visualization that must be deleted.
+		 if (index < frameCount)
+		 {
+			 vis.remove(index);
+	    	 glyphTable.remove(index);
+	    	 dis.remove(index);
+	    	 render.remove(index);
+		 }
+		 // if a new frame must be created, update 
+		 // the frameCount.
+		 if (index == frameCount) 
+		 {
+			 frameCount++;
+		 }
+		 
 		 // setup the visualization
-		 vis = new Visualization();
-	     glyphTable = new GlyphTable(vis, "glyphTable");
+		 vis.add(index, new Visualization());
+		 glyphTable.add(index, new GlyphTable(vis.get(index), "glyphTable"));
+		 //vis.add(new Visualization());
+	     //glyphTable.add(new GlyphTable(vis.get(index), "glyphTable"));
 	     //labelTable = new VisualTable(vis, "labelTable");
-	     vis.add("glyphTable", glyphTable);
+	     vis.get(index).add("glyphTable", glyphTable.get(index));
 	     //vis.add("labelTable", labelTable);
 	     
 	     // load data and create the glyph and pixel tables
 	     ds = data;
 	     if (ds instanceof DataTable)
-	    	 DataLoader.loadTable((DataTable)ds, glyphTable, pixelSize, textSize);
+	    	 DataLoader.loadTable((DataTable)ds, glyphTable.get(index));
 	     else if (ds instanceof DataCube)
-	    	 DataLoader.loadCube((DataCube)ds, glyphTable, pixelSize, textSize);
+	    	 DataLoader.loadCube((DataCube)ds, glyphTable.get(index));
 	        
 	     // setup renderer
-	     r = new PixelRenderer("label", glyphTable, pixelSize,
-	    		 textSize);
-	        
-	     // create a new default renderer factory
-	     DefaultRendererFactory drf = new DefaultRendererFactory(r);
-	     vis.setRendererFactory(drf);
+	     render.add(index, new PixelRenderer("label", glyphTable.get(index)));
+	      // create a new default renderer factory
+	     DefaultRendererFactory drf = new DefaultRendererFactory(render.get(index));
+	     vis.get(index).setRendererFactory(drf);
 	     // setup display and controls
-	     dis = new Display(vis);
-	     dis.setSize(900, 600);
+	     dis.add(index, new Display(vis.get(index)));
+	     dis.get(index).setSize(900, 600);
 	     //dis.setBackground(Color.blue);
 	     // pan with left-click drag on background
-	     dis.addControlListener(new PanControl()); 
+	     dis.get(index).addControlListener(new PanControl()); 
 	     // zoom with mousewheel
-	     dis.addControlListener(new ZoomControler(dis, glyphTable));
+	     dis.get(index).addControlListener(new ZoomControler(dis.get(index), glyphTable.get(index)));
 	     
-	     if (frame == null)
-	    	 frame = new PixelFrame("Visualisierung");
-	     r.setFrame(frame);
+	     if (index >= frameCount || frame.size() == 0)
+	    	 frame.add(index, new PixelFrame("Visualisierung", index));
+	     render.get(index).setFrame(frame.get(index));
 	     // add a control listener
-	     dis.addControlListener(new PixelSelector(frame, glyphTable, this, dis));
+	     dis.get(index).addControlListener(new PixelSelector(frame.get(index), glyphTable.get(index), this, dis.get(index)));
 	     
-	     frame.setSize(frame.getMaximumSize());
-	     frame.init(this, dis, r, glyphTable);
-	     frame.pack();           // layout components in window
-	     frame.setVisible(true); // show the window
+	     frame.get(index).setSize(frame.get(index).getMaximumSize());
+	     frame.get(index).init(this, dis.get(index), render.get(index), glyphTable.get(index));
+	     frame.get(index).pack();           // layout components in window
+	     frame.get(index).setVisible(true); // show the window?
 	     
 	     // set start layout
-	     pixelLayout = StringConstants.RowLayout;
-	     glyphLayout = StringConstants.RowLayout;
-	     glyphSorting = "author";
-	     updatePixelLayout(pixelLayout);
-	     updateGlyphSize();
-	     updateGlyphLayout(glyphLayout);
-	     updatePixelLayout(pixelLayout);
+	     glyphTable.get(index).updatePixelLayout(frame.get(index));
+	     glyphTable.get(index).updateGlyphLayout(frame.get(index));
+	     glyphTable.get(index).updatePixelLayout(frame.get(index));
 	     // is the display big enough?
-	     Rectangle2D rect = vis.getBounds("glyphTable");
-	     double newWidth = dis.getWidth();
-	     double newHeight = dis.getHeight();
-	     if (rect.getWidth() > dis.getWidth())
+	     Rectangle2D rect = vis.get(index).getBounds("glyphTable");
+	     double newWidth = dis.get(index).getWidth();
+	     double newHeight = dis.get(index).getHeight();
+	     if (rect.getWidth() > dis.get(index).getWidth())
 	    	 newWidth = rect.getWidth();
-	     if (rect.getHeight() > dis.getHeight())
+	     if (rect.getHeight() > dis.get(index).getHeight())
 	    	 newHeight = rect.getHeight();
-	     dis.setSize((int)newWidth, (int)newHeight);
-	     //Iterator iter = glyphTable.tuples();
-	     //Rectangle2D rect = (DisplayLib.getBounds(iter, 10));
-	     //dis.setSize((int)rect.getWidth(), (int)rect.getHeight());
-	     updateVisu();
+	     dis.get(index).setSize((int)newWidth, (int)newHeight);
+	     glyphTable.get(index).updateVisu();
+	}
+	 
+	 public void duplicate(int oldIndex)
+	 {
+		 int index = frameCount;
+		 frameCount++;
+		 
+		 // setup the visualization
+		 vis.add(new Visualization());
+	     glyphTable.add(glyphTable.get(oldIndex).duplicate(vis.get(index)));
+		 vis.get(index).add("glyphTable", glyphTable.get(index));
+	     
+	     // setup renderer
+	     render.add(new PixelRenderer("label", glyphTable.get(index)));
+	        
+	     // create a new default renderer factory
+	     DefaultRendererFactory drf = new DefaultRendererFactory(render.get(index));
+	     vis.get(index).setRendererFactory(drf);
+	     // setup display and controls
+	     dis.add(new Display(vis.get(index)));
+	     dis.get(index).setSize(900, 600);
+	     // pan with left-click drag on background
+	     dis.get(index).addControlListener(new PanControl()); 
+	     // zoom with mousewheel
+	     dis.get(index).addControlListener(new ZoomControler(dis.get(index), glyphTable.get(index)));
+	     
+	     if (index >= frame.size())
+	    	 frame.add(new PixelFrame("Visualisierung", index));
+	     render.get(index).setFrame(frame.get(index));
+	     // add a control listener
+	     dis.get(index).addControlListener(new PixelSelector(frame.get(index), glyphTable.get(index), this, dis.get(index)));
+	     
+	     frame.get(index).setSize(frame.get(index).getMaximumSize());
+	     frame.get(index).init(this, dis.get(index), render.get(index), glyphTable.get(index));
+	     frame.get(index).pack();           // layout components in window
+	     frame.get(index).setVisible(true); // show the window?
+	     
+	     // copy frame properties
+	     frame.get(index).setInverted(frame.get(oldIndex).getInverted());
+	     frame.get(index).setSelectedGlyphLayoutIndex(frame.get(oldIndex).getSelectedGlyphLayoutIndex());
+	     frame.get(index).setSelectedPixelLayoutIndex(frame.get(oldIndex).getSelectedPixelLayoutIndex());
+	     if (frame.get(oldIndex).getColor().equals(StringConstants.GrayScale))
+	    	 frame.get(index).setSelectedColorScale(0);
+	     else
+	    	 frame.get(index).setSelectedColorScale(1);
+	     frame.get(index).setBorderOn(frame.get(oldIndex).isBorderOn());
+	     frame.get(index).setSpace(frame.get(oldIndex).getSpace());
+	     frame.get(index).setRange(frame.get(oldIndex).getStartIndex(), frame.get(oldIndex).getStopIndex());
+	     //frame.get(index).setStartIndex(frame.get(oldIndex).getStartIndex());
+	     //frame.get(index).setStopIndex(frame.get(oldIndex).getStopIndex());
+	     frame.get(index).setSlidingRange(frame.get(oldIndex).getSlidingRange());
+	     dis.get(index).setBackground(dis.get(oldIndex).getBackground());
+	     dis.get(index).setSize(dis.get(oldIndex).getSize());//(int)newWidth, (int)newHeight);
+	     glyphTable.get(index).setGlyphBounds(glyphTable.get(oldIndex).getGlyphBounds());
+	     glyphTable.get(index).updateVisu();     
+	}
+	 
+	 public void disposeFrame(int index)
+	 {
+		 for (int i = index + 1; i < frameCount; i++)
+			 frame.get(i).setIndex(i - 1);
+		 frameCount--; 
+		 vis.remove(index);
+		 glyphTable.remove(index);
+		 dis.remove(index);
+		 render.remove(index);
+	     frame.remove(index);
 	 }
 	 
-	public void setSort(String s)
-	{
-		glyphSorting = s;
-	}
-	
-	public void updateGlyphLayout(String layout)
-	{
-		int startX = 0;
-		int startY = 0;
-		int space = frame.getSpace();
-		glyphLayout = layout;
-		ArrayList v = new ArrayList();
-		// Layouts contained in OptimizedLayouts need depend
-		// on the data and thus need the VisualItems themselves.
-		// The other layouts like z-curve don't need any data
-		// and are performed on points representing the
-		// the VisualItems.
-		if (!layout.equals(StringConstants.OptimizedTableLayout)
-				&& !layout.equals(StringConstants.MDSLayout)
-				&& !layout.equals(StringConstants.JigsawLayout))
-		    for (int i = 0; i < glyphTable.getRowCount(); i++)
-		    	v.add(new Point(0, 0));//((Integer)glyphTable.getItem(i).get("xCor")).intValue(), 
-		    			//((Integer)glyphTable.getItem(i).get("yCor")).intValue()));
-		else
-		    for (int i = 0; i < glyphTable.getRowCount(); i++)
-		    	v.add(glyphTable.getItem(i));
-		
-		if (layout.equals(StringConstants.ZLayout))
-	    	Layouts.createZLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space);
-	    else if (layout.equals(StringConstants.MyZLayout))
-	    	Layouts.createFlexibleZLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space);
-	    else if (layout.equals(StringConstants.RowLayout) || 
-	    		layout.equals(StringConstants.TableLayout))
-	    {	
-	    	if (glyphTable.isCube())
-	    		Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space,
-	   			glyphTable.getXAxisCount(), glyphTable.getYAxisCount());
-	    	else
-	    	{
-	    		if (layout.equals(StringConstants.RowLayout)) 
-	    			Layouts.createRowLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, glyphTable.getGlyphHeight() + space, 0, 0);
-	    		else
-	    			Layouts.createTable2D(v, startX, startY, glyphTable.getGlyphWidth() + space, 
-	    					glyphTable.getGlyphHeight() + space, glyphTable);
-	    	}
-	    }
-	    else if (layout.equals(StringConstants.OptimizedTableLayout))
-	    {
-	    	OptimizingLayouts.createOrderedTableLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, 
-	    			glyphTable.getGlyphHeight() + space, glyphTable);
-	    }
-	    else if (layout.equals(StringConstants.JigsawLayout))
-	    {
-	    	OptimizingLayouts.createJigsawLayout(v, startX, startY, glyphTable.getGlyphWidth() + space, 
-	    			glyphTable.getGlyphHeight() + space, glyphTable);
-	    }
-	    else if (layout.equals(StringConstants.MDSLayout))
-	    {
-	    	OptimizingLayouts.createMDSLayout(v, glyphTable.getGlyphWidth() + space, 
-	    			glyphTable.getGlyphHeight() + space, 0, 0, glyphTable);
-	    }
-	    if (!layout.equals(StringConstants.OptimizedTableLayout)
-	    		&& !layout.equals(StringConstants.MDSLayout)
-	    		&& !layout.equals(StringConstants.JigsawLayout))
-		    for (int i = 0; i < v.size(); i++)
-			{
-				Point p = ((Point)v.get(i));
-				glyphTable.getItem(i).set("xCor", new Integer((int)p.getX()));
-				glyphTable.getItem(i).set("yCor", new Integer((int)p.getY()));
-			}
-	}
-	
-	public void updatePixelLayout(String layout)
-	{
-		if (layout.equals(StringConstants.RowLayout))
-			updatePixelLayout(layout, glyphTable.getGlyphWidth(), 0);
-		else if (layout.equals(StringConstants.ColumnLayout))
-			updatePixelLayout(layout, 0, glyphTable.getGlyphHeight());
-		else
-			updatePixelLayout(layout, 0, 0);
-	}
-	
-	public void updatePixelLayout(String layout, int matrixWidth, int matrixHeight)
-	{
-		pixelLayout = layout;
-		// create a Vector of Points which represent the 
-		// pixels
-		ArrayList pixels = new ArrayList();
-		for (int i = 0; i < glyphTable.getPixelCount(); i++)
-		{
-			if (i >= frame.getStartIndex() && i <= frame.getStopIndex())
-				pixels.add(new Point(glyphTable.getXCorAt(i),
-					glyphTable.getYCorAt(i)));
-		}
-		
-		// assign the layout
-		if (layout.equals(StringConstants.ZLayout))
-	    	Layouts.createZLayout(pixels, 0, textSize, 1, 1);
-	    else if (layout.equals(StringConstants.MyZLayout))
-	    	Layouts.createFlexibleZLayout(pixels, 
-	    	0, textSize, 1, 1);
-	    else if (layout.equals(StringConstants.RowLayout))
-	    	Layouts.createRowLayout(pixels, 
-	    	0, textSize, 1, 1, matrixWidth, matrixHeight);
-	    else if (layout.equals(StringConstants.ColumnLayout))
-	    	Layouts.createColumnLayout(pixels, 
-	    	0, textSize, 1, 1, matrixWidth, matrixHeight);
-	    else if (layout.equals(StringConstants.FatRowLayout))
-	    	Layouts.createLineLayout(pixels, 
-	    	0, textSize, 1, 1);
-	    else if (layout.equals(StringConstants.HilbertLayout))
-	    	Layouts.createHilbertLayout(pixels, 
-	    	0, textSize, 1, 1);
-	    
-		// now the pixels must adapt the 
-		// points' positions
-		for (int i = 0; i < pixels.size(); i++)
-		{
-			Point p = ((Point)pixels.get(i));
-			glyphTable.setXCorAt((int)p.getX(), frame.getStartIndex() + i);
-			glyphTable.setYCorAt((int)p.getY(), frame.getStartIndex() + i);
-		}
-	}
-	
-	public void updateGlyphSize()
-	{
-		glyphTable.updateSize(frame.getStartIndex(), frame.getStopIndex());
-	}
-	
-	public void updateVisu()
-	{
-		//for (int i = 0; i < glyphTable.getRowCount(); i++)
-		//	glyphTable.getItem(i).set("xCor", new Integer(((Integer)glyphTable.getItem(i).get("xCor")).intValue()));
-		//vis.run("update");
-		dis.pan(0, 0);
-		dis.repaint();
-		//vis.repaint();
-	}
-	
-	public void setPixelSize(int ps)
-	{
-		pixelSize = ps;
-	}
-	
-	public void setTextSize(int ts)
-	{
-		textSize = ts;
-		r.setTextSize(ts);
-	}
-	
-    public static void main(String[] args) 
+	public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
-    	visuMain1.init(new TestTable());//new TestTable());
+	    if (args.length == 1)
+        	visuMain1.init(args[0], 0);
+	    else
+	    	visuMain1.init("cube1.txt", 0);//new TestTable(), 0);
     }
 }
