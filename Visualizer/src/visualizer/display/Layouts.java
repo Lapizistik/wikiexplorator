@@ -85,9 +85,8 @@ public class Layouts
 	{
 		int tableWidth;
 		int tableHeight;
-		
 		tableWidth = (int)Math.sqrt(v.size());
-		tableHeight = (int)Math.ceil(v.size() / tableWidth);
+		tableHeight = (int)Math.ceil((double)v.size() / (double)tableWidth);
 		
 		// determine how much space is needed to show
 		// the labels (authors' names)

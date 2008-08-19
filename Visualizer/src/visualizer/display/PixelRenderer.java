@@ -42,21 +42,16 @@ import visualizer.userInterface.PixelFrame;
  */
 public class PixelRenderer extends LabelRenderer 
 {
-	protected int pixelSize = 1;
-	protected int textSize = 1;
 	protected boolean table = false;
 	protected GlyphTable gt;
-	protected String colorMode = StringConstants.GrayScale;
 	protected PixelFrame frame;
 	protected float XYZn[];
 	protected int[] color;
 	
-	public PixelRenderer(String n, GlyphTable tab, int ps, int ts)
+	public PixelRenderer(String n, GlyphTable tab)
 	{
 		super(n);
 		gt = tab;
-		pixelSize = ps;
-		textSize = ts;
 		// create reference white
 		float white[] = new float[] {1f, 1f, 1f};
 		XYZn = new Color(0, 0, 0).getColorSpace().toCIEXYZ(white);
@@ -69,18 +64,16 @@ public class PixelRenderer extends LabelRenderer
 		frame = pf;
 	}
 	
-	public void setTextSize(int ts)
-	{
-		textSize = ts;
-	}
-	
 	public void render(Graphics2D g, VisualItem item) 
 	{
+		Boolean vis = ((Boolean)item.get("visible")).booleanValue();
+		if (vis)
+		{
 			int startX = ((Integer)item.get("xCor")).intValue();
 	        int startY = ((Integer)item.get("yCor")).intValue();
 	        int w = gt.getGlyphWidth() + 2;
 	        int h = gt.getGlyphHeight() + 2;
-	    	// if self answer than mark it with 'x'
+	    	// if self answer then mark it with 'x'
 	    	if (gt.isCube() && ((String)item.get("x-desc")).equals((String)item.get("y-desc")))
 	        {
 	        	g.setColor(Color.white);
@@ -94,7 +87,53 @@ public class PixelRenderer extends LabelRenderer
 	        {
 	    		if (frame.isBorderOn())
 	    		{
-	    			boolean startRowBlack = true;
+	    			if (frame.getPixelLayout().equals(StringConstants.HilbertLayout))
+	    			{
+	    				boolean black = true;
+	    				boolean startRowBlack = false;
+	    				for (int i = startX - 1; i < startX + w - 1; i++)
+	    				{
+	    					startRowBlack = !startRowBlack;
+	    					black = startRowBlack;
+	    					for (int j = startY - 1; j < startY + h - 1; j++)
+	    					{
+	    						if (frame.getColor().equals(StringConstants.HeatScale))
+	    							g.setColor(Color.LIGHT_GRAY);
+	    						else if (black)
+	    							g.setColor(Color.black);
+	    						else
+	    							g.setColor(new Color(130, 130, 130));
+	    						g.fillRect(i, j, 1, 1);
+	    						black = !black;
+	    					}
+	    				}
+	    			}
+	    			else
+	    			{
+	    				boolean[][] bounds = gt.getGlyphBounds();
+	    				boolean startRowBlack = false;
+	    				boolean black = false;
+	    				for (int i = startX; i < startX + w; i++)
+	    				{
+	    					startRowBlack = !startRowBlack;
+	    					black = startRowBlack;
+	    					for (int j = startY; j < startY + h; j++)
+	    					{
+	    						if (frame.getColor().equals(StringConstants.HeatScale))
+	    							g.setColor(Color.LIGHT_GRAY);
+	    						else if (black)
+	    							g.setColor(Color.black);
+	    						else
+	    							g.setColor(new Color(130, 130, 130));
+	    						int boundX = i - startX;
+	    						int boundY = j - startY;
+	    						if (bounds[boundX][boundY])
+	    							g.fillRect(i-1, j-1, 1, 1);
+	    						black = !black;
+	    					}
+	    				}
+	    			}
+	    			/*boolean startRowBlack = true;
 		        	boolean black;
 		        	int notFilled = (w - 2) * (h - 2) - frame.getStopIndex();
 		        	//System.out.println(notFilled);
@@ -103,7 +142,7 @@ public class PixelRenderer extends LabelRenderer
 		        		black = startRowBlack;
 		        		for (int i = startX - 1; i < startX + w - 1; i++)
 		        		{
-		        			if (colorMode.equals(StringConstants.HeatScale))
+		        			if (frame.getColor().equals(StringConstants.HeatScale))
 		    	       			g.setColor(Color.lightGray);
 		    	       		else
 		    	       		{
@@ -120,7 +159,7 @@ public class PixelRenderer extends LabelRenderer
 		        			black = !black;
 		        		}
 		        		startRowBlack = !startRowBlack;
-		        	}
+		        	}*/
 	    		}
 	        	for (int i = frame.getStartIndex(); i <= frame.getStopIndex(); i++)
 	        	{
@@ -166,6 +205,7 @@ public class PixelRenderer extends LabelRenderer
 			       	g.drawString(desc, x - stringWidth - 3, y + fontHeight/2 + gt.getGlyphHeight()/2 + 1);
 		       	}
 	        }
+		}
 	}
 	
 	public void setTableLabeling(boolean bol)
@@ -176,7 +216,7 @@ public class PixelRenderer extends LabelRenderer
 	private void drawPixel(Graphics2D gr, double v, int pX, int pY)
 	{
 		gr.setColor(getColor(v));
-		gr.fillRect(pX, pY, pixelSize, pixelSize);
+		gr.fillRect(pX, pY, 1, 1);
 	}
 	
 	public Color getColor(double v)
@@ -192,7 +232,7 @@ public class PixelRenderer extends LabelRenderer
 		if (frame.getInverted())
 			v = 1d - v;
 		
-		if (colorMode.equals(StringConstants.HeatScale))
+		if (frame.getColor().equals(StringConstants.HeatScale))
 		{
 			if (v <= 0.333d)
 			{
@@ -211,7 +251,21 @@ public class PixelRenderer extends LabelRenderer
 				a1 = 1.0d;
 				a2 = 1.0d;
 				a3 = 3.0d * (double)v - 2.0d;
+				
 			}
+			if (a1 > 1)
+				a1 = 1.0d;
+			else if (a1 < 0)
+				a1 = 0.0d;
+			if (a2 > 1)
+				a2 = 1.0d;
+			else if (a2 < 0)
+				a2 = 0.0d;
+			if (a3 > 1)
+				a3 = 1.0d;
+			else if (a3 < 0)
+				a3 = 0.0d;
+			
 			red = (int)(255 * a1);
 			green = (int)(255 * a2);
 			blue = (int)(255 * a3);
@@ -227,6 +281,8 @@ public class PixelRenderer extends LabelRenderer
 		{
 			// define matching grey color in lab space
 			float l = (float)v * 100f;
+			if (l > 100)
+				l = 100f;
 			float a = 0;
 			float b = 0;
 			// convert lab --> xyz
@@ -274,11 +330,6 @@ public class PixelRenderer extends LabelRenderer
 	 public double getGammaCorrectedValue(double val)
 	 {
 		 return Math.pow(val, frame.getGamma());
-	 }
-	 
-	 public void setColorMode(String s)
-	 {
-		 colorMode = s;
 	 }
 	 
 	 public void createColorList()
