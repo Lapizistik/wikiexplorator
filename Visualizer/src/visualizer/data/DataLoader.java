@@ -29,21 +29,19 @@ public class DataLoader
 	/**
 	 *
 	 *Loads data from a given DataTable object. It will
-	 *load the data into a given GlyphTable and a VisualTable
-	 *(currently not in use!) for the labels. 
+	 *load the data into a given GlyphTable. 
 	 */
-	public static void loadTable(DataTable dt, GlyphTable gt,
-			int pixelSize, int textSize) 
+	public static void loadTable(DataTable dt, GlyphTable gt) 
     {
         // size in pixels needed to show all
         // values of one author as Z or Hilbert Layout
         int squareWidth = Layouts.curveSize(dt.getYAxisCount());
-        squareWidth *= pixelSize;
         // add all columns
         gt.addColumn("index", int.class);
         gt.addColumn("y-desc", String.class);
         gt.addColumn("xCor", int.class);
         gt.addColumn("yCor", int.class);
+        gt.addColumn("visible", Boolean.class);
         gt.addColumn("mean", double.class);
         gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
@@ -59,32 +57,32 @@ public class DataLoader
     	
         // create the glyphs
     	int currentIndex = 0;
-        for (int x = 0; x < dt.getXAxisCount(); x++)
+        for (int y = 0; y < dt.getYAxisCount(); y++)
         {
         	VisualItem newItem = gt.addItem();
         	newItem.set("index", new Integer(currentIndex));
-        	newItem.set("y-desc", dt.getXAxisNameAt(x));
+        	newItem.set("y-desc", dt.getYAxisNameAt(y));
         	newItem.set("xCor", new Integer(0));
         	newItem.set("yCor", new Integer(0));
-        	
+        	newItem.set("visible", new Boolean(true));
         	double[] val, scalVal;
         	double sum = 0, scalMean = 0;
-        	val = new double[dt.getYAxisCount()];
-        	scalVal = new double[dt.getYAxisCount()];
+        	val = new double[dt.getXAxisCount()];
+        	scalVal = new double[dt.getXAxisCount()];
         	
-        	for (int y = 0; y < dt.getYAxisCount(); y++)
+        	for (int x = 0; x < dt.getXAxisCount(); x++)
         	{
 	        	// create pixels for this glyph
 	        	// the values for the pixels are assumed to be stored
 	        	// in the z-axis
-	        	val[y] = dt.getValueAt(x, y);
-	        	scalVal[y] = val[y] / highest;
-	        	gt.addToDistribution(scalVal[y]);
-      	    	sum += val[y];
-	        	scalMean += scalVal[y];
+	        	val[x] = dt.getValueAt(x, y);
+	        	scalVal[x] = val[x] / highest;
+	        	gt.addToDistribution(scalVal[x]);
+      	    	sum += val[x];
+	        	scalMean += scalVal[x];
 		    }
-           	sum /= (double)dt.getYAxisCount();
-        	scalMean /= (double)dt.getYAxisCount();
+           	sum /= (double)dt.getXAxisCount();
+        	scalMean /= (double)dt.getXAxisCount();
            	newItem.set("value", val);
 	        newItem.set("scaledValue", scalVal);
 	        newItem.set("mean", new Double(sum));
@@ -93,35 +91,35 @@ public class DataLoader
 	        currentIndex++;
 	     }
          
-        gt.init(dt.getYAxisCount(), dt.getXAxisCount(), 0);
+        gt.init(dt.getXAxisCount(), dt.getYAxisCount(), 0);
+        gt.setHighest(highest);
+        gt.setReference(highest);
         // create axis description
         gt.setAxisTitles(dt.getXAxisTitle(), dt.getYAxisTitle());
 	    for (int x = 0; x < dt.getXAxisCount(); x++)
-	    	gt.setYAxisDescAt(dt.getXAxisNameAt(x), x);
+	    	gt.setXAxisDescAt(dt.getXAxisNameAt(x), x);
 	    for (int y = 0; y < dt.getYAxisCount(); y++)	
-	    	gt.setXAxisDescAt(dt.getYAxisNameAt(y), y);
+	    	gt.setYAxisDescAt(dt.getYAxisNameAt(y), y);
 	}
 	
 	
 	/**
 	 *
 	 *Loads data from a given DataCube object. It will
-	 *load the data into a given GlyphTable and a VisualTable
-	 *(currently not in use!) for the labels. 
+	 *load the data into a given GlyphTable. 
 	 */
-	public static void loadCube(DataCube dc, GlyphTable gt,
-			int pixelSize, int textSize) 
+	public static void loadCube(DataCube dc, GlyphTable gt) 
     {
         // size in pixels needed to show all
         // z values
         int squareWidth = Layouts.curveSize(dc.getZAxisCount());
-        squareWidth *= pixelSize;
         // add all columns
         gt.addColumn("index", int.class);
         gt.addColumn("x-desc", String.class);
         gt.addColumn("y-desc", String.class);
         gt.addColumn("xCor", int.class);
         gt.addColumn("yCor", int.class);
+        gt.addColumn("visible", Boolean.class);
         gt.addColumn("mean", double.class);
         gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
@@ -150,6 +148,7 @@ public class DataLoader
 	        	newItem.set("y-desc", dc.getYAxisNameAt(y));
 	        	newItem.set("xCor", new Integer(0));
 	        	newItem.set("yCor", new Integer(0));
+	        	newItem.set("visible", new Boolean(true));
 	        	// create pixels for this glyph
 	        	// the values for the pixels are assumed to be stored
 	        	// in the z-axis
@@ -187,6 +186,8 @@ public class DataLoader
         		dc.getZAxisTitle());
 	     // create axis description
 	     gt.init(dc.getXAxisCount(), dc.getYAxisCount(), dc.getZAxisCount());
+	     gt.setHighest(highest);
+	     gt.setReference(highest);
 	     for (int x = 0; x < dc.getXAxisCount(); x++)
 	     	 gt.setXAxisDescAt(dc.getXAxisNameAt(x), x);
 	     for (int y = 0; y < dc.getYAxisCount(); y++)
