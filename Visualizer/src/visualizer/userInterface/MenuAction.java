@@ -64,7 +64,6 @@ public class MenuAction implements ActionListener
 		}
 		else if (source.equals("glyphMenu"))
 		{
-			frame.setGlyphLayout(selection);
 			frame.updateGlyphLayout();
 			frame.updateVisu();
 		}
@@ -72,9 +71,10 @@ public class MenuAction implements ActionListener
 		{
 			// if matrix layout was chosen
 			// open a dialog box for the options
-			if (selection.equals(StringConstants.MatrixLayout))
+			if (selection.equals(StringConstants.RowLayout) ||
+				selection.equals(StringConstants.ColumnLayout))
 			{
-				 JDialog dialog = new MatrixOptionsDialog(frame, "Matrix Optionen", true);
+				 JDialog dialog = new MatrixOptionsDialog(frame, selection, true);
 			     dialog.setSize(400,300);
 			     dialog.setLocation(300, 200);
 			     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -83,7 +83,6 @@ public class MenuAction implements ActionListener
 			}
 			else
 			{
-				frame.setPixelLayout(selection);
 				frame.updatePixelLayout();
 				frame.updateGlyphLayout();
 				frame.updateVisu();
@@ -93,19 +92,27 @@ public class MenuAction implements ActionListener
 		{
 			if (selection.equals(StringConstants.GlyphBorders))
 			{
-				frame.setBorders(((JCheckBoxMenuItem)e.getSource()).isSelected());
+				//frame.setBorders(((JCheckBoxMenuItem)e.getSource()).isSelected());
 				frame.updateVisu();
 			}
 			else if (selection.equals(StringConstants.ColorsInverted))
 			{
-				frame.setInverted(((JCheckBoxMenuItem)e.getSource()).isSelected());
+				//frame.setInverted(((JCheckBoxMenuItem)e.getSource()).isSelected());
 				frame.updateColorPanel();
 				frame.updateVisu();
 			}
+			else if (selection.equals(StringConstants.AuthorFilter))
+			{
+				 JDialog dialog = new AuthorSelectionDialog(frame, selection);
+			     dialog.setSize(300,400);
+			     dialog.setLocation(300, 200);
+			     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+			     dialog.setResizable(true);
+			     dialog.setVisible(true);
+			}
 			else
 			{
-				frame.setPref(selection);
-				frame.updateColors();
+				frame.updateColorPanel();
 				frame.updateVisu();
 			}
 		}
