@@ -255,8 +255,8 @@ class DotGraph
   end
   
   # Writes graph to dotfile. See #to_dot.
-  def to_dotfile(filename, *attrs)
-    File.open(filename,'w') { |file| file << to_dot(*attrs) }
+  def to_dotfile(filename, *attrs, &block)
+    File.open(filename,'w') { |file| file << to_dot(*attrs, &block) }
   end
 
   # Creates a LaTeX String representing   
