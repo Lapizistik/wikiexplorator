@@ -5,6 +5,11 @@
 require 'set'
 
 # = Graph class for creating dot-Files
+#
+# This class was created as a quick shot to create dot-files for graphviz.
+#
+# More and more stuff was added and now it's nearly a full featured graph
+# class with support for R and others and some drawbacks due to its history.
 class DotGraph
   # the objects representing the nodes of the graph. This is subject to change 
   # as we will introduce special DotGraph::Node objects in future when needed
@@ -35,6 +40,11 @@ class DotGraph
     @nodes = nodes.to_a
     @links = Hash.new
 
+    # we collect links for each node. The following two Hashes
+    # will be filled with nodes as keys and sets of Links as values.
+    @sourcenodes = Hash.new { |h,k| h[k] = Set.new } # sourcenode as key
+    @destnodes = Hash.new { |h,k| h[k] = Set.new }   # destnode as key
+
     @lproc = lproc || lambda { |n| n.node_id }
     @directed = attrs[:directed]
     if attrs.has_key?(:linkcount)
@@ -64,7 +74,11 @@ class DotGraph
   def link(src, dest, w=1, add=true)
     src, dest = dest, src  if (!@directed) && (src.object_id > dest.object_id)
     key = [src,dest]
-    l = (@links[key] ||= Link.new(self, src, dest))
+    unless l = @links[key]
+      l = Link.new(self, src, dest)
+      @sourcelinks[src] << l
+      @destlinks[dest] << l
+    end
 
     if add
       l.addweight(w)
@@ -92,7 +106,11 @@ class DotGraph
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_links(w=nil)
     w = w || (1.0/0)
-    @links.delete_if { |k,l| l.weight<w }
+    @links.delete_if { |k,l| 
+      (l.weight<w) && 
+      @sourcelinks[l.src].delete(l) &&   # always true
+      @destlinks[l.dest].delete(l)       # always true
+    }
     self
   end
 
@@ -100,7 +118,11 @@ class DotGraph
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_self_links
-    @links.delete_if { |k,l| l.src==l.dest }
+    @links.delete_if { |k,l| 
+      (l.src==l.dest) &&
+      @sourcelinks[l.src].delete(l) &&   # always true
+      @destlinks[l.dest].delete(l)       # always true
+    }
     self
   end
 
@@ -108,12 +130,40 @@ class DotGraph
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_lonely_nodes
-    ns = Set.new
-    @links.each_key { |s,d|
-      ns << s
-      ns << d
+
+    @nodes.delete_if? { |n|
+      !(@sourcelinks[n] || @destlinks[n])
     }
-    @nodes.delete_if { |n| !ns.include?(n) }
+
+    self
+  end
+
+  def remove_nodes_plain(attr={})
+    attr = {
+      :treshold => 1,
+      :weight => false,
+      :dir => :all
+    }.merge(attr)
+
+    dela = case attr[:dir]
+           when :in
+             @nodes.select { |n| n_indegree(n, weight) < treshold }
+           when :out
+             @nodes.select { |n| n_outdegree(n, weight) < treshold }
+           else
+             @nodes.select { |n| n_degree(n, weight) < treshold }
+           end
+    
+    dels = dela.to_set
+
+    @links.delete_if { |k,l| 
+      (dels.include?(k[0]) || dels.include?(k[1])) &&
+      @sourcelinks[l.src].delete(l) &&   # always true
+      @destlinks[l.dest].delete(l)       # always true
+    }
+    
+    @nodes -= dela
+
     self
   end
 
@@ -129,23 +179,59 @@ class DotGraph
   #            _false_, <i>:count</i>:: number of links
   #            <i>:log</i>:: sum of log(link weight)
   def degrees(weight=false)
+    
     h = Hash.new { |h,k| h[k] = [0,0] }
-    @nodes.each { |n| h[n] = [0,0] }   # prefill
-    @links.each_value do |l|
-      c = 1
-      case weight
-      when true, :add
-        c = l.weight
-      when false, nil, :count
-        c = 1
-      when :log
-        c = Math.log(l.weight)
-      end
-      h[l.src][0]  += c
-      h[l.dest][1] += c
-    end
+    @nodes.each { |n|
+      h[n] = [n_out(n,weight), n_in(n,weight)]
+    }
     h
   end
+
+  # computes the (weighted) out-degree of node n
+  #
+  # _weight_:: indicates how the degree is counted:
+  #            _true_, <i>:add</i>:: sum of link weights
+  #            _false_, <i>:count</i>:: number of links
+  #            <i>:log</i>:: sum of log(link weight)
+  def n_outdegree(node, weight=false)
+    case weight
+    when true, :add
+      @sourcelinks[node].inject(0) { |s,l| s+l.weight }
+    when false, nil, :count
+      @sourcelinks[node].length
+    when :log
+      @sourcelinks[node].inject(0) { |s,l| s+Math.log(l.weight) }
+    end
+  end
+
+  # computes the (weighted) in-degree of node n
+  #
+  # _weight_:: indicates how the degree is counted:
+  #            _true_, <i>:add</i>:: sum of link weights
+  #            _false_, <i>:count</i>:: number of links
+  #            <i>:log</i>:: sum of log(link weight)
+  def n_indegree(node, weight=false)
+    case weight
+    when true, :add
+      @destlinks[node].inject(0) { |s,l| s+l.weight }
+    when false, nil, :count
+      @destlinks[node].length
+    when :log
+      @destlinks[node].inject(0) { |s,l| s+Math.log(l.weight) }
+    end
+  end
+
+  # computes the (weighted) degree of node n
+  #
+  # _weight_:: indicates how the degree is counted:
+  #            _true_, <i>:add</i>:: sum of link weights
+  #            _false_, <i>:count</i>:: number of links
+  #            <i>:log</i>:: sum of log(link weight)
+  def n_degree(node, weight=false)
+    indegree(node,weigth) + n_outdegree(node,weight)
+  end
+
+
 
   DEGREESSORTNR = { :node=>0, :degree=>1, :out=>2, :in=>3} # :nodoc:
   # :call-seq:
@@ -559,7 +645,7 @@ class DotGraph
   def nid(o) # :nodoc:
     DotGraph::nid(o)
   end
-  
+
   class Link
     # the source Node of this Link
     attr_reader :src
