@@ -30,37 +30,33 @@ import visualizer.StringConstants;
 public class MatrixOptionsDialog extends JDialog implements ActionListener
 {
 	PixelFrame frame;
-	private JTextField tfWidth, tfHeight;
-	private JRadioButton radRows, radColumns;
+	private JTextField tfWidth;
+	private String type;
 	
 	public MatrixOptionsDialog(PixelFrame pFrame, String name, boolean mod)
 	{
 		super(pFrame, name, mod);
 		frame = pFrame;
+		type = name;
 		init();
 	}
 	
 	public void init()
 	{
-		radRows  = new JRadioButton(StringConstants.RowLayout);
-		radColumns  = new JRadioButton(StringConstants.ColumnLayout);
-		ButtonGroup bg = new ButtonGroup();
-		bg.add(radRows);
-		bg.add(radColumns);
-		radRows.setSelected(true);
-		JLabel labWidth = new JLabel("Breite");
-		JLabel labHeight = new JLabel("Hoehe");
+		if (type.equals(StringConstants.RowLayout))
+			type = "Zeile";
+		else
+			type = "Spalte";
+		JLabel labWidth = new JLabel("Groesse jeder " + type);
 		JTextArea taInfo = new JTextArea(3, 30);
 		taInfo.setLineWrap(true);
 		taInfo.setWrapStyleWord(true);
-		taInfo.setText("Bitte waehlen Sie, ob die Werte zeilen- oder spaltenweise angeordnet werden sollen.");
-		taInfo.append("Sie koennen die Breite bzw. Hoehe selbst angeben.");
-		taInfo.append("Werte, die Sie nicht angeben, werden automatisch errechnet");
+		taInfo.setText("Bitte geben Sie eine Groesse fuer jede " + type + " an.");
+		taInfo.append("Falls Sie keinen Wert angeben, wird dieser automatisch berechnet.");
 		taInfo.setSize(taInfo.getMaximumSize());
 		taInfo.setEditable(false);
 		taInfo.setBackground(Color.WHITE);
 		tfWidth = new JTextField(3);
-		tfHeight = new JTextField(3);
 		JButton okButton = new JButton("OK");
 		okButton.addActionListener(this);
 		Container cp = getContentPane();
@@ -69,48 +65,34 @@ public class MatrixOptionsDialog extends JDialog implements ActionListener
 		cp.setLayout(layout);
 		CellConstraints cc = new CellConstraints();
 		cp.add(taInfo, cc.xyw(1, 1, 3));
-		cp.add(radRows, cc.xy(1, 2));
-		cp.add(radColumns, cc.xy(1, 3));
 		cp.add(labWidth, cc.xy(2, 2));
 		cp.add(tfWidth, cc.xy(3, 2));
-		cp.add(labHeight, cc.xy(2, 3));
-		cp.add(tfHeight, cc.xy(3, 3));
 		cp.add(okButton, cc.xyw(1, 4, 3));
 	}
 	
 	public void actionPerformed(ActionEvent e)
 	{
-		String selection;
-		int matrixWidth = 0, matrixHeight = 0;
+		int width = 0, matrixWidth = 0, matrixHeight = 0;
 			
-		if (radRows.isSelected())
-			selection = StringConstants.RowLayout;
-		else
-			selection = StringConstants.ColumnLayout;
-				
 		// get the width value
 		try
 		{
-			matrixWidth = Integer.parseInt(tfWidth.getText());
+			width = Integer.parseInt(tfWidth.getText());
 		} catch (NumberFormatException nfe) 
 		{
-			matrixWidth = 0;
+			width = 0;
 		};
-				
-		// get the height value
-		try
-		{
-			matrixHeight = Integer.parseInt(tfHeight.getText());
-		} catch (NumberFormatException nfe) 
-		{
-			matrixHeight = 0;
-		};
-				
-		frame.setPixelLayout(selection);
-		frame.updatePixelLayout(matrixWidth, matrixHeight);
+		if (type.equals("Zeile"))
+			matrixWidth = width;
+		else
+			matrixHeight = width;
+		
+		frame.setRowSize(matrixWidth);
+		frame.setColumnSize(matrixHeight);
+		frame.updatePixelLayout();
 		frame.updateGlyphLayout();
 		frame.updateVisu();
-		
+
 		dispose();
 	}
 }
