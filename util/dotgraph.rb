@@ -37,7 +37,11 @@ class DotGraph
   #   used as node parameters. E.g.:
   #    DotGraph.new(nodes) { |n| ["label=#{n.name}", 'style=filled', "fillcolor=#{n.size}"] }
   def initialize(nodes, attrs={}, &lproc)
-    @nodes = nodes.to_a
+    if nodes.kind_of?(Array)
+      @nodes = nodes.dup
+    else
+      @nodes = nodes.to_a
+    end
     @links = Hash.new
 
     # we collect links for each node. The following two Hashes
@@ -78,6 +82,7 @@ class DotGraph
       l = Link.new(self, src, dest)
       @sourcelinks[src] << l
       @destlinks[dest] << l
+      @links[key] = l
     end
 
     if add
@@ -130,7 +135,7 @@ class DotGraph
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_lonely_nodes
-    @nodes.delete_if? { |n| !(@sourcelinks[n] || @destlinks[n]) }
+    @nodes.delete_if { |n| (@sourcelinks[n].empty? && @destlinks[n].empty?) }
     self
   end
 
@@ -153,71 +158,103 @@ class DotGraph
   #   <i>:all</i> :: both
   #   <i>:max</i> :: use the higher value of in and out
   #   <i>:min</i> :: use the lower value of in and out
-  #
+  # <i>:type</i> => :plain ::
+  #   indicates the algorithm to be used:
+  #   <i>:plain</i> :: 
+  #     Nodes are removed based on their degree in the current graph.
+  #     Through the deletion process some nodes will loose links, so the
+  #     new graph may contain nodes with degree lower than the treshold.
+  #   <i>:full</i>, <i>:core</i> ::
+  #     Nodes are recursively removed from the graph until all degrees keep
+  #     the given treshold. This is equivalent to calling <i>:plain</i>
+  #     several times (until a fixpoint is reached, i.e. the graph does not 
+  #     longer change).
   # <b>Caution:</b> 
   # * For indirected graphs it is random whether a link is outgoing or
   #   incoming, so here only <i>:dir</i> => all is useful!
-  # * Nodes are removed based on their degree of the current graph.
-  #   Through the deletion process some nodes will loose links, so the
-  #   new graph may contain nodes with degree lower than the treshold.
-  #   
-  #   You _could_ call this method until a fixpoint is reached (no more
-  #   nodes are removed), but it is faster to use #remove_nodes_full.
   #
   # For convenience this method returns self (i.e. the DotGraph object).
-  def remove_nodes_plain(attr={})
+  def remove_nodes(attr={})
     attr = {
       :treshold => 2,
       :weight => false,
-      :dir => :all
+      :dir => :all,
+      :type => :plain
     }.merge(attr)
 
     treshold = attr[:treshold]
     weight = attr[:weight]
     dir = attr[:dir]
+    plain = (attr[:type] == :plain)
 
-    dela = if weight==:hirsch
-             case attr[:dir]
-             when :in
-               @nodes.select { |n| !hirsch?(@destlinks[n],treshold) }
-             when :out
-               @nodes.select { |n| !hirsch?(@sourcelinks[n],treshold) }
-             when :max
-               @nodes.select { |n| !(hirsch?(@destlinks[n],treshold) ||
+    testnodes = @nodes
+    delnodes = Set.new
+    dellinks = Set.new
+
+    finished = false
+
+    while(!finished)
+      ndels = if weight==:hirsch
+                case attr[:dir]
+                when :in
+                  testnodes.select { |n| !hirsch?(@destlinks[n],treshold) }
+                when :out
+                  testnodes.select { |n| !hirsch?(@sourcelinks[n],treshold) }
+                when :max
+                  testnodes.select { |n| !(hirsch?(@destlinks[n],treshold) ||
                                      hirsch?(@sourcelinks[n],treshold)) }
-             when :min
-               @nodes.select { |n| (!hirsch?(@destlinks[n],treshold) ||
+                when :min
+                  testnodes.select { |n| (!hirsch?(@destlinks[n],treshold) ||
                                     !hirsch?(@sourcelinks[n],treshold)) }
-             else
-               @nodes.select { |n| !hirsch?(@destlinks[n] + @sourcelinks[n],
+                else
+                  testnodes.select { |n| !hirsch?(@destlinks[n] + 
+                                            @sourcelinks[n],
                                             treshold) }
-             end
-           else
-             case attr[:dir]
-             when :in
-               @nodes.select { |n| n_indegree(n, weight) < treshold }
-             when :out
-               @nodes.select { |n| n_outdegree(n, weight) < treshold }
-             when :max
-               @nodes.select { |n| ((n_outdegree(n, weight) < treshold) &&
-                                    (n_indegree(n, weight) < treshold)) }
-             when :min
-               @nodes.select { |n| ((n_outdegree(n, weight) < treshold) ||
-                                    (n_indegree(n, weight) < treshold)) }
-             else
-               @nodes.select { |n| n_degree(n, weight) < treshold }
-             end
-           end
-    
-    dels = dela.to_set
+                end
+              else
+                case attr[:dir]
+                when :in
+                  testnodes.select { |n| n_indegree(n,weight) < treshold }
+                when :out
+                  testnodes.select { |n| n_outdegree(n,weight) < treshold }
+                when :max
+                  testnodes.select { |n| ((n_outdegree(n,weight) < treshold) &&
+                                          (n_indegree(n,weight) < treshold)) }
+                when :min
+                  testnodes.select { |n| ((n_outdegree(n,weight) < treshold) ||
+                                          (n_indegree(n,weight) < treshold)) }
+                else
+                  testnodes.select { |n| n_degree(n,weight) < treshold }
+                end
+              end
+      
+      delnodes.merge(ndels)
+      testnodes = Set.new
+   
+      ndels.each do |n|
+        @sourcelinks[n].each { |l| 
+          d = l.dest 
+          testnodes << d
+          @destlinks[d].delete(l)
+          dellinks << [n,d]
+        }
+        @destlinks[n].each { |l| 
+          s = l.src
+          testnodes << s
+          @sourcelinks[s].delete(l)
+          dellinks << [s,n]
+        }
+      end
 
-    @links.delete_if { |k,l| 
-      (dels.include?(k[0]) || dels.include?(k[1])) &&
-      @sourcelinks[l.src].delete(l) &&   # always true
-      @destlinks[l.dest].delete(l)       # always true
-    }
-    
-    @nodes -= dela
+      testnodes.subtract(delnodes)  # is this faster?
+
+      finished = plain || testnodes.empty?
+
+    end      
+
+    dellinks.each { |a| @links.delete(a) }
+
+    @nodes -= delnodes.to_a
 
     self
   end
@@ -295,7 +332,7 @@ class DotGraph
   #            _false_, <i>:count</i>:: number of links
   #            <i>:log</i>:: sum of log(linkweight+1)
   def n_degree(node, weight=false)
-    indegree(node,weight) + n_outdegree(node,weight)
+    n_indegree(node,weight) + n_outdegree(node,weight)
   end
 
 

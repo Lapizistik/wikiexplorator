@@ -9,7 +9,7 @@ task :default => [:test, :html]
 desc 'Run the test suite'
 Rake::TestTask.new do |t|
   t.libs << "test"
-  t.test_files = FileList["test/tc_mediawiki.rb"]
+  t.test_files = FileList["test/tc_mediawiki.rb","test/tc_dotgraph.rb"]
   t.verbose = true
   t.warning = true
 end
