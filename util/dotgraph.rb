@@ -42,8 +42,8 @@ class DotGraph
 
     # we collect links for each node. The following two Hashes
     # will be filled with nodes as keys and sets of Links as values.
-    @sourcenodes = Hash.new { |h,k| h[k] = Set.new } # sourcenode as key
-    @destnodes = Hash.new { |h,k| h[k] = Set.new }   # destnode as key
+    @sourcelinks = Hash.new { |h,k| h[k] = Set.new } # sourcenode as key
+    @destlinks = Hash.new { |h,k| h[k] = Set.new }   # destnode as key
 
     @lproc = lproc || lambda { |n| n.node_id }
     @directed = attrs[:directed]
@@ -130,28 +130,83 @@ class DotGraph
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_lonely_nodes
-
-    @nodes.delete_if? { |n|
-      !(@sourcelinks[n] || @destlinks[n])
-    }
-
+    @nodes.delete_if? { |n| !(@sourcelinks[n] || @destlinks[n]) }
     self
   end
 
+  # remove nodes based on degree.
+  #
+  # _attrs_:
+  # <i>:treshold</i> => 2 :: delete all nodes with smaller degree.
+  # <i>:weight</i> => false :: 
+  #   indicates how the degree is counted:
+  #   _true_, <i>:add</i>:: sum of link weights
+  #   _false_, <i>:count</i>:: number of links
+  #   <i>:log</i>:: sum of log(linkweight+1)
+  #   <i>:hirsch</i>::
+  #     the Hirsch-index of the node. A node has Hirsch-index _k_ if there are
+  #     at least _k_ links with weight _k_.
+  # <i>:dir</i> => :all ::
+  #   indicates which links are used for degree:
+  #   <i>:in</i> :: only incoming links (node is dest)
+  #   <i>:out</i> :: only outgoing links (node is src)
+  #   <i>:all</i> :: both
+  #   <i>:max</i> :: use the higher value of in and out
+  #   <i>:min</i> :: use the lower value of in and out
+  #
+  # <b>Caution:</b> 
+  # * For indirected graphs it is random whether a link is outgoing or
+  #   incoming, so here only <i>:dir</i> => all is useful!
+  # * Nodes are removed based on their degree of the current graph.
+  #   Through the deletion process some nodes will loose links, so the
+  #   new graph may contain nodes with degree lower than the treshold.
+  #   
+  #   You _could_ call this method until a fixpoint is reached (no more
+  #   nodes are removed), but it is faster to use #remove_nodes_full.
+  #
+  # For convenience this method returns self (i.e. the DotGraph object).
   def remove_nodes_plain(attr={})
     attr = {
-      :treshold => 1,
+      :treshold => 2,
       :weight => false,
       :dir => :all
     }.merge(attr)
 
-    dela = case attr[:dir]
-           when :in
-             @nodes.select { |n| n_indegree(n, weight) < treshold }
-           when :out
-             @nodes.select { |n| n_outdegree(n, weight) < treshold }
+    treshold = attr[:treshold]
+    weight = attr[:weight]
+    dir = attr[:dir]
+
+    dela = if weight==:hirsch
+             case attr[:dir]
+             when :in
+               @nodes.select { |n| !hirsch?(@destlinks[n],treshold) }
+             when :out
+               @nodes.select { |n| !hirsch?(@sourcelinks[n],treshold) }
+             when :max
+               @nodes.select { |n| !(hirsch?(@destlinks[n],treshold) ||
+                                     hirsch?(@sourcelinks[n],treshold)) }
+             when :min
+               @nodes.select { |n| (!hirsch?(@destlinks[n],treshold) ||
+                                    !hirsch?(@sourcelinks[n],treshold)) }
+             else
+               @nodes.select { |n| !hirsch?(@destlinks[n] + @sourcelinks[n],
+                                            treshold) }
+             end
            else
-             @nodes.select { |n| n_degree(n, weight) < treshold }
+             case attr[:dir]
+             when :in
+               @nodes.select { |n| n_indegree(n, weight) < treshold }
+             when :out
+               @nodes.select { |n| n_outdegree(n, weight) < treshold }
+             when :max
+               @nodes.select { |n| ((n_outdegree(n, weight) < treshold) &&
+                                    (n_indegree(n, weight) < treshold)) }
+             when :min
+               @nodes.select { |n| ((n_outdegree(n, weight) < treshold) ||
+                                    (n_indegree(n, weight) < treshold)) }
+             else
+               @nodes.select { |n| n_degree(n, weight) < treshold }
+             end
            end
     
     dels = dela.to_set
@@ -167,6 +222,18 @@ class DotGraph
     self
   end
 
+  # returns true if the Enumerable links contains at least _treshold_ links
+  # with at least weight _treshold_ (this is faster than computing the
+  # real Hirsch-index).
+  def hirsch?(links, treshold)
+    c=0
+    links.each do |l| 
+      c+=1 if l.weight >= treshold
+      return true if c >= treshold
+    end
+    return false
+  end
+
   # Computes in- and out-degrees of all nodes. Returns a hash with the
   # nodes as keys and arrays _a_ with outdegree (<i>a[0]</i>) and
   # indegree (<i>a[1]</i>) as values.
@@ -177,7 +244,7 @@ class DotGraph
   # _weight_:: indicates how the degree is counted:
   #            _true_, <i>:add</i>:: sum of link weights
   #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(link weight)
+  #            <i>:log</i>:: sum of log(linkweight+1)
   def degrees(weight=false)
     
     h = Hash.new { |h,k| h[k] = [0,0] }
@@ -192,7 +259,7 @@ class DotGraph
   # _weight_:: indicates how the degree is counted:
   #            _true_, <i>:add</i>:: sum of link weights
   #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(link weight)
+  #            <i>:log</i>:: sum of log(linkweight+1)
   def n_outdegree(node, weight=false)
     case weight
     when true, :add
@@ -200,7 +267,7 @@ class DotGraph
     when false, nil, :count
       @sourcelinks[node].length
     when :log
-      @sourcelinks[node].inject(0) { |s,l| s+Math.log(l.weight) }
+      @sourcelinks[node].inject(0) { |s,l| s+Math.log(l.weight+1) }
     end
   end
 
@@ -209,7 +276,7 @@ class DotGraph
   # _weight_:: indicates how the degree is counted:
   #            _true_, <i>:add</i>:: sum of link weights
   #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(link weight)
+  #            <i>:log</i>:: sum of log(linkweight+1)
   def n_indegree(node, weight=false)
     case weight
     when true, :add
@@ -217,7 +284,7 @@ class DotGraph
     when false, nil, :count
       @destlinks[node].length
     when :log
-      @destlinks[node].inject(0) { |s,l| s+Math.log(l.weight) }
+      @destlinks[node].inject(0) { |s,l| s+Math.log(l.weight+1) }
     end
   end
 
@@ -226,9 +293,9 @@ class DotGraph
   # _weight_:: indicates how the degree is counted:
   #            _true_, <i>:add</i>:: sum of link weights
   #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(link weight)
+  #            <i>:log</i>:: sum of log(linkweight+1)
   def n_degree(node, weight=false)
-    indegree(node,weigth) + n_outdegree(node,weight)
+    indegree(node,weight) + n_outdegree(node,weight)
   end
 
 

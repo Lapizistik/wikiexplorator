@@ -175,5 +175,6 @@ module Enumerable
   def stat_standard_deviation
     stat_variance**0.5
   end
+
 end
 
