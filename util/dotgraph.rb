@@ -169,6 +169,11 @@ class DotGraph
   #     the given treshold. This is equivalent to calling <i>:plain</i>
   #     several times (until a fixpoint is reached, i.e. the graph does not 
   #     longer change).
+  # <i>:hirsch</i> ::
+  #   setting this attribute to some number _b_ automatically sets
+  #   <i>:weight</i> => <i>:hirsch</i>. Additionally _b_ is used as
+  #   balancing factor (see #hirsch?).
+  #   
   # <b>Caution:</b> For indirected graphs it is random whether a link is 
   # outgoing or incoming, so here only <i>:dir</i> => :all is useful!
   #
@@ -193,6 +198,12 @@ class DotGraph
     dir = attr[:dir]
     plain = (attr[:type] == :plain)
 
+    if b=attr[:hirsch]
+      weight = :hirsch
+    else
+      b = 1
+    end
+
     testnodes = @nodes
     delnodes = Set.new
     dellinks = Set.new
@@ -203,19 +214,19 @@ class DotGraph
       ndels = if weight==:hirsch
                 case attr[:dir]
                 when :in
-                  testnodes.select { |n| !hirsch?(@destlinks[n],treshold) }
+                  testnodes.select { |n| !hirsch?(@destlinks[n],treshold,b) }
                 when :out
-                  testnodes.select { |n| !hirsch?(@sourcelinks[n],treshold) }
+                  testnodes.select { |n| !hirsch?(@sourcelinks[n],treshold,b) }
                 when :max
-                  testnodes.select { |n| !(hirsch?(@destlinks[n],treshold) ||
-                                     hirsch?(@sourcelinks[n],treshold)) }
+                  testnodes.select { |n| !(hirsch?(@destlinks[n],treshold,b) ||
+                                     hirsch?(@sourcelinks[n],treshold,b)) }
                 when :min
-                  testnodes.select { |n| (!hirsch?(@destlinks[n],treshold) ||
-                                    !hirsch?(@sourcelinks[n],treshold)) }
+                  testnodes.select { |n| (!hirsch?(@destlinks[n],treshold,b) ||
+                                    !hirsch?(@sourcelinks[n],treshold,b)) }
                 else
                   testnodes.select { |n| !hirsch?(@destlinks[n] + 
                                             @sourcelinks[n],
-                                            treshold) }
+                                            treshold,b) }
                 end
               else
                 case attr[:dir]
@@ -268,10 +279,12 @@ class DotGraph
   # returns true if the Enumerable links contains at least _treshold_ links
   # with at least weight _treshold_ (this is faster than computing the
   # real Hirsch-index).
-  def hirsch?(links, treshold)
+  #
+  # Each link-weight is multiplied with _balance_, this allows for rescaling.
+  def hirsch?(links, treshold, balance=1)
     c=0
     links.each do |l| 
-      c+=1 if l.weight >= treshold
+      c+=1 if l.weight*balance >= treshold
       return true if c >= treshold
     end
     return false
