@@ -36,12 +36,14 @@ module Mediawiki
     # coauthors).
     #
     # _filter_:: the Filter to use.
-    # _params_:: a Hash of named parameters:
-    #  <i>:type</i> => :plain ::
-    #   type of graph:
-    #   <i>:plain</i> :: ordinary coauthorgraph
-    #   <i>:neumann</i> :: 
-    #     neumann coauthorgraph, i.e. each page counts with 1/(nr of coautors).
+    # _params_:: 
+    #   a Hash of named parameters:
+    #   <i>:type</i> => :plain ::
+    #     type of graph:
+    #     <i>:plain</i> :: ordinary coauthorgraph
+    #     <i>:newman</i> :: 
+    #       newman coauthorgraph, i.e. each page counts with 
+    #       1/(nr of coautors).
     #
     # If a block is given it is passed to DotGraph::new (see there)
     def coauthorgraph(*params, &block)
@@ -59,7 +61,7 @@ module Mediawiki
         end
       end
 
-      neumann = (type==:neumann)
+      newman = (type==:newman)
 
       us = users(filter)
       if block
@@ -73,7 +75,7 @@ module Mediawiki
         l = nodes.length-1 # nr of coauthors on this page...
         nodes.each_with_index do |n,i|
           (i+1).upto(l) do |j|
-            if neumann
+            if newman
               g.link(n,nodes[j], 1.0/l)
             else
               g.link(n,nodes[j])
