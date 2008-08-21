@@ -26,13 +26,41 @@ module Mediawiki
       g
     end
 
+    # :call-seq:
+    # coauthorgraph(filter=@wiki.filter, params={}) { |n| ... }
+    # coauthorgraph(params={}) { |n| ... }
+    #
     # Coauthor graph. Returns a DotGraph with users as nodes. For each page
     # edited by user _a_ and _b_ a link from _a_ to _b_ is added (i.e. the
     # link weight corresponds to the number of pages where _a_ and _b_ are 
     # coauthors).
     #
+    # _filter_:: the Filter to use.
+    # _params_:: a Hash of named parameters:
+    #  <i>:type</i> => :plain ::
+    #   type of graph:
+    #   <i>:plain</i> :: ordinary coauthorgraph
+    #   <i>:neumann</i> :: 
+    #     neumann coauthorgraph, i.e. each page counts with 1/(nr of coautors).
+    #
     # If a block is given it is passed to DotGraph::new (see there)
-    def coauthorgraph(filter=@filter, &block)
+    def coauthorgraph(*params, &block)
+      filter=@filter
+      type = :plain
+      params.each do |par|
+        case par
+        when Filter : filter = par
+        when Symbol : type = par
+        when Hash
+          filter = par[:filter] || filter
+          type = par[:type] || type
+        else
+          raise ArgumentError.new("Wrong argument: #{par.inspect}")
+        end
+      end
+
+      neumann = (type==:neumann)
+
       us = users(filter)
       if block
         g = DotGraph.new(us, :directed => false, &block)
@@ -42,10 +70,14 @@ module Mediawiki
       nodes = l = n = i = j = nil
       pages(filter).each do |p| 
         nodes = p.users(filter).to_a
-        l = nodes.length-1
+        l = nodes.length-1 # nr of coauthors on this page...
         nodes.each_with_index do |n,i|
           (i+1).upto(l) do |j|
-            g.link(n,nodes[j])
+            if neumann
+              g.link(n,nodes[j], 1.0/l)
+            else
+              g.link(n,nodes[j])
+            end
           end
         end
       end
@@ -107,37 +139,38 @@ module Mediawiki
     # to the last revisions of other users before.
     #
     # _filter_:: the Filter to use.
-    # _params_:: a Hash of named parameters:
-    # <i>:counts</i>:: 
-    #   a Symbol indicating how links are counted:
-    #   <i>:add</i>::
-    #     for any pair of users _a_, _b_ the link weight of the link from
-    #     _a_ to _b_ is the sum of all Page#interlockingresponses between
-    #     _a_ and _b_ for each page.
-    #   <i>:log</i>::
-    #     for any pair of users _a_, _b_ the link weight of the link from
-    #     _a_ to _b_ is 
-    #     <tt>sum_{<i>p</i>\in P}\log(il_<i>p</i>(_a_->_b_)+1)</tt> with
-    #     <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
-    #     _a_ to _b_ on page _p_ (see Page#interlockingresponses).
-    #   <i>:squares</i>::
-    #     for any pair of users _a_, _b_ the link weight of the link from
-    #     _a_ to _b_ is 
-    #     <tt>(sum_{<i>p</i>\in P}(il_<i>p</i>(_a_->_b_)^k))^(1/k)</tt> with
-    #     <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
-    #     _a_ to _b_ on page _p_ (see Page#interlockingresponses) and
-    #     _k_=2 (default), can be changed with <i>:k</i>. The function
-    #     kind of reverts for _k_<1.
-    #   <i>:max</i>::
-    #     for any pair of users _a_, _b_ the link weight of the link from
-    #     _a_ to _b_ is the maximum of all Page#interlockingresponses between
-    #     _a_ and _b_ over all pages.
-    #   <i>:page</i>::
-    #     for any pair of users _a_, _b_ the link weight of the link from
-    #     _a_ to _b_ is the number of pages having a interlockingresponse 
-    #     _a_ to _b_.
-    # <i>:k</i>::
-    #   exponent used for <i>:count</i> => <i>:squares</i>
+    # _params_:: 
+    #   a Hash of named parameters:
+    #   <i>:counts</i>:: 
+    #     a Symbol indicating how links are counted:
+    #     <i>:add</i>::
+    #       for any pair of users _a_, _b_ the link weight of the link from
+    #       _a_ to _b_ is the sum of all Page#interlockingresponses between
+    #       _a_ and _b_ for each page.
+    #     <i>:log</i>::
+    #       for any pair of users _a_, _b_ the link weight of the link from
+    #       _a_ to _b_ is 
+    #       <tt>sum_{<i>p</i>\in P}\log(il_<i>p</i>(_a_->_b_)+1)</tt> with
+    #       <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
+    #       _a_ to _b_ on page _p_ (see Page#interlockingresponses).
+    #     <i>:squares</i>::
+    #       for any pair of users _a_, _b_ the link weight of the link from
+    #       _a_ to _b_ is 
+    #       <tt>(sum_{<i>p</i>\in P}(il_<i>p</i>(_a_->_b_)^k))^(1/k)</tt> with
+    #       <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
+    #       _a_ to _b_ on page _p_ (see Page#interlockingresponses) and
+    #       _k_=2 (default), can be changed with <i>:k</i>. The function
+    #       kind of reverts for _k_<1.
+    #     <i>:max</i>::
+    #       for any pair of users _a_, _b_ the link weight of the link from
+    #       _a_ to _b_ is the maximum of all Page#interlockingresponses between
+    #       _a_ and _b_ over all pages.
+    #     <i>:page</i>::
+    #       for any pair of users _a_, _b_ the link weight of the link from
+    #       _a_ to _b_ is the number of pages having a interlockingresponse 
+    #       _a_ to _b_.
+    #   <i>:k</i>::
+    #     exponent used for <i>:count</i> => <i>:squares</i>
     # See Page#interlockingresponses for discussion.
     #
     # If a block is given it is passed to DotGraph::new (see there)

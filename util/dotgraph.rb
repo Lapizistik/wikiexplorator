@@ -71,9 +71,9 @@ class DotGraph
   #   source and destination of this link. If the graph is undirected
   #   they are sorted in canonical order (using #object_id).
   # _w_ :: weight of this link
-  # _add_ :: 
-  #   * if _true_ and the link (same _src_ and _dest_) already exists,
-  #     _w_ is added to the link weight.
+  # _add_ :: addmode. 
+  #   * if _true_ and the link (same _src_ and _dest_) already exists, _w_ 
+  #     is added to the link weight.
   #   * if _false_, the maximum of the old link weight and _w_ is used.
   def link(src, dest, w=1, add=true)
     src, dest = dest, src  if (!@directed) && (src.object_id > dest.object_id)
@@ -169,9 +169,15 @@ class DotGraph
   #     the given treshold. This is equivalent to calling <i>:plain</i>
   #     several times (until a fixpoint is reached, i.e. the graph does not 
   #     longer change).
-  # <b>Caution:</b> 
-  # * For indirected graphs it is random whether a link is outgoing or
-  #   incoming, so here only <i>:dir</i> => all is useful!
+  # <b>Caution:</b> For indirected graphs it is random whether a link is 
+  # outgoing or incoming, so here only <i>:dir</i> => :all is useful!
+  #
+  # Example:
+  #   g.remove_nodes(:treshold => 3, :weight => false, :dir => :out)
+  # will remove all nodes which have currently less than 3 outgoing links.
+  #   g.remove_nodes(:treshold => 3, :weight => false, :dir => :out, :type => :full)
+  # will repeatedly remove all nodes with less than 3 outgoing links until
+  # only nodes with at least 3 outgoing links are left.
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_nodes(attr={})
@@ -271,12 +277,14 @@ class DotGraph
     return false
   end
 
-  # Computes in- and out-degrees of all nodes. Returns a hash with the
-  # nodes as keys and arrays _a_ with outdegree (<i>a[0]</i>) and
-  # indegree (<i>a[1]</i>) as values.
+  # Computes in-, out- and degrees of all nodes. Returns a hash with the
+  # nodes as keys and arrays _a_ with outdegree (<i>a[0]</i>),
+  # indegree (<i>a[1]</i>) and degree (<i>a[2]</i>) as values.
+  # (please note: if the graph contains self-links, degree may be smaller
+  # than indegree+outdegree)
   #
   # Take care: if the graph is _indirected_, it is random whether a link
-  # counts as in- or outlink so only the sum of both is valid.
+  # counts as in- or outlink so only the degree is valid.
   #
   # _weight_:: indicates how the degree is counted:
   #            _true_, <i>:add</i>:: sum of link weights
@@ -284,9 +292,9 @@ class DotGraph
   #            <i>:log</i>:: sum of log(linkweight+1)
   def degrees(weight=false)
     
-    h = Hash.new { |h,k| h[k] = [0,0] }
+    h = Hash.new { |h,k| h[k] = [0,0,0] }
     @nodes.each { |n|
-      h[n] = [n_out(n,weight), n_in(n,weight)]
+      h[n] = [n_outdegree(n,weight), n_indegree(n,weight), n_degree(n,weight)]
     }
     h
   end
@@ -327,12 +335,23 @@ class DotGraph
 
   # computes the (weighted) degree of node n
   #
+  # (please note: if the graph contains self-links, degree may be smaller
+  # than indegree+outdegree)
+  #
   # _weight_:: indicates how the degree is counted:
   #            _true_, <i>:add</i>:: sum of link weights
   #            _false_, <i>:count</i>:: number of links
   #            <i>:log</i>:: sum of log(linkweight+1)
   def n_degree(node, weight=false)
-    n_indegree(node,weight) + n_outdegree(node,weight)
+    d = n_indegree(node,weight) + n_outdegree(node,weight)
+    if l=@links[[node,node]]
+      if weight 
+        d -= l.weight
+      else
+        d -= 1
+      end
+    end
+    d
   end
 
 
