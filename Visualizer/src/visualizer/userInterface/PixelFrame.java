@@ -90,7 +90,7 @@ public class PixelFrame extends JFrame
 	    	public void windowClosing(WindowEvent we)
 	    	{
 	    		vis.disposeFrame(index);
-	    		dispose();
+	    		//dispose();
 	    	}
 	    });
 		setupLayout();
