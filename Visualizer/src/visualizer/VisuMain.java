@@ -47,13 +47,15 @@ public class VisuMain
      protected ArrayList<PixelFrame> frame;
      protected int frameCount = 0;
      
-     
+     /**
+      * Get the count of currently opened frames.
+      */
      public int getNumberOfFrames()
      {
     	 return frameCount;
      }
      
-     public void initNew()
+     protected void initNew()
      {
     	 vis = new ArrayList<Visualization>();
     	 glyphTable = new ArrayList<GlyphTable>();
@@ -62,6 +64,25 @@ public class VisuMain
          frame = new ArrayList<PixelFrame>(); 	 
      }
      
+     /**
+      * load a file in a newly created frame
+      */
+     public void init(String file)
+     {
+    	 init (file, 0);
+     }
+     
+     /**
+      * load a dataset in a newly created frame
+      */
+     public void init(DataSet data)
+     {
+    	 init(data, 0);
+     }
+     
+     /**
+      * load a file into the frame with given index
+      */
      public void init(String file, int index)
      {
     	 DataSet set = FileLoader.load(file);
@@ -70,8 +91,7 @@ public class VisuMain
      }
      
      /**
-      * Initialize the whole visualization. All that is needed
-      * is a DataCube or DataTable.  
+      * load a dataset into the frame with given index
       */
 	 public void init(DataSet data, int index)
 	 {
@@ -152,7 +172,10 @@ public class VisuMain
 	     glyphTable.get(index).updateVisu();
 	}
 	 
-	 public void duplicate(int oldIndex)
+	 /**
+      * clone the frame and its contents of index oldIndex.
+      */
+     public void duplicate(int oldIndex)
 	 {
 		 int index = frameCount;
 		 frameCount++;
@@ -207,7 +230,10 @@ public class VisuMain
 	     glyphTable.get(index).updateVisu();     
 	}
 	 
-	 public void disposeFrame(int index)
+     /**
+      * Remove the frame and all data at index.
+      */
+     public void disposeFrame(int index)
 	 {
 		 for (int i = index + 1; i < frameCount; i++)
 			 frame.get(i).setIndex(i - 1);
@@ -216,15 +242,16 @@ public class VisuMain
 		 glyphTable.remove(index);
 		 dis.remove(index);
 		 render.remove(index);
-	     frame.remove(index);
+	     PixelFrame f = frame.remove(index);
+	     f.dispose();
 	 }
 	 
 	public static void main(String[] args) 
     {
     	VisuMain visuMain1 = new VisuMain();
 	    if (args.length == 1)
-        	visuMain1.init(args[0], 0);
+        	visuMain1.init(args[0]);
 	    else
-	    	visuMain1.init("cube1.txt", 0);//new TestTable(), 0);
+	    	visuMain1.init(new TestTable());//new TestTable(), 0);
     }
 }
