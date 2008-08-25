@@ -314,6 +314,25 @@ public class PixelRenderer extends LabelRenderer
 		return c;
 	}
 	
+	public Color getSRGB(float[] values)
+	{
+		// first use a linear mapping to convert 
+		// to linear rgb
+		float[] newValues = new float[3];
+		newValues[0] = 3.240479f * values[0] - 0.969256f * values[1] + 0.055648f * values[2];
+		newValues[1] = -1.537150f * values[0] + 1.875992f * values[1] - 0.204043f * values[2];
+		newValues[2] = -0.498535f * values[0] + 0.041556f * values[1] + 1.057311f * values[2];
+		// now use a gamma correction for non-linear rgb
+		for (int i = 0; i <= 2; i++)
+		{
+			if (newValues[i] > 0.0031308)
+				newValues[i] = (float)(Math.pow(newValues[i], 1f/2.4f) * 1.055f - 0.055f);
+			else
+				newValues[i] = newValues[i] * 12.92f;
+		}
+		return new Color(newValues[0] * 255, newValues[1] * 255, newValues[2] * 255);
+	}
+	
 	 protected Shape getRawShape(VisualItem item) 
 	 {
 		 int x = 0, y = 0, width = 0, height = 0;

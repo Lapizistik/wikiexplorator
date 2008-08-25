@@ -251,7 +251,7 @@ public class OptimizingLayouts
 			clus.add(d);
 		}*/
 		if (dim2D) // for mds layout with cluttering
-			createMDSMapping2D(cluster, clusterCenter, itemWidth, itemHeight, 0, 0, 250);//, startX, startY, 300, gt);
+			createMDSMapping2D(cluster, clusterCenter, itemWidth, itemHeight, 0, 0, 500);//, startX, startY, 300, gt);
 		else // for jigsaw layout
 		{
 			createMDSMapping1D(cluster, clusterCenter);
@@ -279,7 +279,7 @@ public class OptimizingLayouts
 					int stX, stY;
 					stX = (int)((double[])clusterCenter.get(i))[0];
 					stY = (int)((double[])clusterCenter.get(i))[1];
-					createMDSMapping2D(cluster.get(i), vectors, itemWidth, itemHeight, stX, stY, 50);//, 50, gt);	
+					createMDSMapping2D(cluster.get(i), vectors, itemWidth, itemHeight, stX, stY, 100);//, 50, gt);	
 				}
 				else
 				{
@@ -352,7 +352,7 @@ public class OptimizingLayouts
 						startY + (int)(Math.random() * range) - range / 2);
 		// now optimize
 		//int accuracy = 50;
-		int maxLoops = 0;//v.size() * accuracy;
+		int maxLoops = 250;//v.size() * accuracy;
 		double maxStressImprovement, stressBefor, stressAfter,
 		stressImprovement;
 		int bestPoint = 0, dirX = 0, dirY = 0;
@@ -423,16 +423,27 @@ public class OptimizingLayouts
 				points[i] = new Point((int)(i), 1);
 		// now optimize
 		//int accuracy = 30;
-		int maxLoops = 2000;//objects.size() * accuracy;
-		double stressBefor, stressAfter,
-		stressImprovement;
+		int maxLoops = 500;//objects.size() * accuracy;
+		double stressBefore, stressAfter,
+		stressImprovement, bestImpro = 0;
+		int bestI = 0, bestJ = 0;
 		for (int loop = 0; loop < maxLoops; loop++)
 		{
 			// get two points by random
-			int i = (int)(Math.random() * points.length);
-			int j = (int)(Math.random() * points.length);
+			int i = loop % objects.size();//(int)(Math.random() * points.length);
+			int j;// = (int)(Math.random() * points.length);
+			int start = i - 1;
+			int stop = i + 1;
+			if (start < 0)
+				start = 0;
+			if (stop >= points.length)
+				stop = points.length - 1;
+			for (j = start; j <= stop; j++)
+			{
+				if (i != j)
+				{
 			// switch points and measure the new stress
-			stressBefor = getSingleStress(targetDistances, points, i) + 
+			stressBefore = getSingleStress(targetDistances, points, i) + 
 						  getSingleStress(targetDistances, points, j);
 			double store = points[i].getX();
 			points[i].setLocation(points[j].getX(), 
@@ -442,25 +453,36 @@ public class OptimizingLayouts
 
 			stressAfter = getSingleStress(targetDistances, points, i) +
 						  getSingleStress(targetDistances, points, j);
-			stressImprovement = stressBefor - stressAfter;
-			if (stressImprovement <= 0) // no improvement
+			stressImprovement = stressBefore - stressAfter;
+			if (stressImprovement > bestImpro) // no improvement
 			{
+				bestImpro = stressImprovement;
+				bestI = i;
+				bestJ = j;
+			}
 				// undo the changes
 				store = points[i].getX();
 				points[i].setLocation(points[j].getX(), 
 									points[i].getY());
 				points[j].setLocation(store, 
 					points[j].getY());
-			}
+				}
+			//}
 			// if there was an improvement, switch the objects 
 			// represented by points i and j
-			else  
-			{
-				Object obj1 = objects.get(i);
-				Object obj2 = objects.get(j);
-				objects.set(i, obj2);
-				objects.set(j, obj1);
 			}
+			//	else  
+			//{
+			if (bestImpro > 0)
+			{
+				Object obj1 = objects.get(bestI);
+				Object obj2 = objects.get(bestJ);
+				objects.set(bestI, obj2);
+				objects.set(bestJ, obj1);
+			}
+			bestImpro = 0;
+			//}
+			//} // Ende for j
 		}
 	}
 	
