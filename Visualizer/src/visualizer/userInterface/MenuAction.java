@@ -110,6 +110,15 @@ public class MenuAction implements ActionListener
 			     dialog.setResizable(true);
 			     dialog.setVisible(true);
 			}
+			else if (selection.equals(StringConstants.ColorChooser))
+			{
+				 JDialog dialog = new ColorDialog(frame, selection);
+			     dialog.setSize(350,550);
+			     dialog.setLocation(300, 200);
+			     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+			     dialog.setResizable(true);
+			     dialog.setVisible(true);
+			}
 			else
 			{
 				frame.updateColorPanel();

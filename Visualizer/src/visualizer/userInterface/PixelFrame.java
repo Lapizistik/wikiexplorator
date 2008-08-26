@@ -64,7 +64,7 @@ public class PixelFrame extends JFrame
 	protected JTextField  xValue, yValue, zValue, pixelValue,
 				tfSlidingWindow, tfHighest, tfReference;
 	protected JRangeSlider timeSlider;
-	protected JSlider gammaSlider, curveSlider;
+	protected JSlider curveSlider;
 	protected JScrollPane panel;
 	protected ColorPanel colorPanel;
 	protected PixelRenderer render;
@@ -136,7 +136,7 @@ public class PixelFrame extends JFrame
 		place = new JLabel("Informationen:");
 		
 		timeSlider = new JRangeSlider(0, stopIndex, 0, stopIndex, SwingConstants.VERTICAL);
-		gammaSlider = new JSlider(0, 100, 50);
+		//gammaSlider = new JSlider(0, 100, 50);
 		curveSlider = new JSlider(0, 10, 0);
 		zoomButton = new JButton("zoom 1:1 <--> 4:1");
 		duplicateButton = new JButton("duplizieren");
@@ -154,7 +154,7 @@ public class PixelFrame extends JFrame
 		add(pixelValue, cc.xy(6, 18));
 		add(tfHighest, cc.xy(6, 20));
 		add(tfReference, cc.xy(6, 22));
-		add(gammaSlider, cc.xy(6, 26));
+		//add(gammaSlider, cc.xy(6, 26));
 		add(curveSlider, cc.xy(6, 28));
 		add(tfSlidingWindow, cc.xy(8, 28));
 		add(colorPanel, cc.xy(6, 24));
@@ -184,7 +184,7 @@ public class PixelFrame extends JFrame
 		fileItem = new JMenuItem[3];
 		glyphItem = new JMenuItem[7];
 		pixelItem = new JMenuItem[5];
-		prefItem = new JMenuItem[7];
+		prefItem = new JMenuItem[8];
 		fileItem[0] = new JMenuItem("Als Bilddatei exportieren");
 		fileItem[1] = new JMenuItem("Datei laden");
 		fileItem[2] = new JMenuItem("Beenden");
@@ -238,6 +238,7 @@ public class PixelFrame extends JFrame
 		prefItem[5] = new JCheckBoxMenuItem(StringConstants.ColorsInverted);
 		prefItem[5].setSelected(true);
 		prefItem[6] = new JMenuItem(StringConstants.AuthorFilter);
+		prefItem[7] = new JMenuItem(StringConstants.ColorChooser);
 		for (int i = 0; i < glyphItem.length; i++)
 			addItemTo(glyphItem[i], glyphMenu, i < glyphItem.length - 1);
 		for (int i = 0; i < pixelItem.length; i++)
@@ -301,7 +302,7 @@ public class PixelFrame extends JFrame
 		{
 			timeSlider.removeMouseListener(timeSlider.getMouseListeners()[1]);
 			timeSlider.removeMouseMotionListener(timeSlider.getMouseMotionListeners()[1]);
-			gammaSlider.removeMouseListener(gammaSlider.getMouseListeners()[1]);
+			//gammaSlider.removeMouseListener(gammaSlider.getMouseListeners()[1]);
 			curveSlider.removeMouseListener(curveSlider.getMouseListeners()[1]);
 			curveSlider.removeMouseMotionListener(curveSlider.getMouseMotionListeners()[1]);
 			if (zoomButton.getActionListeners().length > 0)
@@ -358,7 +359,7 @@ public class PixelFrame extends JFrame
             }
         });
 		// gamma slider
-		gammaSlider.addMouseListener(new MouseAdapter() 
+		/*gammaSlider.addMouseListener(new MouseAdapter() 
 		{
             public void mousePressed(MouseEvent e) 
             {
@@ -369,7 +370,7 @@ public class PixelFrame extends JFrame
               	gt.updateVisu();
               	updateColorPanel();
         	}
-        });
+        });*/
 		// the reference value textfield
 		tfReference.addActionListener(new ActionListener()
 		{
@@ -378,7 +379,10 @@ public class PixelFrame extends JFrame
 				try
 				{
 					double newRef = Double.parseDouble(tfReference.getText());
-					gt.setReference(newRef);
+					if (newRef > gt.getHighest())
+						gt.setReference(newRef);
+					else
+						tfReference.setText(Double.toString(gt.getHighest()));
 					gt.updateSlidingWindow(curveSlider.getValue());
 				} catch (Exception exc) {tfReference.setText(tfHighest.getText());}
 				updateVisu();
@@ -695,10 +699,10 @@ public class PixelFrame extends JFrame
 		return prefItem[5].isSelected();
 	}
 	
-	public double getGamma()
-	{
-		return (gammaSlider.getValue() / 100d);
-	}
+	//public double getGamma()
+	//{
+	//	return (gammaSlider.getValue() / 100d);
+	//}
 	
 	public void setRowSize(int rs)
 	{
@@ -718,6 +722,11 @@ public class PixelFrame extends JFrame
 	public int getColumnSize()
 	{
 		return columnSize;
+	}
+	
+	public PixelRenderer getRenderer()
+	{
+		return render;
 	}
 }
 
