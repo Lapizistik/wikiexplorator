@@ -79,7 +79,7 @@ public class OptimizingLayouts
 			}
 	}
 	
-	public static void orderedTable2D(ArrayList v, int startX, int startY, 
+	public static void orderedTable2D(ArrayList<VisualItem> v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		int tableWidth;
@@ -105,8 +105,34 @@ public class OptimizingLayouts
 		space = space + 10;
 		itemWidth += space;
 		// sort the authors
-		java.util.Collections.sort(v, new ItemComparator());
-		java.util.Collections.reverse(v);
+		boolean optimized = true;
+		if (!optimized) // sort by mean value
+		{
+			java.util.Collections.sort(v, new ItemComparator());
+			java.util.Collections.reverse(v);
+		}
+		else // try to optimize
+		{
+			// get ten clusters
+			ArrayList<ArrayList<VisualItem>> cluster = cluster(v, 10);
+			v = new ArrayList<VisualItem>();
+			// sort the clusters themselves by their means
+			// (their centers)
+			java.util.Collections.sort(cluster, new ClusterComparator());
+			java.util.Collections.reverse(cluster);
+			for (int i = 0; i < 10; i++)
+			{
+				ArrayList<double[]> vector = new ArrayList<double[]>();
+				for (int j = 0; j < cluster.get(i).size(); j++)
+					vector.add((double[])cluster.get(i).get(j).get("value"));
+				// sort within the clusters
+				createMDSMapping1D(cluster.get(i), vector);
+				v.addAll(cluster.get(i));
+				// add to ArrayList
+				//for (int j = 0; j < cluster.get(i).size(); j++)
+				//	v.add(cluster.get(i).get(j));
+			}
+		}
 		// set positions
 		int next = 0;
 		for (int x = 0; x < tableWidth; x++)
@@ -114,11 +140,97 @@ public class OptimizingLayouts
 			{
 				if (next >= v.size())
 					break;
-				VisualItem actItem = (VisualItem)v.get(next);
+				VisualItem actItem = v.get(next);
 				actItem.set("xCor", new Integer(startX + x * itemWidth));
 				actItem.set("yCor", new Integer(startY + y * itemHeight));
 				next++;
 			}
+	}
+	
+	public static ArrayList<ArrayList<VisualItem>> cluster(ArrayList<VisualItem> items, int k)
+	{
+		int dim = ((double[])items.get(0).get("value")).length;
+		ArrayList<ArrayList<VisualItem>> cluster = new ArrayList<ArrayList<VisualItem>>();
+		ArrayList<double[]> clusterCenter = new ArrayList<double[]>();//double[k][dim];
+		int numberOfItems = items.size();
+		int elements = (int)Math.ceil((double)numberOfItems / (double)k);
+		// now create k clusters
+		for (int i = 0; i < k; i++)
+		{
+			// new cluster with index i
+			cluster.add(new ArrayList());
+			clusterCenter.add(new double[dim]);
+			// add elements from v
+			if (items.size() < elements)
+				elements = items.size();
+			for (int add = 0; add < elements; add++)
+			{
+				// add new element to cluster
+				cluster.get(i).add((VisualItem)items.remove((int)(Math.random() * items.size())));
+				double[] val = (double[])cluster.get(i).get(cluster.get(i).size()-1).get("value");
+				// update cluster's center
+				for (int dims = 0; dims < dim; dims++)
+					clusterCenter.get(i)[dims] += val[dims] / (double)elements;
+			}
+		}
+		
+
+		boolean changed = true;
+		int runs = 0;
+		int maxRuns = 200;
+		while (changed && runs < maxRuns)
+		{
+			changed = false;
+			runs++;
+		
+			// Assign items to best fitting cluster
+			for (int i = 0; i < k; i++)
+				for (int j = 0; j < cluster.get(i).size(); j++)
+				{
+					// get an item
+					VisualItem actItem = cluster.get(i).get(j);
+					int bestCluster = i;
+					double bestDist = distToCenter(actItem, clusterCenter.get(i));
+					
+					// compare it to all clusters
+					for (int l = 0; l < k; l++)
+					{
+						double dist = distToCenter(actItem, clusterCenter.get(l));
+						if (dist < bestDist)
+						{
+							bestDist = dist;
+							bestCluster = l;
+						}
+					}
+					
+					// put item into best fitting cluster
+					if (bestCluster != i)
+					{
+						cluster.get(bestCluster).add(cluster.get(i).remove(j));
+						changed = true;
+					}
+				}
+			
+			// update all clusters' centers
+			clusterCenter = new ArrayList<double[]>();//double[k][dim]; 
+			for (int i = 0; i < k; i++)
+			{
+				clusterCenter.add(getClusterCenter(cluster.get(i)));
+			}
+				//clusterCenter.add(new double[dim]);
+				// get an item
+				//for (int l = 0; l < cluster.get(i).size(); l++)
+				//{
+				//	VisualItem actItem = cluster.get(i).get(l);
+				//	double[] val = (double[])actItem.get("value");
+					// update center position
+				//	for (int j = 0; j < dim; j++)
+				//		clusterCenter.get(i)[j] += val[j] / cluster.get(i).size(); 
+				//}	
+			//}
+		} // End of re-clustering loop
+		
+		return cluster;
 	}
 	
 	public static void createJigsawLayout(ArrayList v, int startX, int startY, 
@@ -136,6 +248,22 @@ public class OptimizingLayouts
 	public static void createClusterLayout(ArrayList<VisualItem> items, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt, boolean dim2D)
 	{
+		// Delete one of the symmetric halfs of a
+		// relationships table
+		if (gt.isCube())
+		{
+			int n = (int)Math.sqrt(items.size());
+			int removed = 0;
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j <= i; j++)
+				{
+					VisualItem actItem = items.get(n * i + j - removed);
+					actItem.set("xCor", new Integer(-100));
+					actItem.set("yCor", new Integer(-100));
+					items.remove(n * i + j - removed);
+					removed++;
+				}
+		}
 		// Optimization: all elements below threshold
 		// are put on one place
 		double threshold = 0;
@@ -158,11 +286,11 @@ public class OptimizingLayouts
 		// clustering.
 		int k = 10;
 		int dim = gt.getPixelCount();
-		ArrayList<ArrayList<VisualItem>> cluster = new ArrayList<ArrayList<VisualItem>>();
+		ArrayList<ArrayList<VisualItem>> cluster = cluster(items, k);//new ArrayList<ArrayList<VisualItem>>();
 		ArrayList<double[]> clusterCenter = new ArrayList<double[]>();//double[k][dim];
-		int elements = (int)Math.ceil((double)numberOfItems / (double)k);
-		// first sort the items
-		//java.util.Collections.sort(v, new ItemComparator());
+		for (int i = 0; i < k; i++)
+			clusterCenter.add(getClusterCenter(cluster.get(i)));
+		/*int elements = (int)Math.ceil((double)numberOfItems / (double)k);
 		// now create k clusters
 		for (int i = 0; i < k; i++)
 		{
@@ -175,7 +303,7 @@ public class OptimizingLayouts
 			for (int add = 0; add < elements; add++)
 			{
 				// add new element to cluster
-				cluster.get(i).add((VisualItem)items.remove(0));
+				cluster.get(i).add((VisualItem)items.remove((int)(Math.random() * items.size())));
 				double[] val = (double[])cluster.get(i).get(cluster.get(i).size()-1).get("value");
 				// update cluster's center
 				for (int dims = 0; dims < dim; dims++)
@@ -234,7 +362,7 @@ public class OptimizingLayouts
 						clusterCenter.get(i)[j] += val[j] / cluster.get(i).size(); 
 				}	
 			}
-		} // End of re-clustering loop
+		} // End of re-clustering loop*/
 		
 		
 		
@@ -310,6 +438,24 @@ public class OptimizingLayouts
 		}
 	}
 	
+	public static double[] getClusterCenter(ArrayList<VisualItem> items)
+	{
+		int dim = ((double[])items.get(0).get("value")).length;
+		double arr[] = new double[dim];
+		for (int i = 0; i < dim; i++)
+		{
+			for (int j = 0; j < items.size(); j++)
+			{
+				VisualItem actItem = items.get(j);
+				arr[i] += ((double[])actItem.get("value"))[i];
+			}
+			arr[i] = arr[i] / items.size();
+		}
+		
+		return arr;
+	}
+	
+	
 	public static double distToCenter(VisualItem item, double[] center)
 	{
 		double dist = 0;
@@ -352,7 +498,7 @@ public class OptimizingLayouts
 						startY + (int)(Math.random() * range) - range / 2);
 		// now optimize
 		//int accuracy = 50;
-		int maxLoops = 250;//v.size() * accuracy;
+		int maxLoops = 500;//v.size() * accuracy;
 		double maxStressImprovement, stressBefor, stressAfter,
 		stressImprovement;
 		int bestPoint = 0, dirX = 0, dirY = 0;

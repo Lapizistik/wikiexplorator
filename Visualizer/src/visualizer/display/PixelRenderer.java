@@ -46,7 +46,7 @@ public class PixelRenderer extends LabelRenderer
 	protected GlyphTable gt;
 	protected PixelFrame frame;
 	protected float XYZn[];
-	protected int[] color;
+	protected double[] color;
 	
 	public PixelRenderer(String n, GlyphTable tab)
 	{
@@ -55,8 +55,18 @@ public class PixelRenderer extends LabelRenderer
 		// create reference white
 		float white[] = new float[] {1f, 1f, 1f};
 		XYZn = new Color(0, 0, 0).getColorSpace().toCIEXYZ(white);
-		color = new int[101];
+		color = new double[101];
 		createColorList();
+	}
+	
+	public double[] getColors()
+	{
+		return color;
+	}
+	
+	public void setColors(double[] col)
+	{
+		color = col;
 	}
 	
 	public void setFrame(PixelFrame pf)
@@ -227,8 +237,8 @@ public class PixelRenderer extends LabelRenderer
 		
 		// first adjust the value according to gamma
 		// and other optimizations
-		// v = (double)color[(int)Math.round(v * 100d)] / 100d;
-		v = getGammaCorrectedValue(v);
+		v = color[(int)Math.round(v * 100d)];
+		//v = getGammaCorrectedValue(v);
 		if (frame.getInverted())
 			v = 1d - v;
 		
@@ -346,14 +356,16 @@ public class PixelRenderer extends LabelRenderer
 	     return m_bbox;
 	 }
 	 
-	 public double getGammaCorrectedValue(double val)
-	 {
-		 return Math.pow(val, frame.getGamma());
-	 }
+	 //public double getGammaCorrectedValue(double val)
+	 //{
+	 //	 return Math.pow(val, frame.getGamma());
+	 //}
 	 
 	 public void createColorList()
 	 {
-		 ArrayList<Point> colorList = new ArrayList<Point>();
+		 for (int i = 0; i <=100; i++)
+			 color[i] = (double)i / 100d;
+		 /*ArrayList<Point> colorList = new ArrayList<Point>();
 		 int[] dist = gt.getDistribution();
 		 //for (int i = 0; i < dist.length; i++)
 			// System.out.println("Wert " + i + ": " + dist[i]);
@@ -392,7 +404,7 @@ public class PixelRenderer extends LabelRenderer
 		 {
 			 if (color[i] == 0)
 				 color[i] = color[i - 1];
-		 }
+		 }*/
 		 // Test
 		 //for (int i = 0; i < color.length; i++)
 		//	 System.out.println("Wert " + i + " liegt bei Farbe " + color[i]);
