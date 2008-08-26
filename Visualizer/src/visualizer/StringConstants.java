@@ -35,6 +35,7 @@ public class StringConstants
 		BackGray = "Grau",
 		BackBlue = "Blau",
 		AuthorFilter = "Autoren filtern",
+		ColorChooser = "Farben waehlen",
 		Data2D = "Tabelle",
 		Data3D = "Wuerfel",
 		Nothing = "Nichts gewaehlt";

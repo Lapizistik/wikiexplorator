@@ -29,10 +29,11 @@ import visualizer.userInterface.ZoomControler;
 /**
  * The main class of the program. VisuMain creates all
  * necessary objects. If you start the main() method,
- * the visualization will launch with a TestCube.
+ * the visualization will launch with a TestTable.
  * If you have created a DataCube or DataTable yourself,
- * you need to run the method init with your DataSet
- * as parameter.
+ * you can use the static method getInstance() to get
+ * a new VisuMain object on which you invoke one of 
+ * the init methods.
  * 
  * @author Rene Wegener
  *
@@ -45,31 +46,56 @@ public class VisuMain
 	 protected ArrayList<Display> dis;
 	 protected ArrayList<PixelRenderer> render;
      protected ArrayList<PixelFrame> frame;
-     protected int frameCount = 0;
+     protected static ArrayList<VisuMain> visuList = new ArrayList<VisuMain>();
      
-     /**
-      * Get the count of currently opened frames.
-      */
-     public int getNumberOfFrames()
-     {
-    	 return frameCount;
-     }
-     
-     protected void initNew()
+     public VisuMain()
      {
     	 vis = new ArrayList<Visualization>();
     	 glyphTable = new ArrayList<GlyphTable>();
     	 dis = new ArrayList<Display>();
     	 render = new ArrayList<PixelRenderer>();
          frame = new ArrayList<PixelFrame>(); 	 
+         visuList.add(this);
      }
      
      /**
+      * Get the number of VisuMain instances.
+      */
+     public static int visuMainCount()
+     {
+    	 return visuList.size();
+     }
+     
+     /**
+      * If there are actually no VisuMain objects, a new one
+      * will be created and returned. If there are already
+      * VisuMain objects, the one last created will be returned
+      */
+     public static VisuMain getInstance()
+     {
+    	 if (visuMainCount() == 0)
+    		 return new VisuMain();
+    	 else
+    		return visuList.get(visuMainCount() - 1); 
+     }
+     
+     /**
+      * Get the number of currently opened frames.
+      */
+     public int frameCount()
+     {
+    	 if (frame == null)
+    		 return 0;
+    	 else
+    		 return frame.size();
+     }
+     
+      /**
       * load a file in a newly created frame
       */
      public void init(String file)
      {
-    	 init (file, 0);
+    	 init (file, frameCount());
      }
      
      /**
@@ -77,7 +103,7 @@ public class VisuMain
       */
      public void init(DataSet data)
      {
-    	 init(data, 0);
+    	 init(data, frameCount());
      }
      
      /**
@@ -95,26 +121,16 @@ public class VisuMain
       */
 	 public void init(DataSet data, int index)
 	 {
-		 // is this the first initialization?
-		 if (vis == null) 
-			 initNew();
 		 // if the new visualization is put into an already
 		 // existing frame (which means a new file is loaded),
 		 // there is an old visualization that must be deleted.
-		 if (index < frameCount)
+		 if (index < frameCount())
 		 {
 			 vis.remove(index);
 	    	 glyphTable.remove(index);
 	    	 dis.remove(index);
 	    	 render.remove(index);
 		 }
-		 // if a new frame must be created, update 
-		 // the frameCount.
-		 if (index == frameCount) 
-		 {
-			 frameCount++;
-		 }
-		 
 		 // setup the visualization
 		 vis.add(index, new Visualization());
 		 glyphTable.add(index, new GlyphTable(vis.get(index), "glyphTable"));
@@ -145,7 +161,7 @@ public class VisuMain
 	     // zoom with mousewheel
 	     dis.get(index).addControlListener(new ZoomControler(dis.get(index), glyphTable.get(index)));
 	     
-	     if (index >= frameCount || frame.size() == 0)
+	     if (index >= frameCount())// || frame.size() == 0)
 	    	 frame.add(index, new PixelFrame("Visualisierung", index));
 	     render.get(index).setFrame(frame.get(index));
 	     // add a control listener
@@ -177,8 +193,7 @@ public class VisuMain
       */
      public void duplicate(int oldIndex)
 	 {
-		 int index = frameCount;
-		 frameCount++;
+		 int index = frameCount();
 		 
 		 // setup the visualization
 		 vis.add(new Visualization());
@@ -199,8 +214,7 @@ public class VisuMain
 	     // zoom with mousewheel
 	     dis.get(index).addControlListener(new ZoomControler(dis.get(index), glyphTable.get(index)));
 	     
-	     if (index >= frame.size())
-	    	 frame.add(new PixelFrame("Visualisierung", index));
+	     frame.add(new PixelFrame("Visualisierung", index));
 	     render.get(index).setFrame(frame.get(index));
 	     // add a control listener
 	     dis.get(index).addControlListener(new PixelSelector(frame.get(index), glyphTable.get(index), this, dis.get(index)));
@@ -227,7 +241,8 @@ public class VisuMain
 	     dis.get(index).setBackground(dis.get(oldIndex).getBackground());
 	     dis.get(index).setSize(dis.get(oldIndex).getSize());//(int)newWidth, (int)newHeight);
 	     glyphTable.get(index).setGlyphBounds(glyphTable.get(oldIndex).getGlyphBounds());
-	     glyphTable.get(index).updateVisu();     
+	     glyphTable.get(index).updateVisu(); 
+	     render.get(index).setColors(render.get(oldIndex).getColors());
 	}
 	 
      /**
@@ -235,9 +250,8 @@ public class VisuMain
       */
      public void disposeFrame(int index)
 	 {
-		 for (int i = index + 1; i < frameCount; i++)
+		 for (int i = index + 1; i < frameCount(); i++)
 			 frame.get(i).setIndex(i - 1);
-		 frameCount--; 
 		 vis.remove(index);
 		 glyphTable.remove(index);
 		 dis.remove(index);
@@ -248,7 +262,7 @@ public class VisuMain
 	 
 	public static void main(String[] args) 
     {
-    	VisuMain visuMain1 = new VisuMain();
+    	VisuMain visuMain1 = VisuMain.getInstance();
 	    if (args.length == 1)
         	visuMain1.init(args[0]);
 	    else

@@ -50,17 +50,17 @@ public class TestCube extends DataCube
      */
 	public int getZAxisCount()
 	{
-		return 500;
+		return 100;
 	}
 	
 	public int getXAxisCount()
 	{
-		return 15;
+		return 10;
 	}
 	
 	public int getYAxisCount()
 	{
-		return 15;
+		return 10;
 	}
 	
     /**
