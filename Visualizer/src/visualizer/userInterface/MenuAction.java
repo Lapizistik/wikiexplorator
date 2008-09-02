@@ -144,5 +144,14 @@ public class MenuAction implements ActionListener
 			frame.setBackColor(c);
 			frame.updateVisu();
 		}
+		else if (source.equals("helpMenu"))
+		{
+			 JDialog dialog = new HelpDialog("help/overview.html");
+		     dialog.setSize(800,600);
+		     dialog.setLocation(0, 0);
+		     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		     dialog.setResizable(true);
+		     dialog.setVisible(true);
+		}
 	}
 }
