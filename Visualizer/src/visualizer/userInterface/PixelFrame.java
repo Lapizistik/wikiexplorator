@@ -245,6 +245,8 @@ public class PixelFrame extends JFrame
 			addItemTo(pixelItem[i], pixelMenu, i < pixelItem.length - 1);
 		for (int i = 0; i < prefItem.length; i++)
 			addItemTo(prefItem[i], prefMenu, i < prefItem.length - 1);
+		JMenuItem helpItem = new JMenuItem("Hilfe anzeigen");
+		addItemTo(helpItem, helpMenu, false);
 		menuBar.add(fileMenu);
 		menuBar.add(new JSeparator(SwingConstants.VERTICAL));
 		menuBar.add(glyphMenu);
@@ -379,7 +381,7 @@ public class PixelFrame extends JFrame
 				try
 				{
 					double newRef = Double.parseDouble(tfReference.getText());
-					if (newRef > gt.getHighest())
+					if (newRef >= gt.getHighest())
 						gt.setReference(newRef);
 					else
 						tfReference.setText(Double.toString(gt.getHighest()));
