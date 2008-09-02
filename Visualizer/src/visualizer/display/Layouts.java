@@ -413,7 +413,7 @@ public class Layouts
 	public static void createHilbertLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
-		createHilbertLayout(v, startX, startY, itemWidth, itemHeight, "up");
+		createHilbertLayout(v, startX, startY, itemWidth, itemHeight, "down");
 	}
 	
 	private static void createHilbertLayout(ArrayList v, int startX, int startY,
@@ -432,43 +432,43 @@ public class Layouts
 	    	yDown = startY + itemHeight;
 	    	if (dir.equals("left"))
 		    {
-	    		actItem[0].setLocation(xLeft, yUp);
+	    		actItem[0].setLocation(xLeft, yDown);
 	    		if (v.size() > 1)
-					actItem[1].setLocation(xRight, yUp);
+					actItem[1].setLocation(xRight, yDown);
 				if (v.size() > 2)
-					actItem[2].setLocation(xRight, yDown);
+					actItem[2].setLocation(xRight, yUp);
 				if (v.size() > 3)
-					actItem[3].setLocation(xLeft, yDown);
+					actItem[3].setLocation(xLeft, yUp);
 			}
 		    else if (dir.equals("right"))
 		    {
-		    	actItem[0].setLocation(xRight, yDown);
+		    	actItem[0].setLocation(xRight, yUp);
 				if (v.size() > 1)
-					actItem[1].setLocation(xLeft, yDown);
+					actItem[1].setLocation(xLeft, yUp);
 				if (v.size() > 2)
-					actItem[2].setLocation(xLeft, yUp);
+					actItem[2].setLocation(xLeft, yDown);
 				if (v.size() > 3)
-					actItem[3].setLocation(xRight, yUp);
+					actItem[3].setLocation(xRight, yDown);
 			}    
 		    else if (dir.equals("up"))
 		    {
-		     	actItem[0].setLocation(xLeft, yUp);
+		     	actItem[0].setLocation(xRight, yUp);
 				if (v.size() > 1)
-					actItem[1].setLocation(xLeft, yDown);
+					actItem[1].setLocation(xRight, yDown);
 				if (v.size() > 2)
-					actItem[2].setLocation(xRight, yDown);
+					actItem[2].setLocation(xLeft, yDown);
 				if (v.size() > 3)
-					actItem[3].setLocation(xRight, yUp);
+					actItem[3].setLocation(xLeft, yUp);
 			}
 		    else if (dir.equals("down"))
 		    {
-		     	actItem[0].setLocation(xRight, yDown);
+		     	actItem[0].setLocation(xLeft, yDown);
 				if (v.size() > 1)
-					actItem[1].setLocation(xRight, yUp);
+					actItem[1].setLocation(xLeft, yUp);
 				if (v.size() > 2)
-					actItem[2].setLocation(xLeft, yUp);
+					actItem[2].setLocation(xRight, yUp);
 				if (v.size() > 3)
-					actItem[3].setLocation(xLeft, yDown);
+					actItem[3].setLocation(xRight, yDown);
 			} 
 		}
 		else // Recursion
@@ -493,43 +493,43 @@ public class Layouts
 			
 			if (dir.equals("left"))
 			{
-			      createHilbertLayout(newVec[0], startX, startY, itemWidth, itemHeight, "up");
+			      createHilbertLayout(newVec[0], startX, startY + squareHeight, itemWidth, itemHeight, "up");
 			      if (newVec[1].size() > 0)
-			    	  createHilbertLayout(newVec[1], startX + squareWidth, startY, itemWidth, itemHeight, "left");
+			    	  createHilbertLayout(newVec[1], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "left");
 			      if (newVec[2].size() > 0)
-			    	  createHilbertLayout(newVec[2], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "left");
+			    	  createHilbertLayout(newVec[2], startX + squareWidth, startY, itemWidth, itemHeight, "left");
 			      if (newVec[3].size() > 0)
-			    	  createHilbertLayout(newVec[3], startX, startY + squareHeight, itemWidth, itemHeight, "down");
+			    	  createHilbertLayout(newVec[3], startX, startY, itemWidth, itemHeight, "down");
 			}
 			else if (dir.equals("right"))
 			{
-			      createHilbertLayout(newVec[0], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "down");
+			      createHilbertLayout(newVec[0], startX + squareWidth, startY, itemWidth, itemHeight, "down");
 			      if (newVec[1].size() > 0)
-			    	  createHilbertLayout(newVec[1], startX, startY + squareHeight, itemWidth, itemHeight, "right");
+			    	  createHilbertLayout(newVec[1], startX, startY, itemWidth, itemHeight, "right");
 			      if (newVec[2].size() > 0)
-				    	createHilbertLayout(newVec[2], startX, startY, itemWidth, itemHeight, "right");
+				    	createHilbertLayout(newVec[2], startX, startY + squareHeight, itemWidth, itemHeight, "right");
 			      if (newVec[3].size() > 0)
-				    	createHilbertLayout(newVec[3], startX + squareWidth, startY, itemWidth, itemHeight, "up");
+				    	createHilbertLayout(newVec[3], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "up");
 			}
 			else if (dir.equals("up"))
 			{
-			      createHilbertLayout(newVec[0], startX, startY, itemWidth, itemHeight, "left");
+			      createHilbertLayout(newVec[0], startX + squareWidth, startY, itemWidth, itemHeight, "right");
 			      if (newVec[1].size() > 0)
-				    	createHilbertLayout(newVec[1], startX, startY + squareHeight, itemWidth, itemHeight, "up");
+				    	createHilbertLayout(newVec[1], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "up");
 			      if (newVec[2].size() > 0)
-				    	createHilbertLayout(newVec[2], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "up");
+				    	createHilbertLayout(newVec[2], startX, startY + squareHeight, itemWidth, itemHeight, "up");
 			      if (newVec[3].size() > 0)
-				    	createHilbertLayout(newVec[3], startX + squareWidth, startY, itemWidth, itemHeight, "right");
+				    	createHilbertLayout(newVec[3], startX, startY, itemWidth, itemHeight, "left");
 			}
 			else if (dir.equals("down"))
 			{
-			      createHilbertLayout(newVec[0], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "right");
+			      createHilbertLayout(newVec[0], startX, startY + squareHeight, itemWidth, itemHeight, "left");
 			      if (newVec[1].size() > 0)
-				    	createHilbertLayout(newVec[1], startX + squareWidth, startY, itemWidth, itemHeight, "down");
+				    	createHilbertLayout(newVec[1], startX, startY, itemWidth, itemHeight, "down");
 			      if (newVec[2].size() > 0)
-				    	createHilbertLayout(newVec[2], startX, startY, itemWidth, itemHeight, "down");
+				    	createHilbertLayout(newVec[2], startX + squareWidth, startY, itemWidth, itemHeight, "down");
 			      if (newVec[3].size() > 0)
-				    	createHilbertLayout(newVec[3], startX, startY + squareHeight, itemWidth, itemHeight, "left");
+				    	createHilbertLayout(newVec[3], startX + squareWidth, startY + squareHeight, itemWidth, itemHeight, "right");
 			}
 		} 
 	}

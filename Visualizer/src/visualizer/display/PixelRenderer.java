@@ -17,6 +17,8 @@ import java.awt.geom.RectangularShape;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 
+import color.LabColorSpace;
+
 import prefuse.Constants;
 import prefuse.data.Edge;
 import prefuse.render.AbstractShapeRenderer;
@@ -229,16 +231,34 @@ public class PixelRenderer extends LabelRenderer
 		gr.fillRect(pX, pY, 1, 1);
 	}
 	
+	public Color getGreyColor(float l)
+	{
+		float[] lab = new LabColorSpace().toRGB(new float[]{l, 0, 0});
+		return new Color(lab[0], lab[1], lab[2]);
+	}
+	
+	/**
+	 * Convert linear rgb values into Java's nonlinear
+	 * sRGB scale
+	 */
+	public float[] getSRGB(float[] rgb)
+	{
+		float[] sRGB = new float[3];
+		for (int i = 0; i <= 2; i++)
+			// gamma transformation
+			sRGB[i] = 1.055f * (float)Math.pow(rgb[i], 1f/2.4f) - 0.055f;
+		return sRGB;
+	}
+	
 	public Color getColor(double v)
 	{
 		int red, green, blue;
 		double a1, a2, a3;
 		Color c;
 		
-		// first adjust the value according to gamma
-		// and other optimizations
+		// first get the color 'weight' from the table
 		v = color[(int)Math.round(v * 100d)];
-		//v = getGammaCorrectedValue(v);
+		// invert color if necessary
 		if (frame.getInverted())
 			v = 1d - v;
 		
@@ -276,9 +296,10 @@ public class PixelRenderer extends LabelRenderer
 			else if (a3 < 0)
 				a3 = 0.0d;
 			
-			red = (int)(255 * a1);
-			green = (int)(255 * a2);
-			blue = (int)(255 * a3);
+			float sRGB[] = getSRGB(new float[]{(float)a1, (float)a2, (float)a3});
+			red = (int)(255 * sRGB[0]);
+			green = (int)(255 * sRGB[1]);
+			blue = (int)(255 * sRGB[2]);
 			if (red < 0)
 				red = 0;
 			if (green < 0)
@@ -289,8 +310,9 @@ public class PixelRenderer extends LabelRenderer
 		}
 		else //if (colorMode.equals(StringConstants.GrayScale))
 		{
+			c = getGreyColor((float)v * 100f);
 			// define matching grey color in lab space
-			float l = (float)v * 100f;
+			/*float l = (float)v * 100f;
 			if (l > 100)
 				l = 100f;
 			float a = 0;
@@ -319,12 +341,12 @@ public class PixelRenderer extends LabelRenderer
 			// convert XYZ --> RGB
 			float RGB[];
 			RGB = ColorSpace.getInstance(ColorSpace.CS_CIEXYZ).toRGB(new float[] {X, Y, Z});
-			c = new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB), RGB, 1);
+			c = new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB), RGB, 1);*/
 		}
 		return c;
 	}
 	
-	public Color getSRGB(float[] values)
+	/*public Color getSRGB(float[] values)
 	{
 		// first use a linear mapping to convert 
 		// to linear rgb
@@ -341,7 +363,7 @@ public class PixelRenderer extends LabelRenderer
 				newValues[i] = newValues[i] * 12.92f;
 		}
 		return new Color(newValues[0] * 255, newValues[1] * 255, newValues[2] * 255);
-	}
+	}*/
 	
 	 protected Shape getRawShape(VisualItem item) 
 	 {
