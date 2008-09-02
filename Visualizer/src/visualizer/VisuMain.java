@@ -266,6 +266,6 @@ public class VisuMain
 	    if (args.length == 1)
         	visuMain1.init(args[0]);
 	    else
-	    	visuMain1.init(new TestTable());//new TestTable(), 0);
+	    	visuMain1.init(new TestTable());//, 0);
     }
 }

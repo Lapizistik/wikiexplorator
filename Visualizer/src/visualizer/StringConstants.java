@@ -38,5 +38,5 @@ public class StringConstants
 		ColorChooser = "Farben waehlen",
 		Data2D = "Tabelle",
 		Data3D = "Wuerfel",
-		Nothing = "Nichts gewaehlt";
+		Nothing = "";
 }
