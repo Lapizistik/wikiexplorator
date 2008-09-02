@@ -33,9 +33,6 @@ public class DataLoader
 	 */
 	public static void loadTable(DataTable dt, GlyphTable gt) 
     {
-        // size in pixels needed to show all
-        // values of one author as Z or Hilbert Layout
-        int squareWidth = Layouts.curveSize(dt.getYAxisCount());
         // add all columns
         gt.addColumn("index", int.class);
         gt.addColumn("y-desc", String.class);
@@ -48,12 +45,21 @@ public class DataLoader
         gt.addColumn("scaledValue", double[].class);
         // first get highest value  
         double highest = dt.getValueAt(0, 0);
+        //int[] distro = new int[200]; // dist
         for (int x = 0; x < dt.getXAxisCount(); x++)
      	{
       	    for (int y = 0; y < dt.getYAxisCount(); y++)
-      	    	if (dt.getValueAt(x, y) > highest)
+      	    {
+      	    	if (dt.getValueAt(x, y) > highest) 
       	    		highest = dt.getValueAt(x, y);
+      	    	//distro[(int)dt.getValueAt(x, y)]++; // dist
+      	    }
       	}
+        // dist
+        System.out.println("Nutzer: " + dt.getYAxisCount());
+        System.out.println("Messzeitpunkte: " + dt.getXAxisCount());
+        //for (int i = 0; i < distro.length; i++)
+        //	System.out.println(i + " " + distro[i]);
     	
         // create the glyphs
     	int currentIndex = 0;
@@ -110,9 +116,6 @@ public class DataLoader
 	 */
 	public static void loadCube(DataCube dc, GlyphTable gt) 
     {
-        // size in pixels needed to show all
-        // z values
-        int squareWidth = Layouts.curveSize(dc.getZAxisCount());
         // add all columns
         gt.addColumn("index", int.class);
         gt.addColumn("x-desc", String.class);
@@ -129,15 +132,33 @@ public class DataLoader
     	// 0 and 1, we need to know the highest value
     	// of all pixels
     	double highest = dc.getValueAt(0, 0, 0);
-    	for (int x = 0; x < dc.getXAxisCount(); x++)
+    	//int[] distro = new int[200]; // dist
+        for (int x = 0; x < dc.getXAxisCount(); x++)
      	{
       	    for (int y = 0; y < dc.getYAxisCount(); y++)
       	    	for (int z = 0; z < dc.getZAxisCount(); z++)
+      	    	{
+      	    		// test
+      	    		//if (dc.getValueAt(x, y, z) >= 40 && x != y)
+      	    		//{
+      	    		//	System.out.println(x + " und " + y + " bei " + z + ", " + dc.getValueAt(x, y, z));
+      	    		//	System.out.println(y + " und " + x + " bei " + z + ", " + dc.getValueAt(y, x, z));
+          	    	//}
+      	    		
       	    		if (dc.getValueAt(x, y, z) > highest && (x != y))
       	    			highest = dc.getValueAt(x, y, z);
-      	}
-    	  	
-        int currentIndex = 0;
+      	    	 	//if (x != y)
+      	    	 		//distro[(int)dc.getValueAt(x, y, z)]++; // dist
+      	      	}
+     	}
+        // dist
+        System.out.println("Nutzer: " + dc.getXAxisCount());
+        System.out.println("Messzeitpunkte: " + dc.getZAxisCount());
+        //for (int i = 0; i < distro.length; i++)
+        //{
+        //	System.out.println(i + " " + distro[i]);
+        //}
+    	int currentIndex = 0;
         for (int y = 0; y < dc.getYAxisCount(); y++)
         {
         	for (int x = 0; x < dc.getXAxisCount(); x++)
