@@ -231,14 +231,18 @@ end
 
 % Co-Authorship Network
 <%
-wiki.coauthorgraph.remove_self_links.r_plot(:filename => "coauthorgraph.png")
+filter = wiki.filter.clone # clone filter
+wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes.to_graphviz("coauthorgraph.pdf", "neato -Tpdf", [ "outputorder=edgesfirst;\n", "node [ shape=point, style=filled, fillcolor=white ]" ] ) { |w|  "[ weight=#{w} ]" }
 %>
 \begin{figure}
 	\centering
-	\includegraphics[width=\textwidth]{coauthorgraph.png}
-	\caption{Co-Authorship Network}
-	\label{fig:co-authorship_network}
+	\includegraphics[width=\textwidth]{coauthorgraph.pdf}
+	\caption{Coauthorship Network}
+	\label{fig:coauthorship_network}
 \end{figure}
+
+Figure~\ref{fig:coauthor_network} shows the coauthorship network in which the nodes are authors, and an edge between any two vertices represents authorship of one or more pages.
+
 
 %%% TO DO %%%
 % Top 5 Authors in terms of Revisions, Degree, Betweenness, Closeness
@@ -250,17 +254,19 @@ wiki.coauthorgraph.remove_self_links.r_plot(:filename => "coauthorgraph.png")
 
 % Document Network
 <%
-wiki.pagegraph.remove_self_links.r_plot(:filename => "pagegraph.png")
+filter = wiki.filter.clone # clone filter
+page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes.to_graphviz("pagegraph.pdf", "neato -Tpdf", [ "outputorder=edgesfirst;\n", "node [ shape=point, style=filled, fillcolor=white ]" ] ) { |w|  "[ weight=#{w} ]" }
 %>
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\textwidth]{pagegraph.png}
-	\caption{Document Network}
-	\label{fig:document_network}
+	\includegraphics[width=\textwidth]{pagegraph.pdf}
+	\caption{Page Network}
+	\label{fig:page_network}
 \end{figure}
 
-Figure~\ref{fig:document_network} displays the wiki's document network. Nodes are wiki pages, edges are hyperlinks from one to another page. 
+Figure~\ref{fig:page_network} shows the page network in which the nodes are pages, and an edge between any two vertices represents a hyperlink from one to the other page.
+
 
 %%% TO DO %%%
 % Top 10 Pages (Indegree)
@@ -279,7 +285,5 @@ Figure~\ref{fig:document_network} displays the wiki's document network. Nodes ar
 %%% TO DO %%%
 
 % section network_visualization (end)
-
-
 
 \end{document}
