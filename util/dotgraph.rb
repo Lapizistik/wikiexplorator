@@ -28,8 +28,8 @@ class DotGraph
   # _nodes_:: any Enumerable object giving the nodes of the graph
   # _attrs_:: 
   #   additional parameters:
-  #   <i>:directed  => true</i> :: the graph is directed
-  #   <i>:linkcount => true</i> :: the dotfile should show the link count
+  #   <tt>:directed  => true</tt> :: the graph is directed
+  #   <tt>:linkcount => true</tt> :: the dotfile should show the link count
   # <i>&lproc</i> :: 
   #   if a block is given it is called for each node to generate the node 
   #   labels on output. If the block returns a string it is used as the
@@ -142,40 +142,40 @@ class DotGraph
   # remove nodes based on degree.
   #
   # _attrs_:
-  # <i>:treshold</i> => 2 :: delete all nodes with smaller degree.
-  # <i>:weight</i> => false :: 
+  # <tt>:treshold</tt> => 2 :: delete all nodes with smaller degree.
+  # <tt>:weight</tt> => false :: 
   #   indicates how the degree is counted:
-  #   _true_, <i>:add</i>:: sum of link weights
-  #   _false_, <i>:count</i>:: number of links
-  #   <i>:log</i>:: sum of log(linkweight+1)
-  #   <i>:hirsch</i>::
+  #   _true_, <tt>:add</tt>:: sum of link weights
+  #   _false_, <tt>:count</tt>:: number of links
+  #   <tt>:log</tt>:: sum of log(linkweight+1)
+  #   <tt>:hirsch</tt>::
   #     the Hirsch-index of the node. A node has Hirsch-index _k_ if there are
   #     at least _k_ links with weight _k_.
-  # <i>:dir</i> => :all ::
+  # <tt>:dir</tt> => :all ::
   #   indicates which links are used for degree:
-  #   <i>:in</i> :: only incoming links (node is dest)
-  #   <i>:out</i> :: only outgoing links (node is src)
-  #   <i>:all</i> :: both
-  #   <i>:max</i> :: use the higher value of in and out
-  #   <i>:min</i> :: use the lower value of in and out
-  # <i>:type</i> => :plain ::
+  #   <tt>:in</tt> :: only incoming links (node is dest)
+  #   <tt>:out</tt> :: only outgoing links (node is src)
+  #   <tt>:all</tt> :: both
+  #   <tt>:max</tt> :: use the higher value of in and out
+  #   <tt>:min</tt> :: use the lower value of in and out
+  # <tt>:type</tt> => :plain ::
   #   indicates the algorithm to be used:
-  #   <i>:plain</i> :: 
+  #   <tt>:plain</tt> :: 
   #     Nodes are removed based on their degree in the current graph.
   #     Through the deletion process some nodes will loose links, so the
   #     new graph may contain nodes with degree lower than the treshold.
-  #   <i>:full</i>, <i>:core</i> ::
+  #   <tt>:full</tt>, <tt>:core</tt> ::
   #     Nodes are recursively removed from the graph until all degrees keep
-  #     the given treshold. This is equivalent to calling <i>:plain</i>
+  #     the given treshold. This is equivalent to calling <tt>:plain</tt>
   #     several times (until a fixpoint is reached, i.e. the graph does not 
   #     longer change).
-  # <i>:hirsch</i> ::
+  # <tt>:hirsch</tt> ::
   #   setting this attribute to some number _b_ automatically sets
-  #   <i>:weight</i> => <i>:hirsch</i>. Additionally _b_ is used as
+  #   <tt>:weight</tt> => <tt>:hirsch</tt>. Additionally _b_ is used as
   #   balancing factor (see #hirsch?).
   #   
   # <b>Caution:</b> For indirected graphs it is random whether a link is 
-  # outgoing or incoming, so here only <i>:dir</i> => :all is useful!
+  # outgoing or incoming, so here only <tt>:dir</tt> => :all is useful!
   #
   # Example:
   #   g.remove_nodes(:treshold => 3, :weight => false, :dir => :out)
@@ -300,9 +300,9 @@ class DotGraph
   # counts as in- or outlink so only the degree is valid.
   #
   # _weight_:: indicates how the degree is counted:
-  #            _true_, <i>:add</i>:: sum of link weights
-  #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(linkweight+1)
+  #            _true_, <tt>:add</tt>:: sum of link weights
+  #            _false_, <tt>:count</tt>:: number of links
+  #            <tt>:log</tt>:: sum of log(linkweight+1)
   def degrees(weight=false)
     
     h = Hash.new { |h,k| h[k] = [0,0,0] }
@@ -315,9 +315,9 @@ class DotGraph
   # computes the (weighted) out-degree of node n
   #
   # _weight_:: indicates how the degree is counted:
-  #            _true_, <i>:add</i>:: sum of link weights
-  #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(linkweight+1)
+  #            _true_, <tt>:add</tt>:: sum of link weights
+  #            _false_, <tt>:count</tt>:: number of links
+  #            <tt>:log</tt>:: sum of log(linkweight+1)
   def n_outdegree(node, weight=false)
     case weight
     when true, :add
@@ -332,9 +332,9 @@ class DotGraph
   # computes the (weighted) in-degree of node n
   #
   # _weight_:: indicates how the degree is counted:
-  #            _true_, <i>:add</i>:: sum of link weights
-  #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(linkweight+1)
+  #            _true_, <tt>:add</tt>:: sum of link weights
+  #            _false_, <tt>:count</tt>:: number of links
+  #            <tt>:log</tt>:: sum of log(linkweight+1)
   def n_indegree(node, weight=false)
     case weight
     when true, :add
@@ -352,9 +352,9 @@ class DotGraph
   # than indegree+outdegree)
   #
   # _weight_:: indicates how the degree is counted:
-  #            _true_, <i>:add</i>:: sum of link weights
-  #            _false_, <i>:count</i>:: number of links
-  #            <i>:log</i>:: sum of log(linkweight+1)
+  #            _true_, <tt>:add</tt>:: sum of link weights
+  #            _false_, <tt>:count</tt>:: number of links
+  #            <tt>:log</tt>:: sum of log(linkweight+1)
   def n_degree(node, weight=false)
     d = n_indegree(node,weight) + n_outdegree(node,weight)
     if l=@links[[node,node]]
@@ -374,14 +374,14 @@ class DotGraph
   # pp_degrees(:sortby => 0, :up => true, ...)
   # pp_degrees(:sortby => 0, :up => true, ...) { |n| ... }
   # Pretty print the degrees of all nodes.
-  # <i>:sortnr</i>:: 
+  # <tt>:sortnr</tt>:: 
   #    by which column the output should be sorted
   #    0 or :node   :: by node
   #    1 or :degree :: by degree
   #    2 or :out    :: by outdegree
   #    3 or :in     :: by indegree
-  # <i>:up</i>:: _true_ for ascending, _false_ for descending sort.
-  # <i>:weight</i>:: see degrees.
+  # <tt>:up</tt>:: _true_ for ascending, _false_ for descending sort.
+  # <tt>:weight</tt>:: see degrees.
   # <i>&block</i>:: 
   #   if a block is given it is called with each node and its 
   #   return value (preferable a String) is used for printing the node.
@@ -463,7 +463,7 @@ class DotGraph
   #
   # Any strings given as attributes are included as graph attributes 
   # (e.g. <tt>"overflow=scale"</tt> or 
-  # <tt>"node [shape=circle,fixedsize=true,width=0.1"</tt>).
+  # <tt>"node [shape=circle,fixedsize=true,width=0.1]"</tt>).
   #
   # if a block is given it is called with the link count of each link 
   # and the return value is used as link attribute (don't forget the []).
@@ -476,9 +476,26 @@ class DotGraph
     d << "}\n"
   end
   
-  # Writes graph to dotfile. See #to_dot.
+  # Writes graph to dotfile.
+  #
+  # _filename_ :: name of the dotfile to be created
+  #
+  # All other attributes are propagated to #to_dot.
   def to_dotfile(filename, *attrs, &block)
     File.open(filename,'w') { |file| file << to_dot(*attrs, &block) }
+  end
+
+  # Calls the graphviz utility given in _cmd_.
+  #
+  # _filename_ :: name of the file to be created
+  # _cmd_ :: command line to be executed
+  #
+  # All other attributes are propagated to #to_dot.
+  #
+  # Example:
+  #   g.to_dotfile('graph.svg', 'twopi -Tsvg')
+  def to_graphviz(filename, cmd='neato -Tsvg', *attrs, &block)
+    open("|#{cmd} -o '#{filename}'","w") { |io| io << to_dot(*attrs, &block) }
   end
 
   # Creates a LaTeX String representing   
@@ -493,10 +510,10 @@ class DotGraph
   #            is generated, for inclusion in a larger LaTeX-file. If false
   #            a stand-alone LaTeX-document is generated.
   # :figpreamble:: any LaTeX-code to be included at picture start. Try e.g.
-  #                <i>:figpreamble => '\scriptsize'</i> for smaller font.
+  #                <tt>:figpreamble => '\scriptsize'</tt> for smaller font.
   # :graphstyle:: any parameter to the corresponding picture-environment
   #               (+tikzpicture+ or +pspicture+, respectively). Try e.g. 
-  #               <i>:graphstyle => 'scale=0.5'</i> to scale down the graph
+  #               <tt>:graphstyle => 'scale=0.5'</tt> to scale down the graph
   #               to 50%.
   # :texmode:: dot2tex text mode: 
   #            "raw":: (default) any string is subject to LaTeX interpretation
@@ -585,11 +602,11 @@ class DotGraph
   #
   # _options_::
   #   a hash with further options:
-  #   <i>:duration</i>=><tt>SONIA_DURATION</tt>:: 
+  #   <tt>:duration=>SONIA_DURATION</tt>:: 
   #     time (in seconds) a link should last.
-  #   <i>:speedup</i>=><tt>SONIA_SPEEDUP</tt>:: 
+  #   <tt>:speedup</tt>=><tt>SONIA_SPEEDUP</tt>:: 
   #     time (in seconds) is divided by this factor.
-  #   <i>:node_colors</i>::
+  #   <tt>:node_colors</tt>::
   #     the color of the node in its 5 phases (see description below for
   #     details). Defaults to
   #       :node_colors => ['White','LightGray','DarkGray','LightGray','White']
@@ -598,25 +615,25 @@ class DotGraph
   #       :node_colors => [[1,1,1], [0.6,0.4,0.4], ...]
   #     Due to the restrictions of the SONIA file format you may not mix
   #     RGB and named colors, sorry.
-  #   <i>:node_LabelColor</i>:: 
+  #   <tt>:node_LabelColor</tt>:: 
   #     the color of the node label in its 5 phases (see description below
   #     for details). Due to the restrictions of the SONIA file format only
   #     named colors are allowed, sorry.
-  #   <i>:node_BorderColor</i>:: 
+  #   <tt>:node_BorderColor</tt>:: 
   #     the color of the node border in its 5 phases (see description below
   #     for details). Due to the restrictions of the SONIA file format only
   #     named colors are allowed, sorry.
-  #   <i>:node_BorderWidth</i>:: 
+  #   <tt>:node_BorderWidth</tt>:: 
   #     the width of the node border in its 5 phases (see description below
   #     for details) as float array.
-  #   <i>:node_Size</i>:: 
+  #   <tt>:node_Size</tt>:: 
   #     the size of the node in its 5 phases (see description below
   #     for details) as float array.
-  #   <i>:node_Shape</i>:: 
+  #   <tt>:node_Shape</tt>:: 
   #     the shape of the node in its 5 phases (see description below
   #     for details) as String Array. 
   #     SONIA only understands 'ellipse' or 'rect'.
-  #   <i>:node_IconURL</i>:: 
+  #   <tt>:node_IconURL</tt>:: 
   #     the icon of the node in its 5 phases (see description below
   #     for details) as Array of URLS pointing to jpegs. 
   #     SONIA only understands 'ellipse' or 'rect'.

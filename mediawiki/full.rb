@@ -1,0 +1,7 @@
+require 'mediawiki'
+require 'rubygems'
+require 'util/r'
+require 'util/latex'
+require 'util/ngnuplot'
+require 'util/enumstat'
+require 'util/gp-extras'

@@ -6,12 +6,17 @@ require 'util/dotgraph'
 require 'util/jbridge/visualizer'
 
 class DotGraph
+  # returns a Visualizer::Cube representation of this DotGraph rastered
+  # by _timeraster_. Only useful if the links are time-annotated.
+  #
+  # Try e.g.
+  #   dotgraph.to_cube(raster).visualize
   def to_cube(timeraster, params={})
     directed = params[:directed] || @directed
     nn = @nodes.collect { |n| nid(n) }
 
     t0 = timeraster.first
-    timeraster = timeraster[1..-1] # all but first
+    timeraster = timeraster[1..-1] || [] # all but first
 
     sort_times unless params[:times_sorted]
 
@@ -21,7 +26,7 @@ ddd=0
 
     @nodes.each_with_index do |x, ix|
       @nodes.each_with_index do |y, iy|
-        if !directed && (src.object_id > dest.object_id)
+        if !directed && (x.object_id > y.object_id)
           key = [y,x]
         else
           key = [x,y]

@@ -271,26 +271,27 @@ module Mediawiki
     #
     # _attr_:: 
     #   named attributes.
-    #   <i>:step</i>:: 
+    #   <tt>:step</tt>:: 
     #     step width. Either a number of seconds or a symbol
-    #     (<i>:hour</i>=3600, <i>:day</i>=24*3600, <i>:week</i>=7*24*3600).
-    #     <i>:month</i> corresponds to a real month with varying length,
+    #     (<tt>:hour</tt>=3600, <tt>:day</tt>=24*3600, 
+    #     <tt>:week</tt>=7*24*3600).
+    #     <tt>:month</tt> corresponds to a real month with varying length,
     #     so the steps will be e.g. 2000-1-27 to  2000-2-27 to  2000-2-27.
-    #   <i>:zero</i>:: 
+    #   <tt>:zero</tt>:: 
     #     start time setting. _starttime_ may have some 
     #     odd value, e.g. 2003-8-20 14:33, but when stepping daily we would 
     #     prefer timespans from midnight to midnight, i.e. start with
-    #     2003-8- 20 0:00. <i>:zero</i> may have the following values:
-    #     <i>:hour</i>:: set minutes and seconds of _starttime_ to 0.
-    #     <i>:day</i>:: set hours, minutes and seconds of _starttime_ to 0.
-    #     <i>:week</i>:: 
+    #     2003-8- 20 0:00. <tt>:zero</tt> may have the following values:
+    #     <tt>:hour</tt>:: set minutes and seconds of _starttime_ to 0.
+    #     <tt>:day</tt>:: set hours, minutes and seconds of _starttime_ to 0.
+    #     <tt>:week</tt>:: 
     #       sets hours, minutes and seconds of _starttime_ to 0
     #       and the date to the closest day before or equal to _starttime_
-    #       with day of the week as given in <i>:wday</i>. 
-    #     <i>:month</i>:: 
+    #       with day of the week as given in <tt>:wday</tt>. 
+    #     <tt>:month</tt>:: 
     #       set day to 1 and 
     #       hours, minutes and seconds of _starttime_ to 0.
-    #     <i>:year</i>:: 
+    #     <tt>:year</tt>:: 
     #       set month and day to 1 and 
     #       hours, minutes and seconds of _starttime_ to 0.
     #     <i>[y,m,d,h,min,s]</i>:: 
@@ -299,9 +300,9 @@ module Mediawiki
     #       (from year to second) is left untouched, otherwise it is set
     #       to the value given in the array. So to start the day at 5:00
     #       use <i>[nil,nil,nil,5,0,0]</i>.
-    #   <i>:wday</i>:: 
+    #   <tt>:wday</tt>:: 
     #     The day of the week the timeraster will start, if
-    #     <i>:zero => :week</i>. Allowed values are 0 (sunday) 
+    #     <tt>:zero => :week</tt>. Allowed values are 0 (sunday) 
     #     to 6 (saturday). Defaults to 0 (sunday).
     #
     # Use this function e.g. for investigating wiki dynamics:

@@ -38,10 +38,10 @@ module Mediawiki
     # _filter_:: the Filter to use.
     # _params_:: 
     #   a Hash of named parameters:
-    #   <i>:type</i> => :plain ::
+    #   <tt>:type => :plain</tt> ::
     #     type of graph:
-    #     <i>:plain</i> :: ordinary coauthorgraph
-    #     <i>:newman</i> :: 
+    #     <tt>:plain</tt> :: ordinary coauthorgraph
+    #     <tt>:newman</tt> :: 
     #       newman coauthorgraph, i.e. each page counts with 
     #       1/(nr of coautors).
     #
@@ -143,36 +143,36 @@ module Mediawiki
     # _filter_:: the Filter to use.
     # _params_:: 
     #   a Hash of named parameters:
-    #   <i>:counts</i>:: 
+    #   <tt>:counts</tt>:: 
     #     a Symbol indicating how links are counted:
-    #     <i>:add</i>::
+    #     <tt>:add</tt>::
     #       for any pair of users _a_, _b_ the link weight of the link from
     #       _a_ to _b_ is the sum of all Page#interlockingresponses between
     #       _a_ and _b_ for each page.
-    #     <i>:log</i>::
+    #     <tt>:log</tt>::
     #       for any pair of users _a_, _b_ the link weight of the link from
     #       _a_ to _b_ is 
     #       <tt>sum_{<i>p</i>\in P}\log(il_<i>p</i>(_a_->_b_)+1)</tt> with
     #       <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
     #       _a_ to _b_ on page _p_ (see Page#interlockingresponses).
-    #     <i>:squares</i>::
+    #     <tt>:squares</tt>::
     #       for any pair of users _a_, _b_ the link weight of the link from
     #       _a_ to _b_ is 
     #       <tt>(sum_{<i>p</i>\in P}(il_<i>p</i>(_a_->_b_)^k))^(1/k)</tt> with
     #       <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
     #       _a_ to _b_ on page _p_ (see Page#interlockingresponses) and
-    #       _k_=2 (default), can be changed with <i>:k</i>. The function
+    #       _k_=2 (default), can be changed with <tt>:k</tt>. The function
     #       kind of reverts for _k_<1.
-    #     <i>:max</i>::
+    #     <tt>:max</tt>::
     #       for any pair of users _a_, _b_ the link weight of the link from
     #       _a_ to _b_ is the maximum of all Page#interlockingresponses between
     #       _a_ and _b_ over all pages.
-    #     <i>:page</i>::
+    #     <tt>:page</tt>::
     #       for any pair of users _a_, _b_ the link weight of the link from
     #       _a_ to _b_ is the number of pages having a interlockingresponse 
     #       _a_ to _b_.
-    #   <i>:k</i>::
-    #     exponent used for <i>:count</i> => <i>:squares</i>
+    #   <tt>:k</tt>::
+    #     exponent used for <tt>:count => :squares</tt>
     # See Page#interlockingresponses for discussion.
     #
     # If a block is given it is passed to DotGraph::new (see there)
@@ -282,15 +282,15 @@ module Mediawiki
     # _filter_:: the Filter to use.
     # _counts_:: 
     #   a Symbol indicating how links are counted:
-    #   <i>:add</i>::
+    #   <tt>:add</tt>::
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the sum of all Page#directresponses between
     #     _a_ and _b_ for each page.
-    #   <i>:max</i>::
+    #   <tt>:max</tt>::
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the maximum of all Page#directresponses between
     #     _a_ and _b_ over all pages.
-    #   <i>:page</i>::
+    #   <tt>:page</tt>::
     #     for any pair of users _a_, _b_ the link weight of the link from
     #     _a_ to _b_ is the number of pages having a directresponse 
     #     _a_ to _b_.
