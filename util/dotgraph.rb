@@ -493,8 +493,8 @@ class DotGraph
   # All other attributes are propagated to #to_dot.
   #
   # Example:
-  #   g.to_dotfile('graph.svg', 'twopi -Tsvg')
-  def to_graphviz(filename, cmd='neato -Tsvg', *attrs, &block)
+  #   g.to_graphviz('graph.svg', 'twopi -Tsvg')
+  def to_graphviz(filename, cmd, *attrs, &block)
     open("|#{cmd} -o '#{filename}'","w") { |io| io << to_dot(*attrs, &block) }
   end
 
