@@ -96,7 +96,7 @@ wiki.userstats.sort_by { |u,| u.name }.collect { |u,values|
 <%
 ur = users.collect { |u| u.revisions.length }
 ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors",
- :ylabel => "revisions", :png => 'cdfar.png', :size => '480,480')
+ :ylabel => "revisions", :pdf => 'cdfar.pdf', :size => '480,480')
 %>
 \begin{center}
   \includegraphics[width=\textwidth]{cdfar.png}
@@ -232,16 +232,17 @@ end
 % Co-Authorship Network
 <%
 filter = wiki.filter.clone # clone filter
-wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes.to_graphviz("coauthorgraph.pdf", "neato -Tpdf", [ "outputorder=edgesfirst;\n", "node [ shape=point, style=filled, fillcolor=white ]" ] ) { |w|  "[ weight=#{w} ]" }
+coauthorship_network = wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
+coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato -Tpdf", [ "outputorder=edgesfirst;\n", "node [ shape=point, style=filled, fillcolor=white ]" ] ) { |w|  "[ weight=#{w} ]" }
 %>
-\begin{figure}
+\begin{figure}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{coauthorgraph.pdf}
 	\caption{Coauthorship Network}
 	\label{fig:coauthorship_network}
 \end{figure}
 
-Figure~\ref{fig:coauthor_network} shows the coauthorship network in which the nodes are authors, and an edge between any two vertices represents authorship of one or more pages.
+Figure~\ref{fig:coauthor_network} shows the coauthorship network in which the nodes are authors, and a link between any two nodes represents authorship of one or more pages. There are <%= coauthorship_network.nodes.length %> nodes connected by <%= coauthorship_network.links.length %> links in the network. The coauthorship network gives an idea of who is working with whom. Single nodes with above average links to others identify authors who work with many others, usually on many pages. Rather than content, these authors provide most of the structure to the wiki. Clusters of nodes identify authors working in close concert with each other. These authors provide most of the content to the wiki.
 
 
 %%% TO DO %%%
@@ -255,17 +256,18 @@ Figure~\ref{fig:coauthor_network} shows the coauthorship network in which the no
 % Document Network
 <%
 filter = wiki.filter.clone # clone filter
-page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes.to_graphviz("pagegraph.pdf", "neato -Tpdf", [ "outputorder=edgesfirst;\n", "node [ shape=point, style=filled, fillcolor=white ]" ] ) { |w|  "[ weight=#{w} ]" }
+page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
+page_network.to_graphviz("pagegraph.pdf", "neato -Tpdf", [ "outputorder=edgesfirst;\n", "node [ shape=point, style=filled, fillcolor=white ]" ] ) { |w|  "[ weight=#{w} ]" }
 %>
 
-\begin{figure}
+\begin{figure}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{pagegraph.pdf}
 	\caption{Page Network}
 	\label{fig:page_network}
 \end{figure}
 
-Figure~\ref{fig:page_network} shows the page network in which the nodes are pages, and an edge between any two vertices represents a hyperlink from one to the other page.
+Figure~\ref{fig:page_network} shows the page network in which the nodes are pages, and a link between any two nodes represents a hyperlink from one to the other page. There are <%= page_network.nodes.length %> nodes connected by <%= page_network.links.length %> links in the network.  The page network gives an idea of which page links to which other. Single nodes with above average links to others identify pages which serve as portals. These pages provide most of the structure of the wiki. Clusters of nodes identify pages which revolve around a common theme or topic. These pages provide most of the content of the wiki.
 
 
 %%% TO DO %%%
