@@ -6,8 +6,12 @@
 # A kind of history object along timestamps should be built
 #++
 
+require 'util/trytoreq'
+
 require 'set'         # the Set class
-require 'mediawiki/db'
+try_to_require('mediawiki/db', 
+               'Loading Wikis from database will fail.',
+               'Marshal or YAML files will still work.')
 require 'parsedate'
 require 'yaml'
 require 'singleton'

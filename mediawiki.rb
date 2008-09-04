@@ -46,11 +46,12 @@
 #
 # Please send me new language files as patch if done!
 
+require 'util/trytoreq'
 require 'mediawiki/core'
 require 'mediawiki/db'
 require 'mediawiki/functions'
 require 'mediawiki/graph'
-require 'mediawiki/report.rb'
+require 'mediawiki/report'
 
 module Mediawiki
   Version = 0.8

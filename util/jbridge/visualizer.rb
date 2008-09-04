@@ -18,51 +18,44 @@ module Visualizer
   class Table
     # the table data (two-dimensional array of numbers)
     attr_reader :data
-    # array of strings representing the x-labels
-    # (this is the _inner_ data of the java Visualizer)
-    attr_reader :xn
-    # array of strings representing the y-labels
+    # array of strings representing the a-labels
     # (this is the _outer_ data of the java Visualizer)
-    attr_reader :yn
+    attr_reader :an
+    # array of strings representing the t-labels
+    # (this is the _inner_ data of the java Visualizer)
+    attr_reader :tn
 
     
-    # _xn_:: array of strings representing the x-labels
-    #        (this is the _inner_ data of the java Visualizer)
-    # _yn_:: array of strings representing the y-labels
+    # _an_:: array of strings representing the a-labels
     #        (this is the _outer_ data of the java Visualizer)
+    # _tn_:: array of strings representing the t-labels
+    #        (this is the _inner_ data of the java Visualizer)
     # _data_:: a two-dimensional array of numbers
-    #          (i.e. an array containing _xn_.length arrays with
-    #          each having _yn_.length numeric entries)
+    #          (i.e. an array containing _tn_.length arrays with
+    #          each having _an_.length numeric entries)
+    #          <b>Take care:</b> this is the other way around than for
+    #          Visualizer::Cube. Use _data_.+transpose+ on purpose.
     # If _data_ is not given, it is initialized with zeros.
-    def initialize(xn, yn, data=nil)
-      @xn = xn.collect { |s| s.to_s }
-      @yn = yn.collect { |s| s.to_s }
+    def initialize(an, tn, data=nil)
+      @tn = tn.collect { |s| s.to_s }
+      @an = an.collect { |s| s.to_s }
       @data = data || initdata
     end
 
     def initdata # :nodoc:
-      Array.new(@xn.length) { Array.new(@yn.length,0) }
+      Array.new(@tn.length) { Array.new(@an.length,0) }
     end
 
     # :call-seq:
-    # [x,y]=z
+    # [<i>a</i>,<i>t</i>]=<i>v</i>
     #
-    # sets value at _x_,_y_ to _z_.
-    def []=(x,y,v)
-      @data[x][y]=v
-    end
-
-    # :call-seq:
-    # [x]
-    #
-    # returns the corresponding y array. This allows e.g.
-    #   table[x][y] = 4.2
-    def [](x)
-      @data[x]
+    # sets value at _a_,_t_ to _v_.
+    def []=(a,t,v)
+      @data[t][a]=v
     end
 
     def javaobj # :nodoc:
-      jnew("visualizer.ruby.FlatTable", [:t_double]+@data.flatten, @xn, @yn)
+      jnew("visualizer.ruby.FlatTable", [:t_double]+@data.flatten, @tn, @an)
     end
 
     # call the java Visualizer with this table.
@@ -72,38 +65,68 @@ module Visualizer
       vm.init(fc)
     end
 
-    def header_to_string
-      s =  "xn = " + @xn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
-      s << "yn = " + @yn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
+    def header_to_string # :nodoc:
+      s =  "xn = " + @tn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
+      s << "yn = " + @an.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
       s
     end
-    def to_string
+    def to_string # :nodoc:
       header_to_string << "data = " + @data.join(', ') + "\n"
+    end
+
+    # Save plain text representation to file.
+    def save(filename)
+      File.open(filename,w) { |file| file << to_string }
     end
   end
 
+  # Cube data representation.
+  #
+  # Adapter class to java: Visualizer.jar
   class Cube < Table
-    attr_reader :zn
-    def initialize(xn, yn, zn, data=nil)
-      @zn = zn
-      super(xn, yn, data)
+    # _bn_:: array of strings representing the b-labels
+    #        (this is the _second_ _outer_ data of the java Visualizer)
+    attr_reader :bn
+
+    # _an_:: array of strings representing the a-labels
+    #        (this is the _outer_ data of the java Visualizer)
+    # _bn_:: array of strings representing the b-labels
+    #        (this is the _second_ _outer_ data of the java Visualizer)
+    # _tn_:: array of strings representing the t-labels
+    #        (this is the _inner_ data of the java Visualizer)
+    # _data_:: a three-dimensional array of numbers
+    #          (i.e. an array containing _an_.length arrays with
+    #          each containing _bn_.length arrays with _tn_.length
+    #          numeric entries each).
+    #
+    #          <b>Take care:</b> this is the other way around than for
+    #          Visualizer::Table
+    # If _data_ is not given, it is initialized with zeros.
+    def initialize(an, bn, tn, data=nil)
+      @bn = bn
+      super(an, tn, data)
     end
 
-    def initdata
-      Array.new(@xn.length) { Array.new(@yn.length) { Array.new(@zn.length,0)}}
+    def initdata # :nodoc:
+      Array.new(@an.length) { Array.new(@bn.length) { Array.new(@tn.length,0)}}
     end
 
-    def []=(x,y,z,v)
-      @data[x][y][z]=v
+    # :call-seq:
+    # [<i>a</i>,<i>b</i>,<i>t</i>]=<i>v</i>
+    #
+    # sets value at _a_,_b_,_t_ to _v_.
+    def []=(a,b,t,v)
+      @data[a][b][t]=v
     end
 
-    def javaobj
-      jnew("visualizer.ruby.FlatCube", [:t_double]+@data.flatten, @xn,@yn,@zn)
+    def javaobj # :nodoc:
+      jnew("visualizer.ruby.FlatCube", [:t_double]+@data.flatten, @an,@bn,@tn)
     end
 
-    def header_to_string
-      s = super
-      s << "zn = " + @zn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
+    def header_to_string # :nodoc:
+      s =  "xn = " + @an.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
+      s << "yn = " + @bn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
+      s << "zn = " + @tn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
       s
     end
   end
@@ -144,12 +167,34 @@ module Visualizer
 end
 
 
-module Enumerable
-  def jb_visualize2d(xn, yn)
-    Visualizer::Table.new(xn, yn, self).visualize
+class Array
+  # calls the java visualizer. See Visualizer::Table.
+  #
+  # _an_:: array of strings representing the y-labels
+  #        (this is the _outer_ data of the java Visualizer)
+  # _tn_:: array of strings representing the t-labels
+  #        (this is the _inner_ data of the java Visualizer)
+  # The Array must contain _tn_.length arrays with
+  # each having _an_.length numeric entries)
+  #
+  # <b>Take care:</b> The _inner_ data of the visualization is
+  # the _outer_ data in the Array. Use #transpose on purpose.
+  def jb_visualize2d(an, tn)
+    Visualizer::Table.new(tn, an, self).visualize
   end
 
-  def jb_visualize3d(xn, yn, zn)
+  # calls the java visualizer. See Visualizer::Cube.
+  #
+  # _an_:: array of strings representing the a-labels
+  #        (this is the _outer_ data of the java Visualizer)
+  # _bn_:: array of strings representing the b-labels
+  #        (this is the _second_ _outer_ data of the java Visualizer)
+  # _tn_:: array of strings representing the t-labels
+  #        (this is the _inner_ data of the java Visualizer)
+  # The Array must contain _an_.length arrays with
+  # each containing _bn_.length arrays with _tn_.length
+  # numeric entries each)
+  def jb_visualize3d(an, bn, tn)
     Visualizer::Cube.new(xn, yn, zn, self).visualize
   end
 end

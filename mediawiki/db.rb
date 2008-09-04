@@ -43,6 +43,7 @@
 #    "<i>prefix_</i><tt>wio_roles</tt>".
 
 require 'set'
+require 'dbi'      # generic database engine
 
 # Asks for user input with echo off at console
 def IO.getpw(question="Password: ")
@@ -70,7 +71,6 @@ module Mediawiki
     end
     
     def connect
-      require 'dbi'      # generic database engine
 
       DBI.connect("DBI:#{@dbengine}:#{@db}:#{@host}", 
                   @dbuser, @dbpassword) do |dbh| 
