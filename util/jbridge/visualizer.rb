@@ -33,6 +33,7 @@ module Visualizer
     # _data_:: a two-dimensional array of numbers
     #          (i.e. an array containing _tn_.length arrays with
     #          each having _an_.length numeric entries)
+    #
     #          <b>Take care:</b> this is the other way around than for
     #          Visualizer::Cube. Use _data_.+transpose+ on purpose.
     # If _data_ is not given, it is initialized with zeros.
