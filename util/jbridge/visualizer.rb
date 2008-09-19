@@ -31,11 +31,9 @@ module Visualizer
     # _tn_:: array of strings representing the t-labels
     #        (this is the _inner_ data of the java Visualizer)
     # _data_:: a two-dimensional array of numbers
-    #          (i.e. an array containing _tn_.length arrays with
-    #          each having _an_.length numeric entries)
+    #          (i.e. an array containing _an_.length arrays with
+    #          each having _tn_.length numeric entries)
     #
-    #          <b>Take care:</b> this is the other way around than for
-    #          Visualizer::Cube. Use _data_.+transpose+ on purpose.
     # If _data_ is not given, it is initialized with zeros.
     def initialize(an, tn, data=nil)
       @tn = tn.collect { |s| s.to_s }
@@ -77,7 +75,7 @@ module Visualizer
 
     # Save plain text representation to file.
     def save(filename)
-      File.open(filename,w) { |file| file << to_string }
+      File.open(filename,'w') { |file| file << to_string }
     end
   end
 
@@ -175,13 +173,11 @@ class Array
   #        (this is the _outer_ data of the java Visualizer)
   # _tn_:: array of strings representing the t-labels
   #        (this is the _inner_ data of the java Visualizer)
-  # The Array must contain _tn_.length arrays with
-  # each having _an_.length numeric entries)
+  # The Array must contain _an_.length arrays with
+  # each having _tn_.length numeric entries)
   #
-  # <b>Take care:</b> The _inner_ data of the visualization is
-  # the _outer_ data in the Array. Use #transpose on purpose.
   def jb_visualize2d(an, tn)
-    Visualizer::Table.new(tn, an, self).visualize
+    Visualizer::Table.new(an, tn, self).visualize
   end
 
   # calls the java visualizer. See Visualizer::Cube.
