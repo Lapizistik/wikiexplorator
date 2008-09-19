@@ -12,6 +12,11 @@ import visualizer.data.DataSet;
 
 public class FileLoader 
 {
+	/**
+	 * load from a file into a dataSet
+	 * @param filename name of the file that contains the data
+	 * @return a new DataSet
+	 */
     public static DataSet load(String filename) 
     {
     	String[] xs, ys, zs;

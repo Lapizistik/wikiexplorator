@@ -2,24 +2,19 @@
 
 
 
-import java.awt.Point;
-import java.awt.Rectangle;
+
+
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Vector;
-
 import prefuse.Display;
 import prefuse.Visualization;
 import prefuse.controls.PanControl;
 import prefuse.render.DefaultRendererFactory;
-import prefuse.visual.VisualTable;
 import visualizer.data.DataCube;
 import visualizer.data.DataLoader;
 import visualizer.data.DataSet;
 import visualizer.data.DataTable;
 import visualizer.display.GlyphTable;
-import visualizer.display.Layouts;
-import visualizer.display.OptimizingLayouts;
 import visualizer.display.PixelRenderer;
 import visualizer.ruby.FileLoader;
 import visualizer.userInterface.PixelFrame;
@@ -82,7 +77,7 @@ public class VisuMain
      /**
       * Get the number of currently opened frames.
       */
-     public int frameCount()
+     protected int frameCount()
      {
     	 if (frame == null)
     		 return 0;
@@ -189,7 +184,7 @@ public class VisuMain
 	}
 	 
 	 /**
-      * clone the frame and its contents of index oldIndex.
+      * clone the frame at oldIndex and all its contents 
       */
      public void duplicate(int oldIndex)
 	 {
@@ -246,7 +241,7 @@ public class VisuMain
 	}
 	 
      /**
-      * Remove the frame and all data at index.
+      * Remove the frame and all data at index
       */
      public void disposeFrame(int index)
 	 {

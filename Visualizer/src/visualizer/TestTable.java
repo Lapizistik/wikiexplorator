@@ -25,7 +25,7 @@ public class TestTable extends DataTable
 			int streuung = 20;
 			if (author % 4 == 0)
 				for (int time = 0; time < getXAxisCount(); time++)
-					val[author][time] = 64 - time;// + (int)(Math.random() * streuung);
+					val[author][time] = 100 - time;// + (int)(Math.random() * streuung);
 			else if (author % 4 == 1)
 				for (int time = 0; time < getXAxisCount(); time++)
 					val[author][time] = time + (int)(Math.random() * streuung);//Math.random();
@@ -33,7 +33,7 @@ public class TestTable extends DataTable
 				for (int time = 0; time < getXAxisCount(); time++)
 				{
 					if (time >= 50)
-						val[author][time] = 64 - time;// + (int)(Math.random() * streuung);//Math.random();
+						val[author][time] = 100 - time;// + (int)(Math.random() * streuung);//Math.random();
 					else 
 						val[author][time] = time + (int)(Math.random() * streuung);//Math.random();
 				}
@@ -65,7 +65,7 @@ public class TestTable extends DataTable
     
     public int getXAxisCount()
 	{
-		return 64;
+		return 100;
 	}
 	
 	public int getYAxisCount()

@@ -1,8 +1,4 @@
 package visualizer.data;
-/**
- * 
- */
-
 
 import java.util.Iterator;
 
@@ -43,24 +39,20 @@ public class DataLoader
         gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
         gt.addColumn("scaledValue", double[].class);
-        // first get highest value  
+        // get highest value  
         double highest = dt.getValueAt(0, 0);
-        //int[] distro = new int[200]; // dist
         for (int x = 0; x < dt.getXAxisCount(); x++)
      	{
       	    for (int y = 0; y < dt.getYAxisCount(); y++)
       	    {
       	    	if (dt.getValueAt(x, y) > highest) 
       	    		highest = dt.getValueAt(x, y);
-      	    	//distro[(int)dt.getValueAt(x, y)]++; // dist
       	    }
       	}
         // dist
         System.out.println("Nutzer: " + dt.getYAxisCount());
         System.out.println("Messzeitpunkte: " + dt.getXAxisCount());
-        //for (int i = 0; i < distro.length; i++)
-        //	System.out.println(i + " " + distro[i]);
-    	
+  
         // create the glyphs
     	int currentIndex = 0;
         for (int y = 0; y < dt.getYAxisCount(); y++)
@@ -127,28 +119,20 @@ public class DataLoader
         gt.addColumn("scaledMean", double.class);
         gt.addColumn("value", double[].class);
         gt.addColumn("scaledValue", double[].class);
-        // first create all Glyphs  
-    	// to create a value for the color that's between
-    	// 0 and 1, we need to know the highest value
-    	// of all pixels
-    	double highest = dc.getValueAt(0, 0, 0);
+        // get the highest value
+        double highest = 0;//dc.getValueAt(0, 0, 0);
     	//int[] distro = new int[200]; // dist
         for (int x = 0; x < dc.getXAxisCount(); x++)
      	{
       	    for (int y = 0; y < dc.getYAxisCount(); y++)
       	    	for (int z = 0; z < dc.getZAxisCount(); z++)
       	    	{
-      	    		// test
-      	    		//if (dc.getValueAt(x, y, z) >= 40 && x != y)
-      	    		//{
-      	    		//	System.out.println(x + " und " + y + " bei " + z + ", " + dc.getValueAt(x, y, z));
-      	    		//	System.out.println(y + " und " + x + " bei " + z + ", " + dc.getValueAt(y, x, z));
-          	    	//}
+      	    		double v = (dc.getValueAt(x, y, z));
       	    		
-      	    		if (dc.getValueAt(x, y, z) > highest && (x != y))
-      	    			highest = dc.getValueAt(x, y, z);
+      	    		if (v > highest && (x != y))
+      	    			highest = v;
       	    	 	//if (x != y)
-      	    	 		//distro[(int)dc.getValueAt(x, y, z)]++; // dist
+      	    	 		//distro[(int)v]++;
       	      	}
      	}
         // dist
@@ -156,10 +140,11 @@ public class DataLoader
         System.out.println("Messzeitpunkte: " + dc.getZAxisCount());
         //for (int i = 0; i < distro.length; i++)
         //{
-        //	System.out.println(i + " " + distro[i]);
+        	//System.out.println(i + " " + distro[i]);
         //}
     	int currentIndex = 0;
-        for (int y = 0; y < dc.getYAxisCount(); y++)
+    	// create all glyphs  
+    	for (int y = 0; y < dc.getYAxisCount(); y++)
         {
         	for (int x = 0; x < dc.getXAxisCount(); x++)
         	{
@@ -179,7 +164,8 @@ public class DataLoader
 	        	scalVal = new double[dc.getZAxisCount()];
 	        	for (int z = 0; z < dc.getZAxisCount(); z++)
 		       	{
-	            	val[z] = dc.getValueAt(x, y, z);
+	        		//double v = dc.getValueAt(x, y, z);
+      	    		val[z] = dc.getValueAt(x, y, z);
 	        		scalVal[z] = val[z] / highest;
 	        		if (x != y)
 	        			gt.addToDistribution(scalVal[z]);
@@ -200,8 +186,8 @@ public class DataLoader
 		        newItem.set("mean", new Double(sum));
 		        newItem.set("scaledMean", new Double(scaledMean));
 	        	currentIndex++;
-	     	}// end of for y
-        }// end of for x
+	     	}
+        }
         
          gt.setAxisTitles(dc.getXAxisTitle(), dc.getYAxisTitle(),
         		dc.getZAxisTitle());
@@ -215,5 +201,5 @@ public class DataLoader
 	     	 gt.setYAxisDescAt(dc.getYAxisNameAt(y), y);
 	     for (int z = 0; z < dc.getZAxisCount(); z++)
 	     	 gt.setZAxisDescAt(dc.getZAxisNameAt(z), z);
-	} // end of loadCube
+	} 
 }

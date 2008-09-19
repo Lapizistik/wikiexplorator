@@ -6,7 +6,7 @@ package visualizer.ruby;
 import visualizer.data.DataTable;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
  */
 public class FlatTable extends DataTable
