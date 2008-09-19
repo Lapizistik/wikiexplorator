@@ -29,8 +29,10 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * This class allows the user to select or deselect authors;
+ * only selected authors will be visible
  */
 public class AuthorSelectionDialog extends JDialog implements ActionListener
 {
@@ -38,6 +40,12 @@ public class AuthorSelectionDialog extends JDialog implements ActionListener
 	private JCheckBox[] selected; 
 	private GlyphTable gt;
 	
+	/**
+	 * create a new dialog
+	 * 
+	 * @param pFrame the PixelFrame calling the dialog
+	 * @param name the name of the dialog frame
+	 */
 	public AuthorSelectionDialog(PixelFrame pFrame, String name)
 	{
 		super(pFrame, name);
@@ -46,7 +54,7 @@ public class AuthorSelectionDialog extends JDialog implements ActionListener
 		init();
 	}
 	
-	public void init()
+	protected void init()
 	{
 		Container cp = getContentPane();
 		FormLayout layout = new FormLayout("center:default:grow",

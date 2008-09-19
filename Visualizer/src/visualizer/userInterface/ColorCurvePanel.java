@@ -18,8 +18,9 @@ import javax.swing.JPanel;
 import visualizer.display.PixelRenderer;
 
 /**
- * @author rene
- *
+ * @author Rene Wegener
+ * 
+ * This panel lets the user select the color scale
  */
 public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotionListener
 {
@@ -29,6 +30,11 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 	protected PixelRenderer pixRen;
 	protected ColorPanel colPan;
 	
+	/**
+	 * create new ColorCurvePanel
+	 * @param pan the colorPanel which shows the color scale the user selects
+	 * @param ren the visualization's PixelRenderer
+	 */
 	public ColorCurvePanel(ColorPanel pan, PixelRenderer ren) 
 	{
 		colPan = pan;
@@ -43,12 +49,7 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 		addMouseMotionListener(this);
 	}
 	
-	public void init(PixelRenderer ren)
-	{
-		pixRen = ren;
-	}
-
-    public void paintComponent(Graphics gr) 
+	public void paintComponent(Graphics gr) 
     {
     	super.paintComponent(gr);     
     	Graphics2D g = (Graphics2D)gr;
@@ -75,7 +76,8 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 			colPan.repaint();
 	}
     
-    public int getPoint(int x, int y)
+	// get the key of the point at x, y
+    protected int getPoint(int x, int y)
 	{
 		int key = -1;
 		
@@ -168,7 +170,8 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 		
 	}  
 	
-	public void updateValues()
+	// create curve from the coordinates
+	protected void updateValues()
 	{
 		if (!coord.containsKey(0))
 			coord.put(0, 200);
@@ -198,7 +201,8 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 		acceptValues();
 	}
 	
-	public void drawGamma(double gamma)
+	// create a gamma curve
+	protected void drawGamma(double gamma)
 	{
 		for (int i = 0; i <= 100; i++)
 			colors[i] = (int)(200 * Math.pow((double)i/100d, gamma));
@@ -206,7 +210,8 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 		repaint();
 	}
 	
-	public void acceptValues()
+	// accept the selected color scale
+	protected void acceptValues()
 	{
 		double[] arr = new double[colors.length];
 		for (int i = 0; i < colors.length; i++)
@@ -215,25 +220,5 @@ public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotio
 		}
 		if (pixRen != null)
 			pixRen.setColors(arr);
-	}
-	
-	public void smoothen(int size)
-	{
-		int[] store = new int[colors.length];
-		for (int i = 0; i < colors.length; i++)
-		{
-			store[i] = 0;
-        	int numberOfNeighbours = 0;
-        	for (int k = i - size; k <= i + size; k++)
-        	{
-        		if (k >= 0 && k < colors.length)
-        		{	
-        			store[i] += (colors[k]);
-        			numberOfNeighbours++;
-        		}
-        	}
-        	store[i] /= numberOfNeighbours;
-        }
-		colors = store;
 	}
 }

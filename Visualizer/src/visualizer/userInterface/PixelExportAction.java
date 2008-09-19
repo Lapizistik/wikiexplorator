@@ -1,6 +1,3 @@
-/**
- * 
- */
 package visualizer.userInterface;
 
 import java.awt.Dimension;
@@ -13,28 +10,25 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
-
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-
 import prefuse.Display;
-import prefuse.util.display.ExportDisplayAction;
-import prefuse.util.display.ScaleSelector;
 import prefuse.util.io.IOLib;
 import prefuse.util.io.SimpleFileFilter;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * This Action is triggered if the user wants to save
+ * an image
  */
 public class PixelExportAction extends AbstractAction
 {
 
     private Display display;
     private JFileChooser chooser;
-    //private ScaleSelector scaler;
     
     /**
      * Create a new ExportDisplayAction for the given Display.
@@ -69,10 +63,6 @@ public class PixelExportAction extends AbstractAction
         //chooser.setAccessory(scaler);
     }
     
-    /**
-     * Shows the image export dialog and processes the results.
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent evt) 
     {
         // lazy initialization

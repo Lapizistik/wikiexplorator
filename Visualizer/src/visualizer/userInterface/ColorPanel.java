@@ -1,20 +1,16 @@
-/**
- * 
- */
+
 package visualizer.userInterface;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
-
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
 import visualizer.display.PixelRenderer;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * The ColorPanel is just a bar showing the current 
+ * color scale
  */
 public class ColorPanel extends JPanel
 {

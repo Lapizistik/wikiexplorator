@@ -1,42 +1,21 @@
 package visualizer.userInterface;
 
-import java.awt.Button;
-import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Event;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridLayout;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.util.TreeMap;
-
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-
-import prefuse.visual.VisualItem;
-
-import visualizer.StringConstants;
 import visualizer.display.GlyphTable;
-
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * This dialog contains all the panels necessary for the 
+ * user to set the color scale
  */
 public class ColorDialog extends JDialog implements ActionListener
 {
@@ -48,6 +27,12 @@ public class ColorDialog extends JDialog implements ActionListener
 	private DistroPanel distPanel;
 	private JButton okButton, gammaButton;
 	
+	/**
+	 * create a new dialog
+	 * 
+	 * @param pFrame the PixelFrame calling the dialog
+	 * @param name the name of the dialog frame
+	 */
 	public ColorDialog(PixelFrame pFrame, String name)
 	{
 		super(pFrame, name);
@@ -56,7 +41,7 @@ public class ColorDialog extends JDialog implements ActionListener
 		init();
 	}
 	
-	public void init()
+	protected void init()
 	{
 		Container cp = getContentPane();
 		FormLayout layout = new FormLayout("center:default, 10px, center:default, 10px, center:default",

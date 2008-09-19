@@ -1,31 +1,27 @@
-/**
- * 
- */
 package visualizer.userInterface;
 
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.URL;
-
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * The program's main help function
  */
 public class HelpDialog extends JDialog implements HyperlinkListener
 {
+	// testing
 	public static void main(String[] args) 
 	  {
 		 HelpDialog brow = new HelpDialog("help/overview.html");
@@ -35,6 +31,10 @@ public class HelpDialog extends JDialog implements HyperlinkListener
 	  private URL pageURL;
 	  private String name;
 	  
+	  /**
+	   * Open new HelpDialog
+	   * @param n name of the dialog's frame
+	   */
 	  public HelpDialog(String n) 
 	  {
 	    super();
@@ -47,10 +47,7 @@ public class HelpDialog extends JDialog implements HyperlinkListener
 	        });
 	    name = n;
 	    pageURL = getClass().getClassLoader().getResource(name);
-	    //JPanel panel = new JPanel();
-	    //panel.setBackground(Color.lightGray);
-	    //getContentPane().add(panel, BorderLayout.NORTH);
-
+	    
 	    try
 	    {
 	    	overviewPane = new JEditorPane(pageURL);
@@ -69,8 +66,8 @@ public class HelpDialog extends JDialog implements HyperlinkListener
 		cp.setLayout(layout);
 		CellConstraints cc = new CellConstraints();
 		
-	    cp.add(scrollPane1, cc.xy(1, 1));//, BorderLayout.WEST);
-	    cp.add(scrollPane2, cc.xy(3, 1));//, BorderLayout.EAST);
+	    cp.add(scrollPane1, cc.xy(1, 1));
+	    cp.add(scrollPane2, cc.xy(3, 1));
 	    
 	    int width = 800;
 	    int height = 600;

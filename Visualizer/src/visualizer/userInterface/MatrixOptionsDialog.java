@@ -1,31 +1,24 @@
-/**
- * 
- */
 package visualizer.userInterface;
 
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
-
 import visualizer.StringConstants;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * This is a little dialog that pops up to allow the 
+ * user to specify the exact size of a row-by-row or
+ * column-by-column-layout
  */
 public class MatrixOptionsDialog extends JDialog implements ActionListener
 {
@@ -33,9 +26,14 @@ public class MatrixOptionsDialog extends JDialog implements ActionListener
 	private JTextField tfWidth;
 	private String type;
 	
-	public MatrixOptionsDialog(PixelFrame pFrame, String name, boolean mod)
+	/**
+	 * create a new MatrixOptionsDialog
+	 * @param pFrame the PixelFrame calling this dialog
+	 * @param name name of the dialog's frame
+	 */
+	public MatrixOptionsDialog(PixelFrame pFrame, String name)
 	{
-		super(pFrame, name, mod);
+		super(pFrame, name);
 		frame = pFrame;
 		type = name;
 		init();

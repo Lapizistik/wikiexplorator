@@ -1,24 +1,16 @@
 package visualizer.userInterface;
-/**
- * 
- */
 
 
-import java.awt.Button;
-import java.awt.Choice;
+
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Event;
 import java.awt.FlowLayout;
-import java.awt.TextArea;
-import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -28,20 +20,15 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
-
 import prefuse.Display;
-import prefuse.util.display.ExportDisplayAction;
-import prefuse.util.ui.JFastLabel;
 import prefuse.util.ui.JRangeSlider;
 import visualizer.StringConstants;
 import visualizer.VisuMain;
@@ -51,7 +38,7 @@ import visualizer.display.PixelRenderer;
 /**
  * The PixelFrame holds the whole visualization.
  * 
- * @author rene
+ * @author Rene Wegener
  *
  */
 public class PixelFrame extends JFrame
@@ -73,14 +60,16 @@ public class PixelFrame extends JFrame
 	protected JMenu fileMenu, glyphMenu, pixelMenu, prefMenu, helpMenu;
 	protected JMenuItem[] fileItem, pixelItem, glyphItem, prefItem;
 	protected MenuAction ma;
-	//protected String pref;
 	protected GlyphTable gt;
-	//protected boolean bordersOn = true;
-	//protected boolean inverted = true;
 	protected int  space = 3;
 	protected CellConstraints cc;
 	protected double highestValue;
 	
+	/**
+	 * Create a new PixelFrame
+	 * @param title the frame's title
+	 * @param number the index of this frame
+	 */
 	public PixelFrame(String title, int number)
 	{
 		super(title);
@@ -96,14 +85,19 @@ public class PixelFrame extends JFrame
 		setupLayout();
 	}
 	
+	/**
+	 * set the frame's index
+	 * @param newIndex the new index
+	 */
 	public void setIndex(int newIndex)
 	{
 		index = newIndex;
 	}
 	
-	public void setupLayout()
+	// create the layout
+	protected void setupLayout()
 	{
-		FormLayout layout = new FormLayout("10px, left:default:grow, 10px, right:default, 10px, left:default, 10px, left:default, 10px",
+		FormLayout layout = new FormLayout("10px, left:default:grow, 10px, right:default, 10px, right:default, 10px, left:default, 10px, left:default, 10px",
 		"10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default:grow, 10px, center:default, 10px, center:default, 10px");
 		setLayout(layout);
 		cc = new CellConstraints();
@@ -144,25 +138,34 @@ public class PixelFrame extends JFrame
 		colorPanel = new ColorPanel();
 		colorPanel.setPreferredSize(new Dimension(202, 40));
 		
+		JTextField tfHighestValue = new JTextField("höchster Wert");
+		tfHighestValue.setEditable(false);
+		JTextField tfReferenceValue = new JTextField("Referenzwert");
+		tfReferenceValue.setEditable(false);
+		JTextField tfSmoothen = new JTextField("Glättung");
+		tfSmoothen.setEditable(false);
 		//add(xHeader, cc.xy(6, 8));
-		add(xValue, cc.xy(6, 10));
+		add(xValue, cc.xyw(6, 10, 5));
 		//add(yHeader, cc.xy(6, 12));
-		add(yValue, cc.xy(6, 12));
+		add(yValue, cc.xyw(6, 12, 5));
 		//add(zHeader, cc.xy(6, 16));
-		add(zValue, cc.xy(6, 14));
-		add(pixelHeader, cc.xy(6, 16));
-		add(pixelValue, cc.xy(6, 18));
+		add(zValue, cc.xyw(6, 14, 5));
+		add(pixelHeader, cc.xyw(6, 16, 3));
+		add(pixelValue, cc.xyw(6, 18, 5));
 		add(tfHighest, cc.xy(6, 20));
 		add(tfReference, cc.xy(6, 22));
+		add(tfHighestValue, cc.xy(8, 20));
+		add(tfReferenceValue, cc.xy(8, 22));
 		//add(gammaSlider, cc.xy(6, 26));
-		add(curveSlider, cc.xy(6, 28));
-		add(tfSlidingWindow, cc.xy(8, 28));
-		add(colorPanel, cc.xy(6, 24));
+		add(tfSmoothen, cc.xyw(6, 26, 5)); 
+		add(curveSlider, cc.xyw(6, 28, 3));
+		add(tfSlidingWindow, cc.xy(10, 28));
+		add(colorPanel, cc.xyw(6, 24, 5));
 		add(zoomButton, cc.xy(2, 2));
 		add(duplicateButton, cc.xy(4, 2));
 		//add(centerButton, cc.xy(6, 2));
 		add(panel, cc.xywh(2, 4, 3, 22));
-		add(place, cc.xy(6, 6));
+		add(place, cc.xyw(6, 6, 3));
 		add(timeSlider, cc.xyw(2, 28, 3));
 		add(startLabel, cc.xy(2, 26));
 		add(stopLabel, cc.xy(4, 26));
@@ -182,31 +185,37 @@ public class PixelFrame extends JFrame
 		helpMenu = new JMenu("Hilfe");
 		helpMenu.getPopupMenu().setName("helpMenu");
 		fileItem = new JMenuItem[3];
-		glyphItem = new JMenuItem[7];
+		glyphItem = new JMenuItem[5];
 		pixelItem = new JMenuItem[5];
 		prefItem = new JMenuItem[8];
 		fileItem[0] = new JMenuItem("Als Bilddatei exportieren");
 		fileItem[1] = new JMenuItem("Datei laden");
-		fileItem[2] = new JMenuItem("Beenden");
 		addItemTo(fileItem[0], fileMenu, false);
 		addItemTo(fileItem[1], fileMenu, true);
-		addItemTo(fileItem[2], fileMenu, false);
 		glyphItem[0] = new JRadioButtonMenuItem(StringConstants.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
-		glyphItem[1] = new JRadioButtonMenuItem(StringConstants.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
-		glyphItem[2] = new JRadioButtonMenuItem(StringConstants.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
-		glyphItem[3] = new JRadioButtonMenuItem(StringConstants.TableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
-		glyphItem[4] = new JRadioButtonMenuItem(StringConstants.OptimizedTableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
-		glyphItem[5] = new JRadioButtonMenuItem(StringConstants.MDSLayout);
-		glyphItem[6] = new JRadioButtonMenuItem(StringConstants.JigsawLayout);
+		glyphItem[0].setToolTipText(StringConstants.RowText);
+		glyphItem[1] = new JRadioButtonMenuItem(StringConstants.TableLayout, new ImageIcon(getClass().getResource("/pics/table.gif")));
+		glyphItem[1].setToolTipText(StringConstants.TableText);
+		glyphItem[2] = new JRadioButtonMenuItem(StringConstants.OptimizedTableLayout, new ImageIcon(getClass().getResource("/pics/sorted.gif")));
+		glyphItem[2].setToolTipText(StringConstants.OptimizedTableText);
+		glyphItem[3] = new JRadioButtonMenuItem(StringConstants.MDSLayout, new ImageIcon(getClass().getResource("/pics/mds.gif")));
+		glyphItem[3].setToolTipText(StringConstants.MDSText);
+		glyphItem[4] = new JRadioButtonMenuItem(StringConstants.JigsawLayout, new ImageIcon(getClass().getResource("/pics/jigsaw.gif")));
+		glyphItem[4].setToolTipText(StringConstants.JigsawText);
 		ButtonGroup glyphGroup = new ButtonGroup();
 		for (int i = 0; i < glyphItem.length; i++)
 			glyphGroup.add(glyphItem[i]);
 		glyphItem[0].setSelected(true);
 		pixelItem[0] = new JRadioButtonMenuItem(StringConstants.RowLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
-		pixelItem[1] = new JRadioButtonMenuItem(StringConstants.ColumnLayout, new ImageIcon(getClass().getResource("/pics/row.gif")));
+		pixelItem[0].setToolTipText(StringConstants.pixelRowText);
+		pixelItem[1] = new JRadioButtonMenuItem(StringConstants.ColumnLayout, new ImageIcon(getClass().getResource("/pics/column.gif")));
+		pixelItem[1].setToolTipText(StringConstants.pixelColumnText);
 		pixelItem[2] = new JRadioButtonMenuItem(StringConstants.ZLayout, new ImageIcon(getClass().getResource("/pics/zcurve.gif")));
+		pixelItem[2].setToolTipText(StringConstants.pixelZText);
 		pixelItem[3] = new JRadioButtonMenuItem(StringConstants.MyZLayout, new ImageIcon(getClass().getResource("/pics/myz.gif")));
+		pixelItem[3].setToolTipText(StringConstants.pixelMyZText);
 		pixelItem[4] = new JRadioButtonMenuItem(StringConstants.HilbertLayout, new ImageIcon(getClass().getResource("/pics/hilbert.gif")));
+		pixelItem[4].setToolTipText(StringConstants.pixelHilbertText);
 		ButtonGroup pixelGroup = new ButtonGroup();
 		pixelGroup.add(pixelItem[0]);
 		pixelGroup.add(pixelItem[1]);
@@ -289,10 +298,6 @@ public class PixelFrame extends JFrame
 		zHeader.setText(gt.getZAxisTitle());
 		tfHighest.setText(Double.toString(gt.getHighest()));
 		tfReference.setText(Double.toString(gt.getReference()));
-		// set layout and create the choices
-		//FormLayout layout = new FormLayout("10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default, 10px, left:default:grow, 10px, left:default, 10px", 
-		//"10px, center:default, 10px, center:default, 10px, center:default, 10px, center:default:, 10px, center:default:grow, 10px, center:default, 10px, center:default, 10px");
-		// the labels
 		setStartIndex(0);
 		setStopIndex(gt.getPixelCount() - 1);
 		setRange(startIndex, stopIndex);
@@ -304,7 +309,6 @@ public class PixelFrame extends JFrame
 		{
 			timeSlider.removeMouseListener(timeSlider.getMouseListeners()[1]);
 			timeSlider.removeMouseMotionListener(timeSlider.getMouseMotionListeners()[1]);
-			//gammaSlider.removeMouseListener(gammaSlider.getMouseListeners()[1]);
 			curveSlider.removeMouseListener(curveSlider.getMouseListeners()[1]);
 			curveSlider.removeMouseMotionListener(curveSlider.getMouseMotionListeners()[1]);
 			if (zoomButton.getActionListeners().length > 0)
@@ -360,19 +364,6 @@ public class PixelFrame extends JFrame
                	tfSlidingWindow.setText(Integer.toString(curveSlider.getValue()));
             }
         });
-		// gamma slider
-		/*gammaSlider.addMouseListener(new MouseAdapter() 
-		{
-            public void mousePressed(MouseEvent e) 
-            {
-            }
-
-            public void mouseReleased(MouseEvent e) 
-            {
-              	gt.updateVisu();
-              	updateColorPanel();
-        	}
-        });*/
 		// the reference value textfield
 		tfReference.addActionListener(new ActionListener()
 		{
@@ -418,27 +409,47 @@ public class PixelFrame extends JFrame
 		resetFrame();
 	}
 	
+	/**
+	 * 
+	 * @return the GlyphTable visualized by this frame
+	 */
 	public GlyphTable getGlyphTable()
 	{
 		return gt;
 	}
 	
+	/**
+	 * set the size of the range slider
+	 * @param slidingRange new range
+	 */
 	public void setSlidingRange(int slidingRange)
 	{
 		curveSlider.setValue(slidingRange);
 	}
 	
+	/**
+	 * get the size of the range slider
+	 * @return the slider's range
+	 */
 	public int getSlidingRange()
 	{
 		return curveSlider.getValue();
 	}
 	
+	/**  
+	 * update the GlyphTable whole layout
+	 *
+	 */
 	public void updateGlyphTable()
 	{
 		gt.updatePixelLayout(this);
 		gt.updateGlyphLayout(this);
 	}
 	
+	/**
+	 * set layout to initial values
+	 *
+	 */
 	public void resetFrame()
 	{
 		glyphMenu.getItem(0).setSelected(true);
@@ -470,18 +481,14 @@ public class PixelFrame extends JFrame
 		return prefItem[2].isSelected();
 	}
 	
+	/**
+	 * set whether borders are drawn around the glyphs
+	 * @param bol true if borders should be drawn
+	 */
 	public void setBorderOn(boolean bol)
 	{
 		prefItem[2].setSelected(bol);
 	}
-	
-	/**
-	 * True if the glyph borders shall be drawn, false else.
-	 */
-	/*public void setBorders(boolean bol)
-	{
-		return prefItem[2].isSelected();
-	}*/
 	
 	/**
 	 * Refresh visualization.
@@ -491,6 +498,10 @@ public class PixelFrame extends JFrame
 		gt.updateVisu();
 	}
 	
+	/**
+	 * refresh the color panel
+	 *
+	 */
 	public void updateColorPanel()
 	{
 		colorPanel.repaint();
@@ -513,6 +524,10 @@ public class PixelFrame extends JFrame
 		gt.updateGlyphLayout(this);
 	}
 	
+	/**
+	 * get the selected type of color scale
+	 * @return a string with the type of color scale
+	 */
 	public String getColor()
 	{
 		String col;
@@ -522,7 +537,7 @@ public class PixelFrame extends JFrame
 			col = (StringConstants.HeatScale);
 		
 		return col;
-	}
+	 }
 	
 	/**
 	 * Set content of the glyphDesc label.
@@ -562,6 +577,10 @@ public class PixelFrame extends JFrame
 		pixelValue.setText(Double.toString(d));
 	}
 	
+	/**
+	 * get the current layout of the glyphs
+	 * @return glyph layout as s string
+	 */
 	public String getGlyphLayout()
 	{
 		String selection = "";
@@ -571,26 +590,72 @@ public class PixelFrame extends JFrame
 		return selection;
 	}
 	
+	/**
+	 * get the current layout of the pixels
+	 * @return pixel layout as s string
+	 */
+	public String getPixelLayout()
+	{
+		String selection = "";
+		for (int i = 0; i < pixelItem.length; i++)
+			if (pixelItem[i].isSelected())
+				selection = pixelItem[i].getText();
+		
+		return selection;
+	}
+	
+	/**
+	 * set type of color scale by selecting the
+	 * matching menu item
+	 * @param index index of the menu item to select
+	 */
 	public void setSelectedColorScale(int index)
 	{
 		prefItem[index].setSelected(true);
 	}
 	
+	/**
+	 * set type of glyph layout by selecting the
+	 * matching menu item
+	 * @param index index of the menu item to select
+	 */
 	public void setSelectedGlyphLayoutIndex(int index)
 	{
 		glyphItem[index].setSelected(true);
 	}
 	
+	/**
+	 * set type of pixel layout by selecting the
+	 * matching menu item
+	 * @param index index of the menu item to select
+	 */
 	public void setSelectedPixelLayoutIndex(int index)
 	{
 		pixelItem[index].setSelected(true);
 	}
 	
+	/**
+	 * select whether to invert the color scale
+	 * @param inv true if color scale should be inverted
+	 */
 	public void setInverted(boolean inv)
 	{
 		prefItem[5].setSelected(inv);
 	}
 	
+	/**
+	 * @return true if color scale is inverted
+	 */
+	public boolean getInverted()
+	{
+		return prefItem[5].isSelected();
+	}
+	
+	/**
+	 * get the index of the menu item with the selected
+	 * pixel layout
+	 * @return index as integer
+	 */
 	public int getSelectedPixelLayoutIndex()
 	{
 		int selected = 0;
@@ -602,6 +667,11 @@ public class PixelFrame extends JFrame
 		return selected;
 	}
 	
+	/**
+	 * get the index of the menu item with the selected
+	 * glyph layout
+	 * @return index as integer
+	 */
 	public int getSelectedGlyphLayoutIndex()
 	{
 		int selected = 0;
@@ -613,33 +683,24 @@ public class PixelFrame extends JFrame
 		return selected;
 	}
 	
-	public String getPixelLayout()
-	{
-		String selection = "";
-		for (int i = 0; i < pixelItem.length; i++)
-			if (pixelItem[i].isSelected())
-				selection = pixelItem[i].getText();
-		
-		return selection;
-	}
 	
-	/*public void setPref(String s)
-	{
-		pref = s;
-	}*/
-	
-	public void setStartIndex(int start)
+	protected void setStartIndex(int start)
 	{
 		startIndex = start;
 		startLabel.setText(gt.getPixelDescAt(start));
 	}
 	
-	public void setStopIndex(int stop)
+	protected void setStopIndex(int stop)
 	{
 		stopIndex = stop;
 		stopLabel.setText(gt.getPixelDescAt(stop));
 	}
 	
+	/**
+	 * set the range of visible pixels
+	 * @param start start index
+	 * @param stop stop index
+	 */
 	public void setRange(int start, int stop)
 	{
 		setStartIndex(start);
@@ -651,7 +712,8 @@ public class PixelFrame extends JFrame
 		stopLabel.setText(gt.getPixelDescAt(stop));
 	}
 	
-	public void addItemTo(JMenuItem it, JMenu men, boolean sep)
+	// add an item to a menu
+	protected void addItemTo(JMenuItem it, JMenu men, boolean sep)
 	{
 		it.addActionListener(ma);
 		men.add(it);
@@ -659,73 +721,101 @@ public class PixelFrame extends JFrame
 			men.add(new JSeparator(SwingConstants.HORIZONTAL));
 	}
 	
+	/**
+	 * export visualization to an image file
+	 *
+	 */
 	public void export()
 	{
 		PixelExportAction export = new PixelExportAction(gt.getVisualization().getDisplay(0));
 		export.actionPerformed(new ActionEvent(this, 0, ""));
 	}
 	
-	public void initReload(String filename)
+	/**
+	 * load a new file
+	 * @param filename name of the file
+	 */
+	public void loadFile(String filename)
 	{
 		vis.init(filename, index);
-		//dispose();
 	}
 	
+	/** 
+	 * get index of this frame
+	 * @return the index 
+	 */
 	public int getIndex()
 	{
 		return index;
 	}
 	
+	/**
+	 * set space between the items
+	 * @param s space in pixels
+	 */
 	public void setSpace(int s)
 	{
 		space = s;
 	}
 	
+	/**
+	 * get space between the items
+	 * @return space in pixels
+	 */
 	public int getSpace()
 	{
 		return space;
 	}
 	
+	/**
+	 * set tha background color
+	 * @param c new color
+	 */
 	public void setBackColor(Color c)
 	{
 		gt.getVisualization().getDisplay(0).setBackground(c);
 	}
 	
-	/*public void setInverted(boolean inv)
-	{
-		inverted = inv;
-	}*/
-	
-	public boolean getInverted()
-	{
-		return prefItem[5].isSelected();
-	}
-	
-	//public double getGamma()
-	//{
-	//	return (gammaSlider.getValue() / 100d);
-	//}
-	
+	/**
+	 * set the size of the rows
+	 * @param rs number of items per row
+	 */
 	public void setRowSize(int rs)
 	{
 		rowSize = rs;
 	}
 	
+	/**
+	 * set the size of the columns
+	 * @param cs number of items per column
+	 */
 	public void setColumnSize(int cs)
 	{
 		columnSize = cs;
 	}
 	
+	/**
+	 * 
+	 * @return items per row
+	 */
 	public int getRowSize()
 	{
 		return rowSize;
 	}
 	
+	/**
+	 * 
+	 * @return items per column
+	 */
 	public int getColumnSize()
 	{
 		return columnSize;
 	}
 	
+	/**
+	 * 
+	 * @return the PixelRenderer
+	 */
 	public PixelRenderer getRenderer()
 	{
 		return render;

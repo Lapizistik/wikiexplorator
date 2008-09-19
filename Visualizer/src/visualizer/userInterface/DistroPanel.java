@@ -1,21 +1,16 @@
-/**
- * 
- */
 package visualizer.userInterface;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
-
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-
 import visualizer.display.GlyphTable;
-import visualizer.display.PixelRenderer;
+
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * Panel with a very simple visualization of a
+ * frequency distribution.
  */
 public class DistroPanel extends JPanel
 {
@@ -33,6 +28,8 @@ public class DistroPanel extends JPanel
     	int[] dist = gt.getDistribution();
     	int highest = 0;
     	// find the highest value
+    	// (but don't use the 0 value for this might
+    	// occur too many times)
     	for (int i = 1; i <= 100; i++)
         	if (dist[i] > highest)
         		highest = dist[i];
@@ -47,7 +44,6 @@ public class DistroPanel extends JPanel
         	if (length == 0 && dist[i] > 0)
         		length = 1;
     		g.fillRect(i * 2, 100 - length, 2, length);
-    		//g.drawLine(i-1, 100-lastLength, i, 100-length);
-        }
+    	}
     }  
 }

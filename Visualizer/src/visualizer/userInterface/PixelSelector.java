@@ -1,25 +1,17 @@
 package visualizer.userInterface;
-/**
- * 
- */
+
 
 import java.awt.Cursor;
 import java.awt.Point;
-import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
-import java.util.Iterator;
-
-import javax.swing.SwingUtilities;
-
 import prefuse.Display;
-import prefuse.controls.FocusControl;
 import prefuse.controls.SubtreeDragControl;
-import prefuse.visual.AggregateItem;
-import prefuse.visual.AggregateTable;
 import prefuse.visual.VisualItem;
 import visualizer.StringConstants;
 import visualizer.VisuMain;
 import visualizer.display.GlyphTable;
+
+
 /**
  * This class triggers events after actions like dragging
  * an item or just moving the mouse.
@@ -36,6 +28,14 @@ public class PixelSelector extends SubtreeDragControl
 	protected VisuMain vis;
 	protected Display dis;
 	
+	/**
+	 * Create a new PixelSelector
+	 * 
+	 * @param pf the PixelFrame using this PixelSelector
+	 * @param tab the GlyphTable whose glyphs can be selected
+	 * @param v the VisuMain object
+	 * @param d the used Display
+	 */
 	public PixelSelector(PixelFrame pf, GlyphTable tab, VisuMain v, Display d)
 	{
 		super();

@@ -1,19 +1,11 @@
 package visualizer.userInterface;
-/**
- * 
- */
 
 
-import java.awt.Point;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
-
 import prefuse.Display;
-import prefuse.Visualization;
 import prefuse.controls.WheelZoomControl;
 import prefuse.util.display.DisplayLib;
-import prefuse.visual.AggregateTable;
 import prefuse.visual.VisualItem;
 import visualizer.display.GlyphTable;
 
@@ -21,7 +13,7 @@ import visualizer.display.GlyphTable;
  * The Zoom Controller zooms the display and resizes it
  * if the mouse wheel is used.
  * 
- * @author rene
+ * @author Rene Wegener
  *
  */
 public class ZoomControler extends WheelZoomControl
