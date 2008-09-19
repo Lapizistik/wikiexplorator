@@ -5,8 +5,7 @@
     <body>
       <h1>Die Menüs</h1>
       <h2>Datei-Menü</h2>
-      <p>Hier besitzen Sie die Möglichkeit, eine Datei zu laden, die Darstellung als Bild zu exportieren oder das
-	Programm zu beenden. </p>
+      <p>Hier besitzen Sie die Möglichkeit, eine Datei zu laden oder die Darstellung als Bild zu exportieren.</p>
  	<ul>
   		<li>Datei laden: Die Datei muss eine Textdatei sein, welche entweder Daten über die Autorenbeziehungen
 		oder die aggregierten Kollaborationswerte einzelner Autoren enthält.</li>
@@ -16,24 +15,31 @@
 <h2>Glyphen-Menü</h2>
       <p>In diesem Menü ändern Sie die Anordnung der Glyphen. Zu Wahl stehen folgende Layouts:</p>
  	<ul>
-  		<li>Zeile für Zeile: Die Glyphen werden Zeile für Zeile angeordnet, sodass insgesamt Zeilen
-		und Spalten möglichst gleich groß sind.</li>
-  		<li>Morton Z-Kurve: Diese Darstellung soll einer besseren Mustererkennung in den Daten dienen.
-		Die Pixel werden dabei rekursiv in einer Z-Form positioniert, wie in der Darstellung zu sehen.</li>
-		<p><img src="pic2.gif" alt="Fenster"></p>
-   
-		<li>Alternative Z-Kurve: Die Z-Kurve arbeitet am besten auf einem Datensatz, dessen Anzahl einer 			Viererpotenz entspricht. Diese Alternative ist flexibler, indem die Flächen wenn nötig nicht exakt 			geviertelt werden.</li>
-		<li>Tabelle: Entspricht einer Zeile-fürZeile-Darstellung, wobei die Zeilen und Spalten bzw. die Glyphen 		selbst beschriftet werden.</li>
-		<li>Sortierte Tabelle: Entspricht der Tabelle, jedoch mit einer Sortierung anhand absteigender 			Gesamtkollaboration. Die Autorentabelle wird zusätzlich nach der Ähnlichkeit der Kollaborationsverläufe
-		sortiert.</li>
-		<li>MDS Layout: Diese Darstellung dient der Anordnung der Glyphen anhand ihrer Ähnlichkeiten. Ähnliche
-		Glyphen werden näher zusammen gelegt als sehr unterschiedliche. Dadurch entsteht ein Clustering der 			Ikonen. Zu beachten: Kollaborationsbeziehungen, welche komplett bei 0 liegen, werden nicht angeordnet. Im 			Falle der Beziehungstabelle wird zudem nur eine Hälfte der Glyphen verwendet, da die andere ohnehin ihr 		Spiegelbild darstellt. Das MDS Layout ist teilweise zufallsabhängig, weshalb mhrmaliges Auswählen zu
-		unterschiedlichen Anordnungen führt. Beachten Sie zudem, dass die Laufzeit bei einem großen Datensatz
-		schnell ansteigt.</li>
-		<li>Gitteranordnung: Prinzipiell ist dieses Layout mit der MDS zu vergleichen. Um jedoch Überlappungen
-		zu vermeiden und den Platz optimal zu nutzen, werden die Glyphen auf einem fiktiven Gitter angeordnet.
-		Dieses Layout ist daher meist übersichtlicher. Ansonsten gelten die Hinweise des MDS Layouts.</li>
-
+  		<li>Zeile für Zeile: Die Glyphen werden Zeile für Zeile angeordnet. Die Breite der Zeilen wird von
+  		der Visualisierung so gewählt, dass
+  		Zeilen und Spalten möglichst gleich groß sind.</li>
+  		<li>Tabelle: Entspricht einer Zeile-für-Zeile-Darstellung, wobei die Zeilen und Spalten (bei 3D Daten) bzw. die Glyphen	selbst 
+		(bei 2D Daten) beschriftet werden. Die Reihenfolge der Einträge entspricht der Reihenfolge, in der die Daten eingelesen wurden.</li>
+		<li>Sortierte Tabelle: Entspricht der Tabelle, jedoch mit einer Sortierung anhand absteigender Mittelwerte der Glyphen. 
+		Die Tabelle für 2D Daten ordnet die Werte allerdings <b>spaltenweise</b> an. 
+		Zudem wird in diesem Fall zusätzlich versucht, ähnliche Glyphen untereinander anzuordnen, wodurch die Anordnung nicht
+		mehr strikt an den Mittelwerten orientiert ist. Die 3D Tabelle dagegen ordnet ausschließlich anhand absteigender Mittelwerte in den Zeilen an.
+		Die Smmetrie der Tabelle wird dabei beibehalten.</li>
+		<li>MDS-Anordnung: Diese Darstellung dient der Anordnung der Glyphen anhand ihrer Ähnlichkeiten. Ähnliche
+		Glyphen werden näher zusammen gelegt als sehr unterschiedliche. Dadurch entsteht ein Clustering der Ikonen. Zu beachten: Glyphen, deren Werte
+		alle bei 0 liegen, werden der Übersichtlichkeit halber nicht mit angeordnet, sondern auf einem Punkt vereint. Dasselbe gilt für die X-/Y-Diagonale 
+		bei 3D Daten. Sollte die Überlappung der Glyphen zu stark sein, empfiehlt sicher eher die Gitter-Anordnung.</li>
+		<li>Gitter-Anordnung: Prinzipiell ist dieses Layout mit der MDS zu vergleichen. Um jedoch Überlappungen
+		zu vermeiden und den Platz optimal zu nutzen, werden die Glyphen auf einem itter angeordnet. Gruppierungen sind
+		dadurch evtl. jedoch schlechter zu erkennen. </li>
+	
+	<li><b>Hinweise zu den Layouts MDS, Gitter und sortierte Tabelle (2D): </b>
+	Die Anordnung basieren auf optimierenden Algorithmen. Dies hat verschiedene Folgen.<br>
+	1. Bei großen Datenmengen kann die Ausführungen mehrere Sekunden in Anspruch nehmen.<br>
+	2. Die Layouts hängen auch vom Zufall ab. Mehrmaliges Ausführen führt dadurch zu unterschiedlichen Ergebnissen.<br>
+	3. Die Layouts versuchen, eine gute Darstellung zu erreichen, müssen jedoch nicht zwnagsläufig die bestmögliche
+	finden. Bedenken Sie also bei der Interpretation der Ergebnisse, dass meist gewisse Fehlerhaftigkeit der Darstellung nicht
+	zu vermeiden ist.<br></li>
 
   	</ul>
 
@@ -45,9 +51,18 @@
 		können. Geben Sie nichts ein und drücken sofort OK, werden die Zeilen so breit gewählt, dass eine
 		möglichst quadratische Anordnung entsteht.</li>
 		<li>Spalte-für-Spalte: Wie oben, jedoch werden keine Zeilen untereinander sondern Spalten von links nach 			rechts angeordnet.</li> 
-  		<li>Morton Z-Kurve: Analog zur Anordnung der Glyphen als Morton Z-Kurve.</li>
-  		<li>Alternative Z-Kurve: Analog zur Anordnung der Glyphen als alternative Z-Kurve.</li>
-  		<li>Hilbert-Kurve: Die Idee ist ähnlich derjenigen bei der Z-Kurve, jedoch folgt die Hilbert-Kurve einem 			komplexeren Muster.</li>
+  		<li>Z-Kurve: Diese Darstellung soll einer besseren Mustererkennung in den Daten dienen.
+		Die Pixel werden dabei rekursiv in einer Z-Form positioniert, wie in der Darstellung zu sehen.
+		Die ursprünglich ein-dimensionale Anordnung bleibt in der z-Kurve weniger gut erhalten als bei
+		der Hilbert-Kurve, dafür ist sie jedoch leichter nachzuverfolgen. Die Z-Kurve ist am besten geeignet,
+		wenn die Anzahl der Pixel pro Glyph eine Viererpotenz darstellt. Ansonsten bietet sich eher die angepasste
+		Z-Kurve an.</li>
+		<p><img src="pic2.gif" alt="Fenster"></p>
+   		<li>Angepasste Z-Kurve: Diese Z-Kurve arbeitet flexibler, da die Flächen wenn nötig nicht exakt geviertelt werden.
+		die resultierenden Teil-Rechtecke sind dadurch von leicht abweichender Größe, aber insgesamt erreichen die Glyphen
+		eher eine rechteckige Form als bei der normalen Z-Kurve.</li>
+		<li>Hilbert-Kurve: Die Idee ist ähnlich derjenigen bei der Z-Kurve, jedoch folgt die Hilbert-Kurve einem komplexeren Muster.
+		Dieses hält die ursprüngliche Ordnung der Pixel besser ein, ist allerdings schwierig nachzuverfolgen.</li>
 		<p><img src="pic3.gif" alt="Fenster"></p>
    
   	</ul>
