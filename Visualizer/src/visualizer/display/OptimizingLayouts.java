@@ -1,30 +1,38 @@
-/**
- * 
- */
 package visualizer.display;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
-
 import prefuse.visual.VisualItem;
 
 /**
  * This class contains static layout algorithms similar
  * to the Layouts class. But OptimizingLayouts contains
  * methods that try to arrange objects using optimization 
- * algorithms e.g. for a more intuitive table.
+ * algorithms.
  * 
  * @author Rene Wegener
  *
  */
 public class OptimizingLayouts 
 {
-	public static void createOrderedTableLayout(ArrayList v, int startX, int startY, 
+	/**
+	 * create a table that puts items with high values
+	 * to the top; if the data is 2D than a clustering is
+	 * performed to arrange similar items together;
+	 * this is not implemented for 3D data yet
+	 * @param v an ArrayList containing all VisualItems to arrange;
+	 * if the data structure is 3D then the items are supposed to be ordered
+	 * row by row in the ArrayList
+	 * @param startX x-coordinate at which to start the layout
+	 * @param startY y-coordinate at which to start the layout
+	 * @param itemWidth width of the VisualItems
+	 * @param itemHeight height of the VisualItems
+	 * @param gt GlyphTable that holds the VisualItems
+	 */
+	public static void createOrderedTableLayout(ArrayList<VisualItem> v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		if (gt.isCube())
@@ -33,14 +41,15 @@ public class OptimizingLayouts
 			orderedTable2D(v, startX, startY, itemWidth, itemHeight, gt);
 	}
 	
-	public static void orderedTable3D(ArrayList<VisualItem> v, int startX, int startY, 
+	// create the ordered table for 3D data structure
+	protected static void orderedTable3D(ArrayList<VisualItem> v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		int tableWidth;
 		int tableHeight;
 		
-		tableWidth = gt.getXAxisCount();
-		tableHeight = gt.getYAxisCount();
+		tableWidth = (int)(Math.sqrt(v.size()));
+		tableHeight = tableWidth;//gt.getYAxisCount();
 		
 		// create several ArrayLists, each containing 
 		// the items of one row
@@ -74,7 +83,6 @@ public class OptimizingLayouts
 		{
 			// wich index did row i formely have?
 			int actRow = rowIndices.get(rows.get(i));
-			System.out.println("Vorher: " + actRow + ", nachher: " + i);
 			colArr[i] = columns.get(actRow);
 		}
 		
@@ -94,7 +102,8 @@ public class OptimizingLayouts
 			}
 	}
 	
-	public static void orderedTable2D(ArrayList<VisualItem> v, int startX, int startY, 
+	// create the ordered table for 2D data structure
+	protected static void orderedTable2D(ArrayList<VisualItem> v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		int tableWidth;
@@ -141,13 +150,9 @@ public class OptimizingLayouts
 				for (int j = 0; j < cluster.get(i).size(); j++)
 					vector.add((double[])cluster.get(i).get(j).get("value"));
 				// sort within the clusters
-				//createMDSMapping1D(cluster.get(i), vector);
 				java.util.Collections.sort(cluster.get(i), new ItemComparator());
 				java.util.Collections.reverse(cluster.get(i));
 				v.addAll(cluster.get(i));
-				// add to ArrayList
-				//for (int j = 0; j < cluster.get(i).size(); j++)
-				//	v.add(cluster.get(i).get(j));
 			}
 		}
 		// set positions
@@ -164,7 +169,10 @@ public class OptimizingLayouts
 			}
 	}
 	
-	public static ArrayList<ArrayList<VisualItem>> cluster(ArrayList<VisualItem> items, int k)
+	// perform a k-means clustering; this method returns
+	// an ArrayList where each object of the list is one
+	// cluster (an ArrayList itself) containing its VisualItems
+	protected static ArrayList<ArrayList<VisualItem>> cluster(ArrayList<VisualItem> items, int k)
 	{
 		ArrayList<ArrayList<VisualItem>> cluster = new ArrayList<ArrayList<VisualItem>>();
 		ArrayList<double[]> clusterCenter = new ArrayList<double[]>();//double[k][dim];
@@ -192,7 +200,8 @@ public class OptimizingLayouts
 		}
 		// update the centers
 		for (int i = 0; i < k; i++)
-			clusterCenter.add(getClusterCenter(cluster.get(i)));
+			if (cluster.get(i).size() > 0)
+				clusterCenter.add(getClusterCenter(cluster.get(i)));
 		
 		boolean changed = true;
 		int runs = 0;
@@ -212,7 +221,7 @@ public class OptimizingLayouts
 					double bestDist = distToCenter(actItem, clusterCenter.get(i));
 					
 					// compare it to all clusters
-					for (int l = 0; l < k; l++)
+					for (int l = 0; l < clusterCenter.size(); l++)
 					{
 						double dist = distToCenter(actItem, clusterCenter.get(l));
 						if (dist < bestDist)
@@ -242,37 +251,43 @@ public class OptimizingLayouts
 		return cluster;
 	}
 	
-	public static void createJigsawLayout(ArrayList v, int startX, int startY, 
+	/**
+	 * create an layout that puts all VisualItems on a
+	 * grid; similar items are tried to be put close together;
+	 * @param v an ArrayList containing all VisualItems to arrange
+	 * @param startX x-coordinate at which to start the layout
+	 * @param startY y-coordinate at which to start the layout
+	 * @param itemWidth width of the VisualItems
+	 * @param itemHeight height of the VisualItems
+	 * @param gt GlyphTable that holds the VisualItems
+	 */
+	public static void createJigsawLayout(ArrayList<VisualItem> v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		createClusterLayout(v, startX, startY, itemWidth, itemHeight, gt, false);
 	}
 	
+	/**
+	 * create an layout that places all VisualItems on the screen,
+	 * trying to keep similar items close together
+	 * @param v an ArrayList containing all VisualItems to arrange
+	 * @param startX x-coordinate at which to start the layout
+	 * @param startY y-coordinate at which to start the layout
+	 * @param itemWidth width of the VisualItems
+	 * @param itemHeight height of the VisualItems
+	 * @param gt GlyphTable that holds the VisualItems
+	 */
 	public static void createMDSLayout(ArrayList v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		createClusterLayout(v, startX, startY, itemWidth, itemHeight, gt, true);
 	}
 	
-	public static void createClusterLayout(ArrayList<VisualItem> items, int startX, int startY, 
+	// create the mds (parameter dim2D = true) or jigsaw 
+	// (parameter dim2D = false) layout
+	protected static void createClusterLayout(ArrayList<VisualItem> items, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt, boolean dim2D)
 	{
-		// Delete one of the symmetric halfs of a
-		// relationships table
-		if (gt.isCube())
-		{
-			int n = (int)Math.sqrt(items.size());
-			int removed = 0;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j <= i; j++)
-				{
-					VisualItem actItem = items.get(n * i + j - removed);
-					actItem.set("xCor", new Integer(-100));
-					actItem.set("yCor", new Integer(-100));
-					items.remove(n * i + j - removed);
-					removed++;
-				}
-		}
 		// Optimization: all elements below threshold
 		// are put on one place
 		double threshold = 0;
@@ -288,17 +303,21 @@ public class OptimizingLayouts
 				i--;
 			}
 		}
-		int numberOfItems = items.size();
-		
 		// I)
 		// first part of this algorithm is a k means 
 		// clustering.
+		// Usually we use 10 diffferent clusters but if
+		// there are only a few items, then we don't have to
+		// worry about performance and can use just one cluster.
 		int k = 10;
+		if (items.size() < 20)
+			k = 1;
 		int dim = gt.getPixelCount();
 		ArrayList<ArrayList<VisualItem>> cluster = cluster(items, k);//new ArrayList<ArrayList<VisualItem>>();
 		ArrayList<double[]> clusterCenter = new ArrayList<double[]>();//double[k][dim];
-		for (int i = 0; i < k; i++)
-			clusterCenter.add(getClusterCenter(cluster.get(i)));
+		for (int i = 0; i < cluster.size(); i++)
+			if (cluster.get(i).size() > 0)
+				clusterCenter.add(getClusterCenter(cluster.get(i)));
 		
 		// II)
 		// second part of this algorithm is multi-dimensional
@@ -314,7 +333,7 @@ public class OptimizingLayouts
 		// now arrange within the clusters.
 		// first get the attribute vectors (values)
 		// of all VisualItem
-		for (int i = 0; i < k; i++)
+		for (int i = 0; i < cluster.size(); i++)
 		{
 			ArrayList<double[]> vectors = new ArrayList<double[]>();//[v.size()][gt.getPixelCount()];
 			for (int n = 0; n < cluster.get(i).size(); n++)
@@ -354,7 +373,7 @@ public class OptimizingLayouts
 			
 			// update the visual items' positions
 			int counter = 0;
-			for (int i = 0; i < k; i++)
+			for (int i = 0; i < cluster.size(); i++)
 				for (int j = 0; j < cluster.get(i).size(); j++)
 				{
 					cluster.get(i).get(j).set("xCor", newList.get(counter).getX());
@@ -364,7 +383,8 @@ public class OptimizingLayouts
 		}
 	}
 	
-	public static double[] getClusterCenter(ArrayList<VisualItem> items)
+	// return the centers of several clusters
+	protected static double[] getClusterCenter(ArrayList<VisualItem> items)
 	{
 		int dim = ((double[])items.get(0).get("value")).length;
 		double arr[] = new double[dim];
@@ -381,7 +401,9 @@ public class OptimizingLayouts
 		return arr;
 	}
 	
-	public static double distToCenter(VisualItem item, double[] center)
+	// return the distance of one VisualItem to a cluster
+	// of VisualItems
+	protected static double distToCenter(VisualItem item, double[] center)
 	{
 		double dist = 0;
 		double val[] = (double[])item.get("value");
@@ -391,7 +413,8 @@ public class OptimizingLayouts
 		return dist;
 	}
 	
-	public static void createMDSMapping2D(ArrayList objects, ArrayList<double[]> vectors, 
+	// create the normal MDS layout with cluttering
+	protected static void createMDSMapping2D(ArrayList objects, ArrayList<double[]> vectors, 
 			int itemWidth, int itemHeight, int startX,
 			int startY, int range)//, GlyphTable gt)
 	{
@@ -422,10 +445,10 @@ public class OptimizingLayouts
 					for (int yMove = -step; yMove <= step; yMove += step)
 						if (xMove != 0 || yMove != 0)
 						{
-							stressBefor = getSingleStress(distances, points, i);
+							stressBefor = getStress(distances, points, i);
 							points[i].setLocation(points[i].getX() + xMove, 
 									points[i].getY() + yMove);
-							stressAfter = getSingleStress(distances, points, i);
+							stressAfter = getStress(distances, points, i);
 							stressImprovement = stressBefor - stressAfter;
 							if (stressImprovement > maxStressImprovement)
 							{
@@ -463,7 +486,10 @@ public class OptimizingLayouts
 			}
 	}
 	
-	public static void createMDSMapping1D(ArrayList objects, ArrayList<double[]> vectors)
+	// create the Jigsaw layout but without cluttering (also 
+	// based on MDS, but the items are put into one-
+	// dimensional order)
+	protected static void createMDSMapping1D(ArrayList objects, ArrayList<double[]> vectors)
 	{
 		// create the matrices
 		double[][] dissimilarities;
@@ -497,16 +523,16 @@ public class OptimizingLayouts
 				if (i != j)
 				{
 					// switch points and measure the new stress
-					stressBefore = getSingleStress(targetDistances, points, i) + 
-								  getSingleStress(targetDistances, points, j);
+					stressBefore = getStress(targetDistances, points, i) + 
+								  getStress(targetDistances, points, j);
 					double store = points[i].getX();
 					points[i].setLocation(points[j].getX(), 
 											points[i].getY());
 					points[j].setLocation(store, 
 							points[j].getY());
 		
-					stressAfter = getSingleStress(targetDistances, points, i) +
-								  getSingleStress(targetDistances, points, j);
+					stressAfter = getStress(targetDistances, points, i) +
+								  getStress(targetDistances, points, j);
 					stressImprovement = stressBefore - stressAfter;
 					if (stressImprovement > bestImpro) // no improvement
 					{
@@ -524,57 +550,17 @@ public class OptimizingLayouts
 			}
 			
 			if (bestImpro > 0)
-			{
 				java.util.Collections.swap(objects, bestI, bestJ);
-				//Object obj1 = objects.get(bestI);
-				//Object obj2 = objects.get(bestJ);
-				//objects.set(bestI, obj2);
-				//objects.set(bestJ, obj1);
-			}
+			
 			bestImpro = 0;
 		}
 	}
 	
-	/**
-	 * Move a specific row under another one.
-	 * oldIndex: the index of the row that shall be moved
-	 * newIndex: the index of the row under which it will
-	 * be moved
-	 */
-	/*public static void moveRow(ArrayList table, int oldIndex, int newIndex,
-			int tableWidth)
-	{
-		ArrayList store = new ArrayList();
-		// remove the row and store it in a vector
-		for (int i = 0; i < tableWidth; i++)
-			store.add(table.remove(oldIndex * tableWidth));
-		// insert the row at the right place
-		for (int i = 0; i < tableWidth; i++)
-			table.add/*table.insertElementAt(newIndex * tableWidth + i, store.get(i));
-	}*/
 	
-	/**
-	 * Move a specific column to the right of another one.
-	 * oldIndex: the index of the column that shall be moved
-	 * newIndex: the index of the column where it will
-	 * be moved
-	 */
-	/*public static void moveColumn(ArrayList table, int oldIndex, int newIndex,
-			int tableWidth, int tableHeight)
-	{
-		ArrayList store = new ArrayList();
-		// remove the column and store it in a vector
-		for (int i = 0; i < tableHeight; i++)
-			store.add(table.remove(oldIndex + i * tableWidth - i));
-		// insert the column at the right place
-		for (int i = 0; i < tableHeight; i++)
-			table.add(newIndex + i * tableWidth, store.get(i));
-	}*/
-	
-	/**
-	 * Returns the mean value of a row.
-	 */
-	public static double getRowMean(ArrayList table, int index,
+	// Returns the mean value of a row of VisualItems; 
+	// ArrayList table contains all items, index tells which
+	// row to choose
+	protected static double getRowMean(ArrayList table, int index,
 			int tableWidth)
 	{
 		double val = 0;
@@ -587,8 +573,9 @@ public class OptimizingLayouts
 		//val /= tableWidth;
 		return val;
 	}
-		
-	public static double getEuclidianDistance(VisualItem item1, VisualItem item2)
+	
+	// get Euclidian distance between two glyphs
+	protected static double getEuclidianDistance(VisualItem item1, VisualItem item2)
 	{
 		ArrayList v1 = new ArrayList();
 		ArrayList v2 = new ArrayList();
@@ -602,7 +589,9 @@ public class OptimizingLayouts
 		return getEuclidianDistance(v1, v2);
 	}
 	
-	public static double getEuclidianDistance(ArrayList v1, ArrayList v2)
+	// get Euclidian distance between two vectors
+	// given as ArrayLists of type Double
+	protected static double getEuclidianDistance(ArrayList<Double> v1, ArrayList<Double> v2)
 	{
 		double[] arr1 = new double[v1.size()];
 		double[] arr2 = new double[v2.size()];
@@ -615,7 +604,9 @@ public class OptimizingLayouts
 		return getEuclidianDistance(arr1, arr2);
 	}
 	
-	public static double getEuclidianDistance(double[] v1, double[] v2)
+	// get Euclidian distance between two vectors
+	// given as double arrays
+	protected static double getEuclidianDistance(double[] v1, double[] v2)
 	{
 		double dist = 0;
 		for (int i = 0; i < v1.length; i++)
@@ -624,13 +615,17 @@ public class OptimizingLayouts
 		return dist;
 	}
 	
-	public static double getEuclidianDistance(Point p1, Point p2)
+	// get Euclidian distance between two points in
+	// two-dimensional space
+	protected static double getEuclidianDistance(Point p1, Point p2)
 	{
 		return Math.sqrt((double)Math.pow(p1.getX() - p2.getX(), 2) 
 				+ (double)Math.pow(p1.getY() - p2.getY(), 2));
 	}
 	
-	public static double[][] getDissimMatrix(ArrayList<double[]> vectors)
+	// get the matrix of dissimilarities between a set of
+	// vectors, each vector given as a double array
+	protected static double[][] getDissimMatrix(ArrayList<double[]> vectors)
 	{
 		// first fill the similarities with the 
 		// euclidian distances which are dissimilarities 
@@ -662,13 +657,19 @@ public class OptimizingLayouts
 		return dis;
 	}
 	
-	public static double getDistance(double dissim, int range)
+	// get the on-screen-distance in pixels
+	// resulting from a specific dissimilarity;
+	// the parameter range determines how far apart
+	// the objects will be placed on screen
+	protected static double getDistance(double dissim, int range)
 	{
 		// simple function:
 		return (dissim * range);
 	}
 	
-	public static double[][] getDistanceMatrix(double[][] dissim, int range)
+	// get the matrix of distances that fit to the
+	// given dissimilarities
+	protected static double[][] getDistanceMatrix(double[][] dissim, int range)
 	{
 		for (int i = 0; i < dissim.length; i++)
 			for (int j = 0; j < dissim[0].length; j++)
@@ -676,7 +677,7 @@ public class OptimizingLayouts
 		return dissim;
 	}
 	
-	public static double getFStress(double[][] dist, Point[] points)
+	/*public static double getFStress(double[][] dist, Point[] points)
 	{
 		double sum1 = 0, sum2 = 0;
 		for (int i = 0; i < dist.length; i++)
@@ -687,9 +688,11 @@ public class OptimizingLayouts
 				sum2 += (double)Math.pow(dist[i][j], 2);
 			}
 		return (Math.sqrt(sum1 / sum2));
-	}
+	}*/
 	
-	public static double getSingleStress(double[][] dist, Point[] points, int index)
+	// get stress; this value reflects how good a specific
+	// point is actually placed on the screen
+	public static double getStress(double[][] dist, Point[] points, int index)
 	{
 		double sum1 = 0, sum2 = 0;
 		for (int i = 0; i < dist.length; i++)

@@ -1,17 +1,8 @@
 package visualizer.display;
 
 
-
-import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Vector;
-
-import prefuse.action.layout.SpecifiedLayout;
-import prefuse.visual.AggregateItem;
-import prefuse.visual.VisualItem;
-import prefuse.visual.VisualTable;
 
 /**
  * This class contains only static methods that will compute
@@ -23,35 +14,17 @@ import prefuse.visual.VisualTable;
 public class Layouts 
 {
 	/**
-	 * create a layout row by row. As for all methods, 
-	 * several parameters have to be given:
-	 * v is a vector holding the Points that will be
-	 * arranged. startX and startY are the x- and y-
-	 * coordinates at which the layout algorithm will
-	 * start to place the points. itemWidth and itemHeight
-	 * represent the size of the items that shall be placed.
-	 * This algorithm tries to create a square matrix.
+	 * create a layout row by row
+	 * @param v an ArrayList holding the Points that will be
+	 * arranged 
+	 * @param startX x-coordinate at which the algorithm starts 
+	 * @param startY y-coordinate at which the algorithm starts
+	 * @param itemWidth width of the items 
+	 * @param itemHeight height of the items
+	 * @param matrixWidth number of items per row
+	 * @param matrixHeight number of rows
 	*/
-	public static void createRowLayout(ArrayList v, int startX, int startY, int itemWidth,
-			int itemHeight)
-	{
-		int squareWidth = (int)(Math.ceil(Math.sqrt(v.size())));
-		createRowLayout(v, startX, startY, itemWidth, itemHeight,
-				squareWidth, squareWidth);
-	}
-	
-	/**
-	 * create a layout row by row. As for all methods, 
-	 * several parameters have to be given:
-	 * v is a vector holding the Points that will be
-	 * arranged. startX and startY are the x- and y-
-	 * coordinates at which the layout algorithm will
-	 * start to place the points. itemWidth and itemHeight
-	 * represent the size of the items that shall be placed.
-	 * matrixWidth and matrixHeight define the desired size
-	 * of the whole matrix.
-	 */
-	public static void createRowLayout(ArrayList v, int startX, int startY, int itemWidth,
+	public static void createRowLayout(ArrayList<Point> v, int startX, int startY, int itemWidth,
 			int itemHeight, int matrixWidth, int matrixHeight)
 	{
 		if (matrixWidth <= 0 && matrixHeight <= 0)
@@ -73,14 +46,26 @@ public class Layouts
 			{
 				if (currentIndex >= v.size())
 					break;
-				Point actItem = (Point)v.get(currentIndex);
+				Point actItem = v.get(currentIndex);
 				actItem.setLocation(startX + x * itemWidth, 
 						startY + y * itemHeight);
 				currentIndex++;
 			}
 	}
 	
-	public static void createTable2D(ArrayList v, int startX, int startY, 
+	/**
+	 * create a table layout for 2D data; similar to 
+	 * row-by-row, but with
+	 * descriptions each item
+	 * @param v an ArrayList holding the Points that will be
+	 * arranged 
+	 * @param startX x-coordinate at which the algorithm starts 
+	 * @param startY y-coordinate at which the algorithm starts
+	 * @param itemWidth width of the items 
+	 * @param itemHeight height of the items
+	 * @param gt GlyphTable which holds the data
+	*/
+	public static void createTable2D(ArrayList<Point> v, int startX, int startY, 
 			int itemWidth, int itemHeight, GlyphTable gt)
 	{
 		int tableWidth;
@@ -100,7 +85,7 @@ public class Layouts
 			{
 				if (next >= v.size())
 					break;
-				Point point = (Point)v.get(next);
+				Point point = v.get(next);
 				point.setLocation(startX + x * itemWidth,
 						startY + y * itemHeight);
 				next++;
@@ -108,17 +93,17 @@ public class Layouts
 	}
 	
 	/**
-	 * create a layout column by column. As for all methods, 
-	 * several parameters have to be given:
-	 * v is a vector holding the Points that will be
-	 * arranged. startX and startY are the x- and y-
-	 * coordinates at which the layout algorithm will
-	 * start to place the points. itemWidth and itemHeight
-	 * represent the size of the items that shall be placed.
-	 * matrixWidth and matrixHeight define the desired size
-	 * of the whole matrix.
-	 */
-	public static void createColumnLayout(ArrayList v, int startX, int startY, int itemWidth,
+	 * create a layout column by column;
+	 * @param v an ArrayList holding the Points that will be
+	 * arranged 
+	 * @param startX x-coordinate at which the algorithm starts 
+	 * @param startY y-coordinate at which the algorithm starts
+	 * @param itemWidth width of the items 
+	 * @param itemHeight height of the items
+	 * @param matrixWidth number of items per row
+	 * @param matrixHeight number of rows
+	*/
+	public static void createColumnLayout(ArrayList<Point> v, int startX, int startY, int itemWidth,
 			int itemHeight, int matrixWidth, int matrixHeight)
 	{
 		if (matrixWidth <= 0 && matrixHeight <= 0)
@@ -140,29 +125,33 @@ public class Layouts
 			{
 				if (currentIndex >= v.size())
 					break;
-				Point actItem = (Point)v.get(currentIndex);
+				Point actItem = v.get(currentIndex);
 				actItem.setLocation(startX + x * itemWidth, 
 						startY + y * itemHeight);
 				currentIndex++;
 			}
 	}
+	
 	/**
-	 * Create a recursive Morton Z-Curve. Although the method
-	 * will work on a set of items of any size, the best
-	 * result is achieved if the size is a number 4^n.
-	 * The meaning of the parameters is the same as for the 
-	 * method createSimpleLayout.
+	 * Create a recursive Morton Z-Curve; best results are 
+	 * achieved if the number of points in 4^n 
+	 * @param v an ArrayList holding the Points that will be
+	 * arranged 
+	 * @param startX x-coordinate at which the algorithm starts 
+	 * @param startY y-coordinate at which the algorithm starts
+	 * @param itemWidth width of the items 
+	 * @param itemHeight height of the items
 	 */
-	public static void createZLayout(ArrayList v, int startX, int startY,
+	public static void createZLayout(ArrayList<Point> v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
 		// how many space is needed for the whole
 		// set of items?
 		int squareWidth = curveSize(v.size());
 		
-		// if more then four items are left, divide them into
+		// if more then one item are left, divide them into
 		// four quarters by recursion
-		if (v.size() > 4)
+		if (v.size() > 1)
 		{
 			ArrayList[] newVec = new ArrayList[4];
 			int currentIndex = 0;
@@ -191,50 +180,36 @@ public class Layouts
 			if (newVec[3].size() > 0)
 				createZLayout(newVec[3], startX + squareWidth / 2 * itemWidth, startY + squareWidth / 2 * itemHeight, itemWidth, itemHeight);
 		} 
-		else // <= 4 items
+		else if (v.size() == 1)
 		{
-			// first row
-			for (int i = 0; i <= 1; i++)
-			{
-				if (i >= v.size())
-					break;
-				Point actItem = (Point)v.get(i);
-				actItem.setLocation(startX + i * itemWidth, startY);
-			}
-			// second row
-			if (v.size() > 2)
-			{
-				for (int i = 0; i <= 1; i++)
-				{
-					if (i + 2 >= v.size())
-						break;
-					Point actItem = (Point)v.get(i + 2);
-					actItem.setLocation(startX + i * itemWidth, startY + itemHeight);
-				}
-			}
+			Point actItem = v.get(0);
+			actItem.setLocation(startX + 0 * itemWidth, startY);
 		}
 	}
 	
-	
 	/**
 	 * Create a recursive Z-Curve that tries to create
-	 * a square even on item sets of a size that's far
-	 * bigger or smaller than 4^n.
-	 * The meaning of the parameters is the same as for the 
-	 * method createSimpleLayout.
+	 * a square even on item sets of a size that differs
+	 * from 4^n
+	 * @param v an ArrayList holding the Points that will be
+	 * arranged 
+	 * @param startX x-coordinate at which the algorithm starts 
+	 * @param startY y-coordinate at which the algorithm starts
+	 * @param itemWidth width of the items 
+	 * @param itemHeight height of the items
 	 */
-	public static void createFlexibleZLayout(ArrayList v, int startX, int startY,
+	public static void createFlexibleZLayout(ArrayList<Point> v, int startX, int startY,
 			int itemWidth, int itemHeight)
 	{
 		createFlexibleZLayout(v, startX, startY, itemWidth, itemHeight, 0, 0);
 	}
 	
-	private static void createFlexibleZLayout(ArrayList v, int startX, int startY,
+	// the flexible z-curve method; desiredWidth 
+	// and desiredHeight are parameters determining the
+	// the size the z-curve should have
+	protected static void createFlexibleZLayout(ArrayList<Point> v, int startX, int startY,
 			int itemWidth, int itemHeight, int desiredWidth, int desiredHeight)
 	{
-		// get the desired size of each VisualItem
-		//itemWidth += abstand;
-		//itemHeight += abstand;
 		// how many space is needed for the whole
 		// set of items?
 		if (desiredWidth <= 0)
@@ -247,13 +222,13 @@ public class Layouts
 		}
 		// if more then nine items are left, divide them into
 		// four quarters by recursion
-		if (v.size() > 9)
+		if (v.size() > 1)
 		{
-			ArrayList[] newVec = new ArrayList[4];
+			ArrayList<Point>[] newVec = new ArrayList[4];
 			int[] width = new int[4];
 			int[] height = new int[4];
 			width[0] = (int)(Math.ceil(desiredWidth / 2d));
-			height[0] = (int)(Math.ceil(desiredWidth / 2d));
+			height[0] = (int)(Math.ceil(desiredHeight / 2d));
 			width[1] = desiredWidth - width[0];
 			height[1] = height[0];
 			width[2] = width[0];
@@ -264,7 +239,7 @@ public class Layouts
 			int currentIndex = 0;
 			for (int i = 0; i < 4; i++)
 			{
-				newVec[i] = new ArrayList();
+				newVec[i] = new ArrayList<Point>();
 				
 				for (int j = 0; j < width[i] * height[i]; j++)
 				{
@@ -285,130 +260,22 @@ public class Layouts
 			if (newVec[3].size() > 0)
 				createFlexibleZLayout(newVec[3], startX + width[0] * itemWidth, startY + height[0] * itemHeight,  itemWidth, itemHeight, width[3], height[3]);
 		} 
-		else // <= 9 items
+		else if (v.size() == 1)
 		{
-			if (desiredWidth <= 0)
-				desiredWidth = (int)(Math.ceil(Math.sqrt(v.size())));
-			if (desiredHeight <= 0)
-				desiredHeight = (int)(Math.ceil(Math.sqrt(v.size())));
-			// there are several possibilities:
-			// 2x2 layout, 2x3, 3x3 and 3x3
-			int currentIndex = 0;
-			for (int y = 0; y < desiredHeight; y++)
-				for (int x = 0; x < desiredWidth; x++)
-				{
-					if (currentIndex >= v.size())
-						break;
-					Point actItem = (Point)v.get(currentIndex);
-					actItem.setLocation(startX + x * itemWidth, startY + y * itemHeight);
-					currentIndex++;
-				}
+			Point actItem = v.get(0);
+			actItem.setLocation(startX + 0 * itemWidth, startY + 0 * itemHeight);
 		}
 	}
 	
 	/**
-	 * Create a layout similar to a simple row layout
-	 * but with rows of a width of four pixels. This might
-	 * result in a more intuitive visualization than
-	 * the simple row layout.
-	 * The meaning of the parameters is the same as for the 
-	 * method createSimpleLayout.
-	 */
-	public static void createLineLayout(ArrayList v, int startX, int startY,
-			int itemHeight, int itemWidth)
-	{
-		int pixelsPerBlock = 7; // one week
-		// get the desired size of each VisualItem
-		//itemWidth += abstand;
-		//itemHeight += abstand;
-		// how many space is needed for the whole
-		// set of items?
-		int width = (int)(Math.ceil(Math.sqrt(v.size())));
-		int height = width;
-		if (v.size() <= Math.pow(pixelsPerBlock, 2))
-		{
-			width = pixelsPerBlock;
-			height = pixelsPerBlock;
-		}
-		else
-		{
-			while (width * (height - 1) >= v.size())
-				height--;
-			while (height % pixelsPerBlock != 0)
-				height--;
-			while (height * width < v.size())
-				width++;
-		}
-		// now place the items
-		boolean upDown = true;
-		int currentIndex = 0;
-		for (int y = 0; y < height/pixelsPerBlock; y++)
-			for (int x = 0; x < width; x++)
-			{
-				for (int line = 0; line < pixelsPerBlock; line++)
-				{
-					if (currentIndex >= v.size())
-						break;
-					Point actItem = (Point)v.get(currentIndex);
-					if (upDown)
-						actItem.setLocation(startX + x * itemWidth, (startY + (y * pixelsPerBlock * itemHeight) + line * itemHeight));
-					else
-						actItem.setLocation(startX + x * itemWidth, (startY + ((y + 1) * pixelsPerBlock * itemHeight) - line * itemHeight - itemHeight));
-					currentIndex++;
-				}
-				upDown = !upDown;
-			}
-	}
-	
-	/**
-	 * At the moment not implemented correctly.
-	 */
-	public static void createRecursiveLayout(ArrayList v, int startX, int startY,
-			int itemWidth, int itemHeight)
-	{
-		// first level: 7 in a row (one week)
-		// second level: 5 rows (one month)
-		// third level: 3 in a row (one quarter)
-		VisualItem item = (VisualItem)v.get(0);
-		//itemWidth = itemWidth + abstand;
-		// row by row, column by column
-		int posX, posY;
-		int currentIndex = 0;
-		int numberOfMonths = v.size() / 35 + 1;
-		
-		for (int month = 0; month <= numberOfMonths; month++)
-		{
-			if (currentIndex >= v.size())
-				break;
-			posX = startX + month * 7 * itemWidth;
-			posY = startY;
-			
-			for (int week = 0; week<= 4; week++)
-			{
-				if (currentIndex >= v.size())
-					break;
-				for (int day = 0; day <= 6; day++)
-				{
-					if (currentIndex >= v.size())
-						break;
-					VisualItem actItem = ((VisualItem)v.get(currentIndex));
-					actItem.set("xCor", new Integer(posX));
-					actItem.set("yCor", new Integer(posY));
-					posX += itemWidth;
-					currentIndex++;
-				}
-				posX = posX - 7 * itemWidth;
-				posY += itemWidth;
-			}
-		}
-	}
-	
-	/**
-	 * Create a recursive Hilbert Curve. Although the method
-	 * will work on a set of items of any size, the best
-	 * result is achieved if the size is a number 4^n.
-	 * The meaning of the parameters is the same as for the 
-	 * method createSimpleLayout.
+	 * Create a recursive Hilbert Curve. Like the z-curve
+	 * this method will work best on 4^n items.
+	 * @param v an ArrayList holding the Points that will be
+	 * arranged 
+	 * @param startX x-coordinate at which the algorithm starts 
+	 * @param startY y-coordinate at which the algorithm starts
+	 * @param itemWidth width of the items 
+	 * @param itemHeight height of the items
 	 */
 	public static void createHilbertLayout(ArrayList v, int startX, int startY,
 			int itemWidth, int itemHeight)
@@ -416,7 +283,10 @@ public class Layouts
 		createHilbertLayout(v, startX, startY, itemWidth, itemHeight, "down");
 	}
 	
-	private static void createHilbertLayout(ArrayList v, int startX, int startY,
+	// creates the hilbert-curve; the paraneter dir tells
+	// this recursive method which part of the hilbert curve
+	// to create
+	protected static void createHilbertLayout(ArrayList<Point> v, int startX, int startY,
 			int itemWidth, int itemHeight, String dir)
 	{
 		int width = curveSize(v.size());
@@ -473,11 +343,11 @@ public class Layouts
 		}
 		else // Recursion
 		{
-			ArrayList[] newVec = new ArrayList[4];
+			ArrayList<Point>[] newVec = new ArrayList[4];
 			int currentIndex = 0;
 			for (int i = 0; i < 4; i++)
 			{
-				newVec[i] = new ArrayList();
+				newVec[i] = new ArrayList<Point>();
 				int start = currentIndex;
 				for (int j = currentIndex; j < start + ((width/2)*(width/2)); j++)
 				{
@@ -534,15 +404,16 @@ public class Layouts
 		} 
 	}
 	
-	/**
-	 * Compute the width/height of s square that is 
-	 * just big enough to hold num data values.
-	 */
-	public static int curveSize(int num)
+	// calculates the width/height of a square just big
+	// enough to hold num data values; this square is 
+	// supposed to have a side length of 2*n; the method is
+	// used by z-curve and hilbert-curve to determine the
+	// size they need to arrange the items
+	protected static int curveSize(int num)
 	{
 		int counter = 1;
 		
-		for (int i = 1; i < 12; i++)
+		while (true)
 		{
 			if (counter >= num)
 				break;

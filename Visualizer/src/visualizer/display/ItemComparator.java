@@ -8,8 +8,9 @@ import java.util.Comparator;
 import prefuse.visual.VisualItem;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ *Class used to compare two VisualItems by their means
  */
 public class ItemComparator implements Comparator<VisualItem>
 {

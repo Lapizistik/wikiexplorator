@@ -1,24 +1,32 @@
-/**
- * 
- */
 package visualizer.display;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.TreeMap;
-
 import prefuse.visual.VisualItem;
 
 /**
- * @author rene
+ * @author Rene Wegener
  *
+ * This class is used to decide which of two clusters 
+ * of glyphs has got the higher mean value. 
+ * So clusters like the glyph rows of a sorted  
+ * table may be compared.
  */
 public class ClusterComparator implements Comparator<ArrayList<VisualItem>>
 {
 	// this TreeMap stores a cluster and its mean value (center)
 	protected HashMap<ArrayList<VisualItem>, Double> mean;
 	
+	/**
+	 * The constructor needs an ArrayList of all clusters that 
+	 * might be compared. These clusters themselves are
+	 * ArrayLists of VisualItems. 
+	 * By delivering the clusters to the constructor as
+	 * parameters, the calculation of the their mean
+	 * values can be done one time instead of every time
+	 * a comparison is needed. 
+	 */
 	public ClusterComparator(ArrayList<ArrayList<VisualItem>> clusters)
 	{
 		mean = new HashMap<ArrayList<VisualItem>, Double>();
@@ -32,26 +40,12 @@ public class ClusterComparator implements Comparator<ArrayList<VisualItem>>
 		}
 	}
 	
+	/**
+	 * Compare two clusters of VisualItems by their
+	 * mean values.
+	 */
 	public int compare(ArrayList<VisualItem> arg0, ArrayList<VisualItem> arg1) 
 	{
-		/*double mean1 = 0, mean2 = 0;
-		double[] values1 = new double[0];
-		double[] values2 = new double[0];
-		for (int i = 0; i < arg0.size(); i++)
-		{
-			values1 = ((double[])arg0.get(i).get("value"));
-			for (int j = 0; j < values1.length; j++)
-				mean1 += values1[j];
-		}
-		
-		for (int i = 0; i < arg1.size(); i++)
-		{
-			values2 = ((double[])arg1.get(i).get("value"));
-			for (int j = 0; j < values2.length; j++)
-				mean2 += values2[j];
-		}
-		mean1 /= (arg0.size() * values1.length);
-		mean2 /= (arg1.size() * values2.length);*/
 		double mean1 = mean.get(arg0);
 		double mean2 = mean.get(arg1);
 		
@@ -62,5 +56,4 @@ public class ClusterComparator implements Comparator<ArrayList<VisualItem>>
 		else
 			return 0;
 	}
-
 }
