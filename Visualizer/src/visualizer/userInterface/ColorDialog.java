@@ -12,10 +12,11 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * @author Rene Wegener
  *
  * This dialog contains all the panels necessary for the 
  * user to set the color scale
+ * 
+ * @author Rene Wegener
  */
 public class ColorDialog extends JDialog implements ActionListener
 {

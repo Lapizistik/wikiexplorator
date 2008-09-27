@@ -29,10 +29,11 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * @author Rene Wegener
  *
  * This class allows the user to select or deselect authors;
  * only selected authors will be visible
+ * 
+ * @author Rene Wegener
  */
 public class AuthorSelectionDialog extends JDialog implements ActionListener
 {

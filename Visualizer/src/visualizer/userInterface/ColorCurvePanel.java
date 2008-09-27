@@ -18,9 +18,10 @@ import javax.swing.JPanel;
 import visualizer.display.PixelRenderer;
 
 /**
- * @author Rene Wegener
  * 
  * This panel lets the user select the color scale
+ * 
+ * @author Rene Wegener
  */
 public class ColorCurvePanel extends JPanel implements MouseListener, MouseMotionListener
 {

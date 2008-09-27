@@ -7,10 +7,11 @@ import javax.swing.JPanel;
 import visualizer.display.PixelRenderer;
 
 /**
- * @author Rene Wegener
  *
  * The ColorPanel is just a bar showing the current 
  * color scale
+ * 
+ * @author Rene Wegener
  */
 public class ColorPanel extends JPanel
 {

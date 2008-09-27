@@ -7,10 +7,11 @@ import visualizer.display.GlyphTable;
 
 
 /**
- * @author Rene Wegener
  *
  * Panel with a very simple visualization of a
  * frequency distribution.
+ * 
+ * @author Rene Wegener
  */
 public class DistroPanel extends JPanel
 {

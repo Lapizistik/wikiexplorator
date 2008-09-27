@@ -19,10 +19,11 @@ import prefuse.util.io.IOLib;
 import prefuse.util.io.SimpleFileFilter;
 
 /**
- * @author Rene Wegener
- *
  * This Action is triggered if the user wants to save
  * an image
+ * 
+ * @author Rene Wegener
+ *
  */
 public class PixelExportAction extends AbstractAction
 {

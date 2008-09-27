@@ -14,11 +14,12 @@ import com.jgoodies.forms.layout.FormLayout;
 import visualizer.StringConstants;
 
 /**
- * @author Rene Wegener
  *
  * This is a little dialog that pops up to allow the 
  * user to specify the exact size of a row-by-row or
  * column-by-column-layout
+ * 
+ * @author Rene Wegener
  */
 public class MatrixOptionsDialog extends JDialog implements ActionListener
 {

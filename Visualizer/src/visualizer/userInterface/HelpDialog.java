@@ -15,9 +15,10 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * @author Rene Wegener
  *
  * The program's main help function
+ * 
+ * @author Rene Wegener
  */
 public class HelpDialog extends JDialog implements HyperlinkListener
 {
