@@ -565,56 +565,6 @@ public class OptimizingLayouts
 					}
 				}
 		}
-		/*double stressBefore, stressAfter,
-		stressImprovement, bestImpro = 0;
-		int bestI = 0, bestJ = 0;
-		for (int loop = 0; loop < maxLoops; loop++)
-		{
-			// get two points 
-			int i = (int)(Math.random() * points.length);
-			int j = (int)(Math.random() * points.length);
-			//int start = i - 1;
-			//int stop = i + 1;
-			//if (start < 0)
-			//	start = 0;
-			//if (stop >= points.length)
-			//	stop = points.length - 1;
-			//for (j = start; j <= stop; j++)
-			//{
-				if (i != j)
-				{
-					// switch points and measure the new stress
-					stressBefore = getStress(targetDistances, points, i) + 
-								  getStress(targetDistances, points, j);
-					double store = points[i].getX();
-					points[i].setLocation(points[j].getX(), 
-											points[i].getY());
-					points[j].setLocation(store, 
-							points[j].getY());
-		
-					stressAfter = getStress(targetDistances, points, i) +
-								  getStress(targetDistances, points, j);
-					stressImprovement = stressBefore - stressAfter;
-					if (stressImprovement > bestImpro) // no improvement
-					{
-						bestImpro = stressImprovement;
-						bestI = i;
-						bestJ = j;
-					}
-					// undo the changes
-					store = points[i].getX();
-					points[i].setLocation(points[j].getX(), 
-										points[i].getY());
-					points[j].setLocation(store, 
-						points[j].getY());
-				}
-			//}
-			
-			if (bestImpro > 0)
-				java.util.Collections.swap(objects, bestI, bestJ);
-			
-			bestImpro = 0;
-		}*/
 	}
 	
 	

@@ -6,12 +6,13 @@ import java.util.HashMap;
 import prefuse.visual.VisualItem;
 
 /**
- * @author Rene Wegener
  *
  * This class is used to decide which of two clusters 
  * of glyphs has got the higher mean value. 
  * So clusters like the glyph rows of a sorted  
  * table may be compared.
+ * 
+ * @author Rene Wegener
  */
 public class ClusterComparator implements Comparator<ArrayList<VisualItem>>
 {
