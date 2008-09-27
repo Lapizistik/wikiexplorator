@@ -429,8 +429,7 @@ public class OptimizingLayouts
 				points[i] = new Point(startX + (int)(Math.random() * range) - range / 2, 
 						startY + (int)(Math.random() * range) - range / 2);
 		// now optimize
-		//int accuracy = 50;
-		int maxLoops = 500;//v.size() * accuracy;
+		int maxLoops = 500;
 		double maxStressImprovement, stressBefor, stressAfter,
 		stressImprovement;
 		int bestPoint = 0, dirX = 0, dirY = 0;
@@ -493,9 +492,7 @@ public class OptimizingLayouts
 	{
 		// create the matrices
 		double[][] dissimilarities;
-		double[][] targetDistances;
 		dissimilarities = getDissimMatrix(vectors);
-		targetDistances = getDistanceMatrix(dissimilarities, 1);
 		// setup start configuration:
 		// every item is represented by a point.
 		// these points are arranged in linear order.
@@ -503,23 +500,87 @@ public class OptimizingLayouts
 		for (int i = 0; i < objects.size(); i++)
 				points[i] = new Point((int)(i), 1);
 		// now optimize
-		int maxLoops = 500;
-		double stressBefore, stressAfter,
+		int maxLoops = 50;
+		// initialize an array that stores where in the
+		// dissimilarity matrix to find an object
+		// (for the indices wouldn't fit after swapping
+		// objects)
+		int[] matrix = new int[objects.size()];
+		for (int i = 0; i < objects.size(); i++)
+			matrix[i] = i;
+		
+		for (int loop = 0; loop < maxLoops; loop++)
+		{
+			for (int i = 0; i < objects.size(); i++)
+				for (int j = 0; j < objects.size(); j++)
+				{
+					if (i != j)
+					{
+						double dissimBefor, dissimAfter;
+						
+						// how good is item i placed?
+						if (i > 0 && i < objects.size() - 1)
+							dissimBefor = dissimilarities[matrix[i]][matrix[i-1]] +
+										dissimilarities[matrix[i]][matrix[i+1]];
+						else if (i > 0)
+							dissimBefor = 2 * dissimilarities[matrix[i]][matrix[i-1]];
+						else		
+							dissimBefor = 2 * dissimilarities[matrix[i]][matrix[i+1]];
+						
+						// how good is item j placed?
+						if (j > 0 && j < objects.size() - 1)
+							dissimBefor += dissimilarities[matrix[j]][matrix[j-1]] +
+										dissimilarities[matrix[j]][matrix[j+1]];
+						else if (j > 0)
+							dissimBefor += 2 * dissimilarities[matrix[j]][matrix[j-1]];
+						else		
+							dissimBefor += 2 * dissimilarities[matrix[j]][matrix[j+1]];
+						
+						// how good would they be placed
+						// after they've been swapped?
+						if (i > 0 && i < objects.size() - 1)
+							dissimAfter = dissimilarities[matrix[j]][matrix[i-1]] +
+										dissimilarities[matrix[j]][matrix[i+1]];
+						else if (i > 0)
+							dissimAfter = 2 * dissimilarities[matrix[j]][matrix[i-1]];
+						else		
+							dissimAfter = 2 * dissimilarities[matrix[j]][matrix[i+1]];
+						
+						if (j > 0 && j < objects.size() - 1)
+							dissimAfter += dissimilarities[matrix[i]][matrix[j-1]] +
+										dissimilarities[matrix[i]][matrix[j+1]];
+						else if (j > 0)
+							dissimAfter += 2 * dissimilarities[matrix[i]][matrix[j-1]];
+						else		
+							dissimAfter += 2 * dissimilarities[matrix[i]][matrix[j+1]];
+						
+						if (dissimAfter < dissimBefor)
+						{
+							java.util.Collections.swap(objects, i, j);
+							// store the items' new positions
+							int store = matrix[i];
+							matrix[i] = matrix[j];
+							matrix[j] = store;
+						}
+					}
+				}
+		}
+		/*double stressBefore, stressAfter,
 		stressImprovement, bestImpro = 0;
 		int bestI = 0, bestJ = 0;
 		for (int loop = 0; loop < maxLoops; loop++)
 		{
 			// get two points 
-			int i = loop % objects.size();//(int)(Math.random() * points.length);
-			int j;// = (int)(Math.random() * points.length);
-			int start = i - 1;
-			int stop = i + 1;
-			if (start < 0)
-				start = 0;
-			if (stop >= points.length)
-				stop = points.length - 1;
-			for (j = start; j <= stop; j++)
-			{
+			int i = (int)(Math.random() * points.length);
+			int j = (int)(Math.random() * points.length);
+			//int start = i - 1;
+			//int stop = i + 1;
+			//if (start < 0)
+			//	start = 0;
+			//if (stop >= points.length)
+			//	stop = points.length - 1;
+			//for (j = start; j <= stop; j++)
+			//{
 				if (i != j)
 				{
 					// switch points and measure the new stress
@@ -547,13 +608,13 @@ public class OptimizingLayouts
 					points[j].setLocation(store, 
 						points[j].getY());
 				}
-			}
+			//}
 			
 			if (bestImpro > 0)
 				java.util.Collections.swap(objects, bestI, bestJ);
 			
 			bestImpro = 0;
-		}
+		}*/
 	}
 	
 	
