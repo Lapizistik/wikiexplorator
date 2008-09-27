@@ -49,10 +49,7 @@ public class DataLoader
       	    		highest = dt.getValueAt(x, y);
       	    }
       	}
-        // dist
-        System.out.println("Nutzer: " + dt.getYAxisCount());
-        System.out.println("Messzeitpunkte: " + dt.getXAxisCount());
-  
+        
         // create the glyphs
     	int currentIndex = 0;
         for (int y = 0; y < dt.getYAxisCount(); y++)
@@ -131,18 +128,10 @@ public class DataLoader
       	    		
       	    		if (v > highest && (x != y))
       	    			highest = v;
-      	    	 	//if (x != y)
-      	    	 		//distro[(int)v]++;
-      	      	}
+      	    	}
      	}
-        // dist
-        System.out.println("Nutzer: " + dc.getXAxisCount());
-        System.out.println("Messzeitpunkte: " + dc.getZAxisCount());
-        //for (int i = 0; i < distro.length; i++)
-        //{
-        	//System.out.println(i + " " + distro[i]);
-        //}
-    	int currentIndex = 0;
+        
+        int currentIndex = 0;
     	// create all glyphs  
     	for (int y = 0; y < dc.getYAxisCount(); y++)
         {
