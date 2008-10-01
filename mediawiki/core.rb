@@ -46,6 +46,8 @@ module Mediawiki
     # <tt>$wgLanguageCode</tt>. This is needed as namespace identifiers are
     # language dependent.
     attr_reader :language
+    # additional information about the wiki owner given as a Hash.
+    attr_reader :owner
 
     # Creates a new Wiki object from database connection _wikidb_.
     #
@@ -56,6 +58,8 @@ module Mediawiki
       @name = options[:name] || 'wiki'
       @language = options[:language] || 'en'
       @ips = options[:ips]
+
+      @owner = options[:owner] 
 
       @ns_mapping = NS_Default_Mapping.dup
       begin # let's get the language definitions...
@@ -99,11 +103,11 @@ module Mediawiki
     # _pw_:: database password
     # _options_:: 
     #   a hash with further options:
-    #   <i>:engine=>"Mysql"</i>:: the database engine to be used.
-    #   <i>:version=>1.8</i>:: 
+    #   <tt>:engine</tt>=><tt>"Mysql"</tt>:: the database engine to be used.
+    #   <tt>:version</tt>=><tt>1.8</tt>:: 
     #     used, if reading the database is different in different Mediawiki 
     #     versions. Not really implemented until now!
-    #   <i>:uid_aliases=>{}</i>:: 
+    #   <tt>:uid_aliases</tt>=><tt>{}</tt>:: 
     #     hash of uids to be aliased. E.g. if the user with uid=17 was 
     #     registered by mistake (e.g. with the wrong user name) and the user 
     #     reregistered with uid=22, use:
@@ -116,25 +120,27 @@ module Mediawiki
     #     target). Mapping an IP-Adress to an non-existing uid will work, 
     #     mapping an existing User to an IP-Adress will not work (this is 
     #     due to implementation purposes and not important enough to change).
-    #   <i>:ips=>false</i>::
+    #   <tt>:ips</tt>=><tt>false</tt>::
     #     by default all anonymous edits are mapped to one default ip-user.
-    #     If option <i>:ips</i> is set, a dedicated user is created for each
+    #     If option <tt>:ips</i> is set, a dedicated user is created for each
     #     IP-adress. In both cases uid-aliases mapping is applied.
     #     (We may later enhance this by mapping address ranges to uids?)
     #     For all created users: uid<0.
-    #   <i>:name=>'Wiki'</i>::
+    #   <tt>:name</tt>=><tt>"Wiki"</tt>::
     #     The official name of the wiki as given in <tt>LocalSettings.php</tt>
     #     in the variable <tt>$wgSitename</tt>, as this is used for the Project
     #     namespace.
-    #   <i>:language=>'en'</i>::
+    #   <tt>:language</tt>=><tt>"en"</tt>::
     #     the language as given in <tt>LocalSettings.php</tt> in the variable 
     #     <tt>$wgLanguageCode</tt>. This is needed as namespace identifiers 
     #     are language dependent. Currently implemented: '+en+', '+de+'.
-    #   <i>:ns_mapping=>{}</i>::
+    #   <tt>:ns_mapping</tt>=><tt>{}</tt>::
     #     a Hash with custom namespaces used in the wiki. So if you defined
     #     additional namespaces Custom and Custom_talk with id 100 and 101 
     #     in your wiki you use:
     #       :ns_mapping=>{'Custom' => 100, 'Custom_talk' => 101}
+    #   <tt>:owner</tt> :: a Hash with additional information about the wiki 
+    #     owner.
     def Wiki.open(db, host, user, pw, options={})
       Wiki.new(DB.new(db, host, user, pw, options), options)
     end
@@ -1005,7 +1011,7 @@ module Mediawiki
     # the corresponding keeps are set to true:
     # <i>user_text</i> :: unless <tt>:name</tt> => _true_ (if the user was logged in) or  <tt>:ip</tt> => _true_ (if the user was anonymous)
     # <i>comment</i>   :: unless <tt>:comment</tt> => _true_
-    # <i>:full_dangling</i>  :: unless <tt>:links</tt> => _true_
+    # <i>full_dangling</i>  :: unless <tt>:links</tt> => _true_
     def obliterate(keeps={})
       unless keeps[:name] && keeps[:ip] # we want to keep both
         if Mediawiki.is_ip?(@user_text)

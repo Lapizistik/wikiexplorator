@@ -152,7 +152,7 @@ module Mediawiki
       #   to 0700.
       # <tt>:filename</tt>:: 
       #   the name of the report file. To be given without path but with
-      #   extension. Defaults to <tt>report</tt>.<i>type</i>.
+      #   extension. Defaults to <tt>default</tt>.<i>type</i>.
       # <tt>:type</tt>::
       #   type of the report. Used to find the template (if :ttype is not set)
       #   and to generate the default report filename.
@@ -163,7 +163,7 @@ module Mediawiki
       def initialize(wiki, params={})
         super(wiki, params)
         @basedir = @params[:basedir] || Dir.tmpdir
-        @filename = @params[:filename] || ('report.' + @type)
+        @filename = @params[:filename] || ('default.' + @type)
         mode = @params[:mode] || 0700
         mode = mode.oct if mode.kind_of?(String)
         if @outputdir = @params[:outputdir]
