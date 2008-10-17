@@ -5,7 +5,7 @@
 <% users = @wiki.users %>
 <% pages = @wiki.pages %>
 <% revisions = @wiki.revisions %>
-<% topdf = ENV['RB_TOPDF'] || :pspdf %>
+<% topdf = (ENV['RB_TOPDF'] || 'pspdf').to_sym %>
 \documentclass{scrartcl}
 
 \usepackage[T1]{fontenc}
