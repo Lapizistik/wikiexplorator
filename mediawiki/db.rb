@@ -68,12 +68,14 @@ module Mediawiki
       @dbengine = options[:engine] || 'Mysql'
       @version = options[:version] || 1.8
       @prefix = options[:prefix] || ''
+      @port = options[:port]
     end
     
     def connect
+      dbs = "DBI:#{@dbengine}:database=#{@db};host=#{@host}"
+      dbs << "port=#{@port}" if @port
 
-      DBI.connect("DBI:#{@dbengine}:#{@db}:#{@host}", 
-                  @dbuser, @dbpassword) do |dbh| 
+      DBI.connect(dbs, @dbuser, @dbpassword) do |dbh| 
         yield(MWDBI.new(dbh, @prefix))
       end
     end

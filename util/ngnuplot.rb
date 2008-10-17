@@ -1,7 +1,10 @@
 #!/usr/bin/ruby -w
 
 class Gnuplot
+  # the gnuplot command
   CMD = ENV['RB_GNUPLOT'] || 'gnuplot'
+  # the ps2pdf command (reading from stdin)
+  PS2PDF = ENV['RB_PS2PDF'] || 'epstopdf --filter --outfile'
   
   T0 = Time.gm(2000) # gnuplot zero time
 
@@ -154,7 +157,7 @@ class Gnuplot
   def command!(cmd)
     @sets << cmd
     Gnuplot.open { |io|
-      io << sets_to_s(params)
+      io << sets_to_s
     }
   end
 
@@ -318,6 +321,9 @@ class Gnuplot
     elsif file = p[:fig]
       @sets << ['terminal', "fig"]
       @sets << ['output', "'#{file}'"]
+    elsif file = p[:pspdf]
+      @sets << ['terminal', "postscript eps enhanced color"]
+      @sets << ['output', "'| #{PS2PDF} #{file}'"]
     end
   end
 

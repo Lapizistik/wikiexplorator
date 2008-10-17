@@ -11,6 +11,9 @@ require 'set'
 # More and more stuff was added and now it's nearly a full featured graph
 # class with support for R and others and some drawbacks due to its history.
 class DotGraph
+  # the ps2pdf command (reading from stdin)
+  PS2PDF = ENV['RB_PS2PDF'] || 'epstopdf --filter --outfile'
+
   # the objects representing the nodes of the graph. This is subject to change 
   # as we will introduce special DotGraph::Node objects in future when needed
   attr_reader :nodes
@@ -488,14 +491,26 @@ class DotGraph
   # Calls the graphviz utility given in _cmd_.
   #
   # _filename_ :: name of the file to be created
-  # _cmd_ :: command line to be executed
+  # _cmd_  :: command line to be executed
+  # _lang_ :: the output format (given as String or Symbol). Besides all
+  #           formats understood by _cmd_ -T _lang_ you may use
+  #           <tt>:pspdf</tt> to generate pdf files using ps.
   #
   # All other attributes are propagated to #to_dot.
   #
   # Example:
-  #   g.to_graphviz('graph.svg', 'twopi -Tsvg')
-  def to_graphviz(filename, cmd, *attrs, &block)
-    open("|#{cmd} -o '#{filename}'","w") { |io| io << to_dot(*attrs, &block) }
+  #   g.to_graphviz('graph.svg', 'twopi', :svg, "outputorder=edgesfirst", "node [ shape=point, style=filled ]" ])
+  #   g.to_graphviz('graph.pdf', 'twopi', :pspdf)
+  def to_graphviz(filename, cmd, lang, *attrs, &block)
+    if lang == :pspdf
+      IO.popen("#{cmd} -Tps|#{PS2PDF} #{filename}","w") do |io| 
+        io << to_dot(*attrs, &block)
+      end
+    else
+      IO.popen("|#{cmd} -T#{lang} -o '#{filename}'","w") do |io| 
+        io << to_dot(*attrs, &block)
+      end
+    end
   end
 
   # Creates a LaTeX String representing   
