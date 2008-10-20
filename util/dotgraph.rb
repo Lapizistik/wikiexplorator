@@ -507,7 +507,7 @@ class DotGraph
         io << to_dot(*attrs, &block)
       end
     else
-      IO.popen("|#{cmd} -T#{lang} -o '#{filename}'","w") do |io| 
+      IO.popen("#{cmd} -T#{lang} -o '#{filename}'","w") do |io| 
         io << to_dot(*attrs, &block)
       end
     end
