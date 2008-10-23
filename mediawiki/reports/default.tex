@@ -11,6 +11,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{subfigure}
 \usepackage{tabularx}
 
 \title{Mediawiki Report -- <%= wiki.to_s %>
@@ -21,6 +22,12 @@
 \begin{document}
 \maketitle
 
+\section{Introduction} % (fold)
+\label{sec:introduction}
+
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
+
+% section introduction (end)
 
 \section{Statistics} % (fold)
 \label{sec:statistics}
@@ -29,6 +36,8 @@ We have <%=@wiki.pages(full).length%> pages with
 <%=@wiki.revisions(full).length%>  revisions from <%=users.length%> 
 users (<%=pages.length%> pages with <%=revisions.length%> revisions in 
 Namespace 0).
+
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
 \subsection{Wiki Statistics} % (fold)
 \label{sub:wiki_statistics}
@@ -54,6 +63,8 @@ wiki.global_userstats.collect { |a|
 %>      
 \\\bottomrule
 \end{tabular}
+
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
 % subsection wiki_statistics (end)
 
@@ -83,10 +94,11 @@ wiki.userstats.sort_by { |u,| u.name }.collect { |u,values|
 \\\bottomrule
 \end{tabular}
 
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
+
 % subsection user_statistics (end)
 
 % section statistics (end)
-
 
 %%% Cummulative Distribution Functions: Lorenz, Gini, Pareto %%%
 
@@ -96,33 +108,33 @@ wiki.userstats.sort_by { |u,| u.name }.collect { |u,values|
 % Authors vs. Revisions
 <%
 ur = users.collect { |u| u.revisions.length }
-ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors",
- :ylabel => "revisions", topdf => 'cdfar.pdf', :size => '480,480')
+ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "revisions", topdf => 'cdfar.pdf')
 %>
-\begin{center}
-  \includegraphics[width=\textwidth]{cdfar}
-\end{center}
 
 % Authors vs. Pages
 <%
 up = users.collect { |u| u.pages.length }
-up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pages", topdf => 'cdfap.pdf', :size => '480,480')
+up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pages", topdf => 'cdfap.pdf')
 %>
-\begin{center}
-  \includegraphics[width=\textwidth]{cdfap}
-\end{center}
 
 % Revisions vs. Pages
 <%
 pr = pages.collect { |p| p.revisions.length }
-pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", topdf => 'cdfpr.pdf', :size => '480,480')
+pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", topdf => 'cdfpr.pdf')
 %>
-\begin{center}
-  \includegraphics[width=\textwidth]{cdfpr}
-\end{center}
+
+\begin{figure}[htbp]
+	\centering
+	\subfigure[Authors vs. Revisions]{\includegraphics[width=0.5\textwidth]{cdfar}}\\
+	\subfigure[Authors vs. Pages]{\includegraphics[width=0.5\textwidth]{cdfap}}\\
+	\subfigure[Revisions vs. Pages]{\includegraphics[width=0.5\textwidth]{cdfpr}}
+	\caption{Cummulative Distribution Functions}
+	\label{fig:cummulative_distribution_functions}
+\end{figure}
+
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
 % section cummulative_distribution_functions (end)
-
 
 %%% Set Filter and Time Raster %%%
 <%
@@ -132,30 +144,6 @@ raster = wiki.timeraster(:zero => :week, :step => :week) # set time raster to we
 
 \section{Revision History} % (fold)
 \label{sec:revision_history}
-
-% Cummulative Revisions per Week (CRPW)
-<% 
-crpw = raster[1..-2].collect { |e| filter.endtime = e 
-	[ e, wiki.revisions(filter).length ]
-	}
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(crpw, :timefmt => '%Y-%m-%d', 
-		:with => 'linespoints', 
-		:title => 'revisions')
-	gp.set('nokey')
-	gp.set('xtics rotate')
-	gp.set('title "Cummulative Revisions per Week"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "cummulative number of revisions"')
-	gp.plot(topdf => 'crpw.pdf', :size => '640,480')
-end
-%>
-\begin{center}
-  \includegraphics[width=\textwidth]{crpw}
-\end{center}
 
 % Revisions per Week (RPW)
 <% 
@@ -176,19 +164,98 @@ Gnuplot.new do |gp|
 	gp.set('ylabel "number of revisions"')
 	gp.fit(:title => 'trend')
 	gp.plot(:svg => 'rpw.svg')
-	gp.plot(topdf => 'rpw.pdf', :size => '640,480')
+	gp.plot(topdf => 'rpw.pdf')
 end
 %>
-\begin{center}
-  \includegraphics[width=\textwidth]{rpw}
-\end{center}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{rpw}
+	\caption{Revisions per Week}
+	\label{fig:revisions_per_week}
+\end{figure}
+
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
+
+%%% Set Filter and Time Raster %%%
+<%
+filter = wiki.filter.clone # clone filter
+raster = wiki.timeraster(:zero => :week, :step => :week) # set time raster to weekly spells
+%>
+
+% Cummulative Revisions per Week (CRPW)
+<% 
+crpw = raster[1..-2].collect { |e| filter.endtime = e 
+	[ e, wiki.revisions(filter).length ]
+	}
+Gnuplot.new do |gp|
+	gp.set('xdata', 'time')
+	gp.set('timefmt', '%Y-%m-%d', true)
+	gp.set('format x', '%b %y', true)
+	gp.add(crpw, :timefmt => '%Y-%m-%d', 
+		:with => 'linespoints', 
+		:title => 'revisions')
+	gp.set('nokey')
+	gp.set('xtics rotate')
+	gp.set('title "Cummulative Revisions per Week"')
+	gp.set('xlabel "month"')
+	gp.set('ylabel "cummulative number of revisions"')
+	gp.plot(topdf => 'crpw.pdf')
+end
+%>
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{crpw}
+	\caption{Cummulative Revisions per Week}
+	\label{fig:cummulative_revisions_per_week}
+\end{figure}
+
+Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
 % section revision_history (end)
 
 \section{Author Participation} % (fold)
 \label{sec:author_participation}
 
-% Relative Author Participation
+%%% Set Filter and Time Raster %%%
+<%
+filter = wiki.filter.clone # clone filter
+raster = wiki.timeraster(:zero => :week, :step => :week) # set time raster to weekly spells
+%>
+
+% Author Participation per Week
+<%
+# authors
+authors = raster.enum_cons(2).collect { |s,e| 
+	filter.revision_timespan = (s..e)
+	[ e, wiki.coauthorgraph(filter).remove_lonely_nodes.nodes.length ]
+}[1..-2]
+# Gnuplot
+Gnuplot.new do |gp|
+	gp.set('xdata', 'time')
+	gp.set('timefmt', '%Y-%m-%d', true)
+	gp.set('format x', '%b %y', true)
+	gp.add(authors, :timefmt => '%Y-%m-%d',
+		:with => 'lines',
+		:title => 'authors')
+	gp.set('nokey')
+	gp.set('xtics rotate')
+	gp.set('title "Author Participation"')
+	gp.set('xlabel "month"')
+	gp.set('ylabel "number of authors"')
+	gp.fit(:title => 'trend')
+	gp.plot(topdf => 'author_participation.pdf')
+end
+%>
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{author_participation}
+	\caption{Author Participation}
+	\label{fig:author_participation}
+\end{figure}
+
+Figure~\ref{fig:author_participation} shows the number of authors who edited at least one document at any given week. While the absolute numbers are likely to fluctuate, the trend line gives an idea of just how many authors participate in the wiki.
+
+% Relative Author Participation per Week
 <%
 # events
 events = wiki.users.collect{ |u| 
@@ -211,17 +278,22 @@ Gnuplot.new do |gp|
 		:title => 'authors')
 	gp.set('nokey')
 	gp.set('xtics rotate')
-	gp.set('title "Author Participation"')
+	gp.set('title "Relative Author Participation"')
 	gp.set('xlabel "month"')
 	gp.set('ylabel "percentage of authors"')
 	gp.fit(:title => 'trend')
-	gp.plot(:svg => 'rap.svg')
-	gp.plot(topdf => 'rap.pdf', :size => '640,480')
+	gp.plot(topdf => 'relative_author_participation.pdf', :size => '640,480')
 end
 %>
-\begin{center}
-  \includegraphics[width=\textwidth]{rap}
-\end{center}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{relative_author_participation}
+	\caption{Relative Author Participation}
+	\label{fig:relative_author_participation}
+\end{figure}
+
+Figure~\ref{fig:relative_author_participation} shows the percentage of authors who edit at least one document at any given week. For example, a value of 50\,\% indicates that half of all active authors participate in the wiki. Note that we define an author as active for the time between his first and his last edit. Therefore, and in contrast to Figure~\ref{fig:author_participation}, relative author participation adjusts for growth of the wiki in question. Again, while the absolute percentages are likely to fluctuate, the trend line gives an idea of just the percentage of authors who participate in the wiki.
 
 % section author_participation (end)
 
@@ -232,16 +304,16 @@ end
 <%
 filter = wiki.filter.clone # clone filter
 coauthorship_network = wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
-coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
+coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", :pdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
 %>
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{coauthorgraph.pdf}
+	\includegraphics[width=0.95\textwidth]{coauthorgraph}
 	\caption{Coauthorship Network}
 	\label{fig:coauthorship_network}
 \end{figure}
 
-Figure~\ref{fig:coauthor_network} shows the coauthorship network in which the nodes are authors, and a link between any two nodes represents authorship of one or more pages. There are <%= coauthorship_network.nodes.length %> nodes connected by <%= coauthorship_network.links.length %> links in the network. The coauthorship network gives an idea of who is working with whom. Single nodes with above average links to others identify authors who work with many others, usually on many pages. Rather than content, these authors provide most of the structure to the wiki. Clusters of nodes identify authors working in close concert with each other. These authors provide most of the content to the wiki.
+Figure~\ref{fig:coauthorship_network} shows the coauthorship network in which the nodes are authors, and a link between any two nodes represents authorship of one or more pages. There are <%= coauthorship_network.nodes.length %> nodes connected by <%= coauthorship_network.links.length %> links in the network. The coauthorship network gives an idea of who is working with whom. Single nodes with above average links to others identify authors who work with many others, usually on many pages. Rather than content, these authors provide most of the structure to the wiki. Clusters of nodes identify authors working in close concert with each other. These authors provide most of the content to the wiki.
 
 
 %%% TO DO %%%
@@ -256,12 +328,12 @@ Figure~\ref{fig:coauthor_network} shows the coauthorship network in which the no
 <%
 filter = wiki.filter.clone # clone filter
 page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
-page_network.to_graphviz("pagegraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
+page_network.to_graphviz("pagegraph.pdf", "neato", :pdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
 %>
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{pagegraph.pdf}
+	\includegraphics[width=0.95\textwidth]{pagegraph}
 	\caption{Page Network}
 	\label{fig:page_network}
 \end{figure}
