@@ -73,7 +73,7 @@ module Mediawiki
     
     def connect
       dbs = "DBI:#{@dbengine}:database=#{@db};host=#{@host}"
-      dbs << "port=#{@port}" if @port
+      dbs << ";port=#{@port}" if @port
 
       DBI.connect(dbs, @dbuser, @dbpassword) do |dbh| 
         yield(MWDBI.new(dbh, @prefix))

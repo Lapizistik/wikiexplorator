@@ -11,7 +11,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{subfigure}
+%\usepackage{subfigure}
 \usepackage{tabularx}
 
 \title{Mediawiki Report -- <%= wiki.to_s %>
@@ -42,11 +42,14 @@ Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian,
 \subsection{Wiki Statistics} % (fold)
 \label{sub:wiki_statistics}
 
-\begin{tabular}{>{\bfseries}lrrrrr}\toprule
-  &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min}
-  &\textbf{max}\\
-\midrule
-<%= 
+\begin{table}
+  \centering
+  \caption{Wiki overview}
+  \begin{tabular}{>{\bfseries}lrrrrr}\toprule
+    &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min}
+    &\textbf{max}\\
+    \midrule
+<%=
 wiki.global_userstats.collect { |a|
   a.collect { |v| 
     if v.kind_of?(String)
@@ -60,9 +63,10 @@ wiki.global_userstats.collect { |a|
     end
   }.join('&')
 }.join('\\\\')
-%>      
+    %>
 \\\bottomrule
-\end{tabular}
+  \end{tabular}
+\end{table}
 
 Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
@@ -71,9 +75,12 @@ Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian,
 \subsection{User Statistics} % (fold)
 \label{sub:user_statistics}
 
-\begin{tabular}{>{\bfseries}llrrrrr}\toprule
-\textbf{User} & & \textbf{\#edits} & \textbf{\#pages} &
-\textbf{edits/page} & \textbf{\#self edits} & \textbf{\#foreign
+\begin{table}
+  \centering
+  \caption{User overview}
+  \begin{tabular}{>{\bfseries}llrrrrr}\toprule
+    \textbf{User} & & \textbf{\#edits} & \textbf{\#pages} &
+    \textbf{edits/page} & \textbf{\#self edits} & \textbf{\#foreign
   edits}\\
 \midrule
 <%= 
@@ -93,6 +100,7 @@ wiki.userstats.sort_by { |u,| u.name }.collect { |u,values|
 %>
 \\\bottomrule
 \end{tabular}
+\end{table}
 
 Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
@@ -124,12 +132,17 @@ pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revi
 %>
 
 \begin{figure}[htbp]
-	\centering
-	\subfigure[Authors vs. Revisions]{\includegraphics[width=0.5\textwidth]{cdfar}}\\
-	\subfigure[Authors vs. Pages]{\includegraphics[width=0.5\textwidth]{cdfap}}\\
-	\subfigure[Revisions vs. Pages]{\includegraphics[width=0.5\textwidth]{cdfpr}}
-	\caption{Cummulative Distribution Functions}
-	\label{fig:cummulative_distribution_functions}
+  \centering
+  \begin{tabular}{@{}ccc@{}}
+    \includegraphics[width=0.3\textwidth]{cdfar} &
+    \includegraphics[width=0.3\textwidth]{cdfap} &
+    \includegraphics[width=0.3\textwidth]{cdfpr}\\
+    Authors vs. Revisions &
+    Authors vs. Pages &
+    Revisions vs. Pages
+  \end{tabular}
+  \caption{Cummulative Distribution Functions}
+  \label{fig:cummulative_distribution_functions}
 \end{figure}
 
 Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
@@ -167,12 +180,6 @@ Gnuplot.new do |gp|
 	gp.plot(topdf => 'rpw.pdf')
 end
 %>
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.95\textwidth]{rpw}
-	\caption{Revisions per Week}
-	\label{fig:revisions_per_week}
-\end{figure}
 
 Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian, Florian
 
@@ -204,6 +211,11 @@ end
 %>
 \begin{figure}[htbp]
 	\centering
+	\includegraphics[width=0.95\textwidth]{rpw}
+	\caption{Revisions per Week}
+	\label{fig:revisions_per_week}
+        \vfill
+
 	\includegraphics[width=0.95\textwidth]{crpw}
 	\caption{Cummulative Revisions per Week}
 	\label{fig:cummulative_revisions_per_week}
@@ -246,12 +258,6 @@ Gnuplot.new do |gp|
 	gp.plot(topdf => 'author_participation.pdf')
 end
 %>
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.95\textwidth]{author_participation}
-	\caption{Author Participation}
-	\label{fig:author_participation}
-\end{figure}
 
 Figure~\ref{fig:author_participation} shows the number of authors who edited at least one document at any given week. While the absolute numbers are likely to fluctuate, the trend line gives an idea of just how many authors participate in the wiki.
 
@@ -288,6 +294,11 @@ end
 
 \begin{figure}[htbp]
 	\centering
+	\includegraphics[width=0.95\textwidth]{author_participation}
+	\caption{Author Participation}
+	\label{fig:author_participation}
+        \vfill
+
 	\includegraphics[width=0.95\textwidth]{relative_author_participation}
 	\caption{Relative Author Participation}
 	\label{fig:relative_author_participation}
@@ -304,11 +315,11 @@ Figure~\ref{fig:relative_author_participation} shows the percentage of authors w
 <%
 filter = wiki.filter.clone # clone filter
 coauthorship_network = wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
-coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", :pdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
+coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
 %>
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.95\textwidth]{coauthorgraph}
+	\includegraphics[width=0.95\textwidth,height=0.9\textheight,keepaspectratio]{coauthorgraph}
 	\caption{Coauthorship Network}
 	\label{fig:coauthorship_network}
 \end{figure}
@@ -328,7 +339,7 @@ Figure~\ref{fig:coauthorship_network} shows the coauthorship network in which th
 <%
 filter = wiki.filter.clone # clone filter
 page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
-page_network.to_graphviz("pagegraph.pdf", "neato", :pdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
+page_network.to_graphviz("pagegraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
 %>
 
 \begin{figure}[htbp]

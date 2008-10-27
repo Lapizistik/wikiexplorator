@@ -18,13 +18,13 @@ module Mediawiki
     # For parameter description see the new method of the corresponding
     # class in Report.
     def Report.new(wiki, type=:txt, params={})
-      {
-        :txt    => PlainText,
-        :html   => HTML,
-        :tex    => LaTeX,
-        :latex  => LaTeX,
-        :pdf    => PDF
-      }[type].new(wiki, params)
+      case type
+      when :txt    : PlainText
+      when :html   : HTML
+      when :tex    : LaTeX
+      when :latex  : LaTeX
+      when :pdf    : PDF
+      end.new(wiki, params)
     end
 
     # Base class for all reports. Not to be used directly.
@@ -130,6 +130,8 @@ module Mediawiki
     # Base class for all reports who need auxiliary files. 
     # Not to be used directly.
     class DirBase < Base
+      # the directory the outputfiles are created in.
+      attr_reader :outputdir
       # creates a Report
       #
       # Dont use this class directly but one of the subclasses shaped for
@@ -287,20 +289,18 @@ module Mediawiki
     # for plain report formats and a String with a filename for complex
     # report formats. See Report.new for a description of parameters.
     def report(*options)
-      type=:txt
-      params={}
-      filter = nil
+      type = nil
+      params = {}
       options.each do |par|
         case par
         when Symbol : type = par
-        when Hash   : params = par
-        when Filter : filter = par
+        when Hash   : params = par; type = params[:type]
+        when Filter : params[:filter] = par
         else
           raise ArgumentError.new("Wrong argument: #{par.inspect}")
         end
       end
-      params[:filter] = filter    if filter
-      Report.new(self, type, params).generate
+      Report.new(self, (type || :txt), params).generate
     end
   end
 end
