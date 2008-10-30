@@ -415,11 +415,11 @@ class DotGraph
   end
 
   # Compute the adjacency matrix (Array of Arrays) of this graph.
-  def adjacencymatrix(inf=0)
+  def adjacencymatrix
     # prepare matrix
     ni = Hash.new
     @nodes.each_with_index { |n,i| ni[n]=i }
-    matrix = Array.new(@nodes.length) { Array.new(@nodes.size, inf) }
+    matrix = Array.new(@nodes.length) { Array.new(@nodes.length, 0) }
     matrix.each_with_index { |a,i| a[i]=0 }
     @links.each_key do |s,d| 
       i = ni[s]
