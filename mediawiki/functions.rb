@@ -271,39 +271,44 @@ module Mediawiki
     #
     # _attr_:: 
     #   named attributes.
-    #   <tt>:step</tt>:: 
+    #   <tt>:step</tt> => <tt>:day</tt>:: 
     #     step width. Either a number of seconds or a symbol
     #     (<tt>:hour</tt>=3600, <tt>:day</tt>=24*3600, 
     #     <tt>:week</tt>=7*24*3600).
-    #     <tt>:month</tt> corresponds to a real month with varying length,
-    #     so the steps will be e.g. 2000-1-27 to  2000-2-27 to  2000-2-27.
-    #   <tt>:zero</tt>:: 
+    #     <tt>:month</tt> corresponds to a real month with varying 
+    #     length, so the steps will be e.g. 2000-1-27 to 
+    #     2000-2-27 to  2000-3-27.
+    #   <tt>:zero</tt> => <tt>:day</tt>:: 
     #     start time setting. _starttime_ may have some 
-    #     odd value, e.g. 2003-8-20 14:33, but when stepping daily we would 
-    #     prefer timespans from midnight to midnight, i.e. start with
-    #     2003-8- 20 0:00. <tt>:zero</tt> may have the following values:
+    #     odd value, e.g. 2003-8-20 14:33, but when stepping daily we 
+    #     would prefer timespans from midnight to midnight, i.e. start 
+    #     with 2003-8- 20 0:00. <tt>:zero</tt> may have the following 
+    #     values:
     #     <tt>:hour</tt>:: set minutes and seconds of _starttime_ to 0.
-    #     <tt>:day</tt>:: set hours, minutes and seconds of _starttime_ to 0.
+    #     <tt>:day</tt>:: 
+    #       set hours, minutes and seconds of _starttime_ to 0.
     #     <tt>:week</tt>:: 
     #       sets hours, minutes and seconds of _starttime_ to 0
-    #       and the date to the closest day before or equal to _starttime_
-    #       with day of the week as given in <tt>:wday</tt>. 
+    #       and the date to the closest day before or equal to 
+    #       _starttime_ with day of the week as given in <tt>:wday</tt>. 
     #     <tt>:month</tt>:: 
     #       set day to 1 and 
     #       hours, minutes and seconds of _starttime_ to 0.
     #     <tt>:year</tt>:: 
     #       set month and day to 1 and 
     #       hours, minutes and seconds of _starttime_ to 0.
-    #     <i>[y,m,d,h,min,s]</i>:: 
+    #     [<i>y,m,d,h,min,s</i>]:: 
     #       each entry may either be _nil_ or an Integer. 
     #       If _nil_ the corresponding Time component of _starttime_
     #       (from year to second) is left untouched, otherwise it is set
     #       to the value given in the array. So to start the day at 5:00
-    #       use <i>[nil,nil,nil,5,0,0]</i>.
-    #   <tt>:wday</tt>:: 
+    #       use [_nil_,_nil_,_nil_,5,0,0].
+    #   <tt>:wday</tt> => 0:: 
     #     The day of the week the timeraster will start, if
     #     <tt>:zero => :week</tt>. Allowed values are 0 (sunday) 
-    #     to 6 (saturday). Defaults to 0 (sunday).
+    #     to 6 (saturday). 
+    #   <tt>:range</tt> => (timeline.first..timeline.last)::
+    #     range to create the timeraster on.
     #
     # Use this function e.g. for investigating wiki dynamics:
     #  filter = wiki.filter
@@ -318,18 +323,19 @@ module Mediawiki
     #    filter.endtime = ta.last
     #    [ta.first, ta_last, wiki.revisions.length]
     #  }
-    # Now <i>r1</i> holds a table (array of arrays) with the time in the first
-    # column and the number of revisions in the wiki up to this time in the 
-    # second column.
+    # Now <i>r1</i> holds a table (array of arrays) with the time in 
+    # the first column and the number of revisions in the wiki up to 
+    # this time in the second column.
     #
-    # In <i>r2</i> the first and second column give start and end time of a two
-    # week time slice and the third column gives the number of revisions
-    # created within this timespan. The trick is here to use the enumerator
-    # package to get the right slices from timeraster.
+    # In <i>r2</i> the first and second column give start and end time 
+    # of a two week time slice and the third column gives the number of 
+    # revisions created within this timespan. The trick is here to use 
+    # the enumerator package to get the right slices from timeraster.
     def timeraster(attr={})
       attr = { 
         :step => :day,
-        :zero => :day
+        :zero => :day,
+        :range => (@timeline.first..@timeline.last)
       }.merge(attr)
       
       step = case attr[:step]
@@ -339,8 +345,9 @@ module Mediawiki
              else attr[:step]
              end
       
-      ct = @timeline.first
-      et = @timeline.last
+      range = attr[:range]
+      ct = range.first
+      et = range.last
 
       case z = attr[:zero]
       when :hour
