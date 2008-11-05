@@ -173,6 +173,8 @@ module Mediawiki
     #       _a_ to _b_.
     #   <tt>:k</tt>::
     #     exponent used for <tt>:count => :squares</tt>
+    #   all other _params_ are propagated to Dotgraph.new 
+    #
     # See Page#interlockingresponses for discussion.
     #
     # If a block is given it is passed to DotGraph::new (see there)
@@ -180,24 +182,28 @@ module Mediawiki
       filter=@filter
       counts=:add
       k = 2.0
+      paramhash = {}
       params.each do |par|
         case par
         when Filter : filter = par
         when Symbol : counts = par
         when Numeric : k = par
         when Hash
-          filter = par[:filter] || filter
-          counts = par[:counts] || counts
-          k = par[:k] || k
+          filter = par.delete(:filter) || filter
+          counts = par.delete(:counts) || counts
+          k = par.delete(:k) || k
+          paramhash = par
         else
           raise ArgumentError.new("Wrong argument: #{par.inspect}")
         end
       end
+      paramhash[:directed] = true
+
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed => true, &block)
+        g = DotGraph.new(us, paramhash, &block)
       else
-        g = DotGraph.new(us, :directed => true) { |n| n.name }
+        g = DotGraph.new(us, paramhash) { |n| n.name }
       end
       case counts
       when :add
@@ -238,6 +244,10 @@ module Mediawiki
       g
     end
 
+    # :call-seq:
+    # timedinterlockingresponsegraph(filter=@wiki.filter, params={}) { |n| ... }
+    # timedinterlockingresponsegraph(params={}) { |n| ... }
+    #
     # Luhmann communication graph. Any revision is considered as an answer
     # to the last revisions of other users before.
     #
@@ -249,16 +259,31 @@ module Mediawiki
     #   wiki.timedinterlockingresponsegraph.to_sonfile('test.son')
     #
     # _filter_:: the Filter to use.
+    # _params_:: propagated to Dotgraph.new
     #
     # See also Page#timedinterlockingresponses.
     #
     # If a block is given it is passed to DotGraph::new (see there)
-    def timedinterlockingresponsegraph(filter=@filter, &block)
+    def timedinterlockingresponsegraph(*params, &block)
+      filter=@filter
+      paramhash = {}
+      params.each do |par|
+        case par
+        when Filter : filter = par
+        when Hash
+          filter = par.delete(:filter) || filter
+          paramhash = par
+        else
+          raise ArgumentError.new("Wrong argument: #{par.inspect}")
+        end
+      end
+      paramhash[:directed] = true
+
       us = users(filter)
       if block
-        g = DotGraph.new(us, :directed => true, &block)
+        g = DotGraph.new(us, paramhash, &block)
       else
-        g = DotGraph.new(us, :directed => true) { |n| n.name }
+        g = DotGraph.new(us, paramhash) { |n| n.name }
       end
       pages(filter).each do |p| 
         p.timedinterlockingresponses(filter).each_pair do |s,dt|

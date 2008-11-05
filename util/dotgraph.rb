@@ -27,12 +27,15 @@ class DotGraph
   # boolean indicating whether this is a directed graph 
   # (currently this has to be set at graph creation time. May change later).
   attr_reader :directed
+  # indicates whether the method node_id should be used to create unique identifiers in the dot and son files (if false the node ids are created in a clouded way).
+  attr_reader :use_nid
 
   # _nodes_:: any Enumerable object giving the nodes of the graph
   # _attrs_:: 
   #   additional parameters:
-  #   <tt>:directed  => true</tt> :: the graph is directed
-  #   <tt>:linkcount => true</tt> :: the dotfile should show the link count
+  #   <tt>:directed</tt>  => _false_ :: the graph is directed
+  #   <tt>:linkcount</tt> => _true_  :: the dotfile should show the link count
+  #   <tt>:nid</tt> => _true_ :: whether the method node_id should be used to create unique identifiers in the dot and son files (if false the node ids are created in a clouded way).
   # <i>&lproc</i> :: 
   #   if a block is given it is called for each node to generate the node 
   #   labels on output. If the block returns a string it is used as the
@@ -46,6 +49,12 @@ class DotGraph
       @nodes = nodes.to_a
     end
     @links = Hash.new
+
+    if attrs.has_key?(:nid)
+      @use_nid = attrs[:nid]
+    else
+      @use_nid = true
+    end
 
     # we collect links for each node. The following two Hashes
     # will be filled with nodes as keys and sets of Links as values.
@@ -802,16 +811,16 @@ class DotGraph
     end    
   end
 
-  def DotGraph::nid(o) # :nodoc:
-    if o.respond_to?(:node_id)
+  def DotGraph::nid(o, use_nid) # :nodoc:
+    if use_nid && o.respond_to?(:node_id)
       o.node_id
     else
       "n%x" % o.object_id
     end
   end
   
-  def nid(o) # :nodoc:
-    DotGraph::nid(o)
+  def nid(o, use_nid=@use_nid) # :nodoc:
+    DotGraph::nid(o, use_nid)
   end
 
   class Link
@@ -865,8 +874,8 @@ class DotGraph
       directed ? '->' : '--'
     end
     
-    def nid(o) # :nodoc:
-      DotGraph::nid(o)
+    def nid(o, use_nid=@graph.use_nid) # :nodoc:
+      DotGraph::nid(o, use_nid)
     end
     
     def linkcount # :nodoc:

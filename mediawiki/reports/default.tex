@@ -6,13 +6,21 @@
 <% pages = @wiki.pages %>
 <% revisions = @wiki.revisions %>
 <% topdf = (ENV['RB_TOPDF'] || 'pspdf').to_sym %>
+<% sonia = @params[:sonia] %>
 \documentclass{scrartcl}
 
 \usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{german}
 \usepackage{booktabs}
 \usepackage{graphicx}
 %\usepackage{subfigure}
 \usepackage{tabularx}
+<% if sonia %>
+\usepackage{textcomp}
+\usepackage{attachfile}
+<% end %>
+
 
 \title{Mediawiki Report -- <%= wiki.to_s %>
 }
@@ -369,5 +377,15 @@ Figure~\ref{fig:page_network} shows the page network in which the nodes are page
 %%% TO DO %%%
 
 % section network_visualization (end)
+
+<% if sonia %>
+\section{SONIA Attachment}
+In dieses PDF ist ein SONIA-Sourcefile eingebettet, aus dem sich mittels der Social Network Image Animator\footnote{\url{http://www.stanford.edu/group/sonia/}} JAVA Applikation eine Animation der Zusammenarbeit der Wiki-Autoren erzeugen läßt. Leider sind nicht alle PDF-Anzeigeprogramme in der Lage, eingebettete Dateien anzuzeigen. Der aktuelle Acrobat-Reader sollte funktionieren, alternativ gibt es auch Spezialprogramme zur Extraktion eingebetteter Dateien.\footnote{siehe z.\,B. pdftosrc \textlangle\url{http://man.root.cz/1/pdftosrc/}\textrangle}
+<% wiki.timedinterlockingresponsegraph(:nid => false) { |n| '' }.to_sonfile('interlocking.son') %>
+\bigskip
+
+\textattachfile[mimetype=text/plain,subject=SONIA-File,description=Der Interlocking-Kollaborations-Graph im Zeitverlauf,color=0.7 0.3 0.3,author=Wiki Explorator]{interlocking.son}{\texttt{interlocking.son}}
+<% end %>
+
 
 \end{document}
