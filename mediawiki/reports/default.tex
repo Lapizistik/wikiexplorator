@@ -33,7 +33,7 @@
 \section{Introduction} % (fold)
 \label{sec:introduction}
 
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
+This is an automated report of your wiki. Section~\ref{sec:statistics} provides some basic statistics on the global level of the wiki (Subsection~\ref{sub:wiki_statistics}) as well as on the local level of wiki users (Subsection~\ref{sub:user_statistics}). This gives you a first and general impression of what is going on in your wiki. Section~\ref{sec:cumulative_distribution_functions} introduces a number of cumulative distribution functions. These functions allow for statements such as ``20\,\% of the users do 80\,\% of the work.'' Section~\ref{sec:revision_history} delves into the revision history of your wiki and with it takes a first look at the dynamics of your wiki. Section~\ref{sec:author_participation} continues the investigation of dynamics in terms of author participation. Section~\ref{sec:network_visualization} offers various visualizations of your wiki. In particular, it shows the hyperlink network and the coauthorship network. Finally, but only if you chose to include a SoNIA file in your report (Report + SON), Section~\ref{sec:sonia} shows the corresponding file.
 
 % section introduction (end)
 
@@ -52,7 +52,7 @@ Namespace 0).
 
 \begin{table}
   \centering
-  \caption{Wiki overview}
+  \caption{Wiki Overview}
   \begin{tabular}{>{\bfseries}lrrrrr}\toprule
     &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min}
     &\textbf{max}\\
@@ -116,10 +116,10 @@ wiki.userstats.sort_by { |u,| u.name }.collect { |u,values|
 
 % section statistics (end)
 
-%%% Cummulative Distribution Functions: Lorenz, Gini, Pareto %%%
+%%% Cumulative Distribution Functions: Lorenz, Gini, Pareto %%%
 
-\section{Cummulative Distribution Functions} % (fold)
-\label{sec:cummulative_distribution_functions}
+\section{Cumulative Distribution Functions} % (fold)
+\label{sec:cumulative_distribution_functions}
 
 % Authors vs. Revisions
 <%
@@ -149,13 +149,13 @@ pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revi
     Authors vs. Pages &
     Revisions vs. Pages
   \end{tabular}
-  \caption{Cummulative Distribution Functions}
-  \label{fig:cummulative_distribution_functions}
+  \caption{Cumulative Distribution Functions}
+  \label{fig:cumulative_distribution_functions}
 \end{figure}
 
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
+Figure~\ref{fig:cumulative_distribution_functions} shows three cumulative distribution functions (a.\,k.\,a. Lorenz curves), one for each combination of authors, pages, and revisions. For example, plotting authors versus revisions allows for statements such as ``80\,\% of all revisions are made by 20\,\% of the authors.'' This ``80-20 rule'' or, as it is more commonly known, the \emph{Pareto principle} states that, for many events, roughly 80\,\% of the effects come from 20\,\% of the causes (e.\,g., 80\,\% of a nation's wealth is held by 20\,\% of its citizens). A distribution far less then the \emph{Pareto principle} suggests that your wiki is driven by very few people. In all likelihood, this may be an undesirable state, although the overall number of authors puts this finding into perspective. In the German Wikipedia, for example, approximately 80\,\% of the revisions are made by 2\,\% (!) of the 132,238 authors.
 
-% section cummulative_distribution_functions (end)
+% section cumulative_distribution_functions (end)
 
 %%% Set Filter and Time Raster %%%
 <%
@@ -189,15 +189,13 @@ Gnuplot.new do |gp|
 end
 %>
 
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
-
 %%% Set Filter and Time Raster %%%
 <%
 filter = wiki.filter.clone # clone filter
 raster = wiki.timeraster(:zero => :week, :step => :week) # set time raster to weekly spells
 %>
 
-% Cummulative Revisions per Week (CRPW)
+% Cumulative Revisions per Week (CRPW)
 <% 
 crpw = raster[1..-2].collect { |e| filter.endtime = e 
 	[ e, wiki.revisions(filter).length ]
@@ -211,9 +209,9 @@ Gnuplot.new do |gp|
 		:title => 'revisions')
 	gp.set('nokey')
 	gp.set('xtics rotate')
-	gp.set('title "Cummulative Revisions per Week"')
+	gp.set('title "Cumulative Revisions per Week"')
 	gp.set('xlabel "month"')
-	gp.set('ylabel "cummulative number of revisions"')
+	gp.set('ylabel "cumulative number of revisions"')
 	gp.plot(topdf => 'crpw.pdf')
 end
 %>
@@ -225,11 +223,11 @@ end
         \vfill
 
 	\includegraphics[width=0.95\textwidth]{crpw}
-	\caption{Cummulative Revisions per Week}
-	\label{fig:cummulative_revisions_per_week}
+	\caption{Cumulative Revisions per Week}
+	\label{fig:cumulative_revisions_per_week}
 \end{figure}
 
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
+Figures~\ref{fig:revisions_per_week} and \ref{fig:cumulative_revisions_per_week} show the absolute and cumulative number of revisions per week. On the one hand, this gives a first impression of the work that is being done in your wiki on a week to week basis, while this impression translates to the growth of the wiki, on the other hand. Note that the number of revisions does not necessarily point to work in terms of content, that is, content may easily come about few revisions. However, many revisions generally account for an active use of the wiki so that its content is up to date. In both figures, you should be able to identify holidays (Christmas, summer vacation, etc.) when the number of revisions is presumably low. If you ever tried to ``kick off'' or ``jump start'' your wiki, you should also be able to identify these events in the face of rather high numbers of revisions.
 
 % section revision_history (end)
 
@@ -382,7 +380,7 @@ Figure~\ref{fig:page_network} shows the page network in which the nodes are page
 
 \section{SoNIA} % (fold)
 \label{sec:sonia}
-This report contains an embedded source file for later use with Stanford's Social Network Image Animator\footnote{\url{http://www.stanford.edu/group/sonia/}} otherwise known as SoNIA. Unfortunately, not all PDF readers are capable of displaying embedded files. The latest version of Acrobat Reader, however, works just fine. Alternatively, you may extract the source file with applications such as \emph{pdftosrc}\footnote{\url{http://man.root.cz/1/pdftosrc/}.
+This report contains an embedded source file for later use with Stanford's Social Network Image Animator\footnote{\url{http://www.stanford.edu/group/sonia/}} (SoNIA). Unfortunately, not all PDF readers are capable of displaying embedded files. The latest version of Acrobat Reader, however, works just fine. Alternatively, you may extract the source file with applications such as \emph{pdftosrc}\footnote{\url{http://man.root.cz/1/pdftosrc/}.
 
 % In dieses PDF ist ein SONIA-Sourcefile eingebettet, aus dem sich mittels der Social Network Image Animator\footnote{\url{http://www.stanford.edu/group/sonia/}} JAVA Applikation eine Animation der Zusammenarbeit der Wiki-Autoren erzeugen läßt. Leider sind nicht alle PDF-Anzeigeprogramme in der Lage, eingebettete Dateien anzuzeigen. Der aktuelle Acrobat-Reader sollte funktionieren, alternativ gibt es auch Spezialprogramme zur Extraktion eingebetteter Dateien.\footnote{siehe z.\,B. pdftosrc \textlangle\url{http://man.root.cz/1/pdftosrc/}\textrangle}
 <% wiki.timedinterlockingresponsegraph(:nid => false) { |n| '' }.to_sonfile('interlocking.son') %>
