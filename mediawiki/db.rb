@@ -44,6 +44,7 @@
 
 require 'set'
 require 'dbi'      # generic database engine
+require 'mediawiki/dbfields'
 
 # Asks for user input with echo off at console
 def IO.getpw(question="Password: ")
@@ -98,42 +99,32 @@ module Mediawiki
                    else
                      'user'
                    end,
-                   %w{user_id user_name user_real_name user_email 
-                      user_options user_touched user_email_authenticated 
-                      user_email_token_expires user_registration 
-                      user_newpass_time user_editcount}, 
+                   FIELDS_USER, 
                    &block)
       end
       
       def usergroups(&block)
-        select_all('user_groups', %w{ug_user ug_group}, &block)
+        select_all('user_groups', FIELDS_USER_GROUPS, &block)
       end
       
       def texts(&block)
-        select_all('text', %w{old_id old_text old_flags}, &block)
+        select_all('text', FIELDS_TEXT, &block)
       end
       
       def pages(&block)
-        select_all('page', 
-                   %w{page_id page_namespace page_title page_restrictions 
-                      page_counter page_is_redirect page_is_new page_random 
-                      page_touched page_latest page_len}, 
-                   &block)
+        select_all('page', FIELDS_PAGE, &block)
       end
       
       def revisions(&block)
-        select_all('revision', 
-                   %w{rev_id rev_page rev_text_id rev_comment rev_user 
-                      rev_user_text rev_timestamp rev_minor_edit rev_deleted},
-                   &block)
+        select_all('revision', FIELDS_REVISION, &block)
       end
       
       def genres(&block) 
-        select_all('wio_genres', %w{page_id genres}, &block)
+        select_all('wio_genres', FIELDS_GENRES, &block)
       end
       
       def roles(&block) 
-        select_all('wio_roles', %w{user_id roles}, &block)
+        select_all('wio_roles', FIELDS_ROLES, &block)
       end
             
       # Select a set of columns from table _table_. 

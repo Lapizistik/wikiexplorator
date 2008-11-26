@@ -12,6 +12,9 @@ require 'set'         # the Set class
 try_to_require('mediawiki/db', 
                'Loading Wikis from database will fail.',
                'Marshal or YAML files will still work.')
+try_to_require('mediawiki/db_libxml', 
+               'Loading Wikis from XML will fail.',
+               'Marshal or YAML files will still work.')
 require 'parsedate'
 require 'yaml'
 require 'singleton'
@@ -143,6 +146,18 @@ module Mediawiki
     #     owner.
     def Wiki.open(db, host, user, pw, options={})
       Wiki.new(DB.new(db, host, user, pw, options), options)
+    end
+
+    # Creates a new Wiki object from an XML-Dump of a MySQL database.
+    # _filename_ :: filename of the XML file.
+    # _options_ :: a hash with further options.
+    #              See Wiki.open for a description.
+    # The MySQL XML-Dump can be created using
+    #
+    # <tt>mysqldump -p --xml</tt> _dbname_ <tt>user user_groups page revision text ></tt> _xmlfilename_
+    #
+    def Wiki.open_XML(filename, options={})
+      Wiki.new(DB_libXML.open(filename), options)
     end
 
     # Loads a Wiki from a YAML file created by Wiki#yaml_save.
