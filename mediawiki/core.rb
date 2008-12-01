@@ -807,7 +807,7 @@ module Mediawiki
     end
 
     # links of current revision
-    def links(filter=@filter)
+    def links(filter=@wiki.filter)
       if r=revision(filter)
         r.links(filter)
       else
