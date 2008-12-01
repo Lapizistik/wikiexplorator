@@ -160,6 +160,18 @@ module Mediawiki
       Wiki.new(DB_libXML.open(filename), options)
     end
 
+    # Creates a new Wiki object from an XML-Dump of a MySQL database.
+    # _xml_ :: String with the XML text.
+    # _options_ :: a hash with further options.
+    #              See Wiki.open for a description.
+    # The MySQL XML-Dump can be created using
+    #
+    # <tt>mysqldump -p --xml</tt> _dbname_ <tt>user user_groups page revision text ></tt> _xmlfilename_
+    #
+    def Wiki.open_XML_String(xml, options={})
+      Wiki.new(DB_libXML.parse(xml), options)
+    end
+
     # Loads a Wiki from a YAML file created by Wiki#yaml_save.
     def Wiki.yaml_load(filename)
       puts 'YAML load...'
