@@ -165,7 +165,7 @@ module Mediawiki
       def initialize(wiki, params={})
         super(wiki, params)
         @basedir = @params[:basedir] || Dir.tmpdir
-        @filename = @params[:filename] || ('default.' + @type)
+        @filename = @params[:filename] || ('default.' + @type.to_s)
         mode = @params[:mode] || 0700
         mode = mode.oct if mode.kind_of?(String)
         if @outputdir = @params[:outputdir]
@@ -294,7 +294,7 @@ module Mediawiki
       options.each do |par|
         case par
         when Symbol : type = par
-        when Hash   : params = par; type = params[:type]
+        when Hash   : params.merge!(par); type ||= params[:type]
         when Filter : params[:filter] = par
         else
           raise ArgumentError.new("Wrong argument: #{par.inspect}")
