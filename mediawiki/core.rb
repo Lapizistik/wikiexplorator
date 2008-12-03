@@ -1001,9 +1001,10 @@ module Mediawiki
     end
 
     # Size of the Text object associated with this Revision object. 
+    # Returns 0 if no Text object (should not happen).
     # Don't confuse this with #len.
     def size
-      @text.size
+      @text ? @text.size : 0
     end
 
     alias length size

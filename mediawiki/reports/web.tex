@@ -1,12 +1,123 @@
 <%# some convenience definitions %>
-<%# wiki = @wiki %>
-<% full = wiki.filter.clone; full.include_all_namespaces %>
-<% wiki.filter.namespace=0 %>
-<% users = @wiki.users %>
-<% pages = @wiki.pages %>
-<% revisions = @wiki.revisions %>
 <% topdf = (ENV['RB_TOPDF'] || 'pspdf').to_sym %>
 <% sonia = @params[:sonia] %>
+<%
+# As we do not want to run TeX more than one time we predefine \ref: 
+ref = {
+    'sec:statistics' => "#{count = 1}",
+    'sub:wiki_statistics' => "#{count}.1",
+    'sub:user_statistics' => "#{count}.2",
+    'sec:cumulative_distribution_functions' => "#{count += 1}",
+    'sec:revision_history' => "#{count += 1}",
+    'sec:author_participation' => "#{count += 1}",
+    'sec:network_visualization' => "#{count += 1}",
+    'sec:sonia' => "#{count += 1}",
+    'fig:cumulative_distribution_functions' => "#{count = 1}",
+    'fig:revisions_per_week' => "#{count += 1}",
+    'fig:cumulative_revisions_per_week' => "#{count += 1}",
+    'fig:number_of_links' => "#{count += 1}",
+    'fig:amount_of_text' =>  "#{count += 1}",
+    'fig:author_participation' => "#{count += 1}",
+    'fig:relative_author_participation' => "#{count += 1}",
+    'fig:coauthorship_network' => "#{count += 1}",
+    'fig:page_network' => "#{count += 1}"
+  }
+%>
+
+
+<%
+# Gnuplot of timeline data
+def gp_time(file, title, ylabel, *data)
+  topdf = (ENV['RB_TOPDF'] || 'pspdf').to_sym
+  Gnuplot.new do |gp|
+    gp.set('xdata', 'time')
+    gp.set('timefmt', '%Y-%m-%d', true)
+    gp.set('format x', '%b %y', true)
+    data.each_slice(2) do |array, label|
+      gp.add(array, :timefmt => '%Y-%m-%d',
+             :with => 'lines', 
+             :title => label )
+    end
+    gp.set('xtics rotate')
+    gp.set("title \"#{title}\"")
+#    gp.set('xlabel "month"')
+    gp.set("ylabel \"#{ylabel}\"")
+    gp.plot(topdf => file)
+  end
+end
+%>
+
+
+
+<%
+wiki = @wiki
+full = wiki.filter.clone; full.include_all_namespaces
+# Set Filter and Time Raster
+filter = full.clone # clone filter
+filter0 = full.clone
+filter0.namespace = 0
+sfilter = filter.clone
+sfilter0 = filter0.clone
+
+allpages = wiki.pages(full).to_a
+allpages0 = wiki.pages(filter0).to_a
+
+users = wiki.users.to_a
+revisions = wiki.revisions(full).to_a
+revisions0 = wiki.revisions(filter0).to_a
+
+
+# set time raster to weekly spells
+raster = wiki.timeraster(:zero => :week, :step => :week) 
+
+# events
+events = users.collect{ |u| 
+	[ u.time_of_first_event, u.time_of_last_event ] 
+    }.select { |f,l| f && l }
+
+
+#crpw = raster[1..-2].collect { |e| filter.endtime = e 
+#  [ e, wiki.revisions(filter).length ]
+#}
+
+aupart = []
+aurel = []
+rpw = []
+lpw = []
+tpw = []
+rpw0 = []
+lpw0 = []
+tpw0 = []
+raster[1..-2].each_cons(2) { |s,e| 
+  filter.revision_timespan = (s..e)
+  filter0.revision_timespan = (s..e)
+  sfilter.endtime = e
+  sfilter0.endtime = e
+  pages = wiki.pages(sfilter).to_a # should be faster
+  pages0 = wiki.pages(sfilter0).to_a # should be faster
+  rpw << [ e, wiki.revisions(filter).length ]
+  rpw0 << [ e, wiki.revisions(filter0).length ]
+  nodesl = wiki.coauthorgraph(filter).remove_lonely_nodes.nodes.length.to_f
+  aupart << [ e, nodesl ]
+  # The following could be done more efficiently:
+  aurel << [ e, nodesl / 
+                events.reject { |f,l| (f > e) || (l < s) }.length ]
+  lpw << [e, allpages.inject(0) { |s,p| s+p.links(sfilter).length } ]
+  lpw0 << [e, allpages0.inject(0) { |s,p| s+p.links(sfilter0).length } ]
+  tpw << [e, pages.inject(0) { |s,p| 
+            (r=p.revision(sfilter)) ? s + r.size : s }]
+  tpw0 << [e, pages0.inject(0) { |s,p| 
+             (r=p.revision(sfilter0)) ? s + r.size : s }]
+}
+
+s = 0; crpw = rpw.collect { |e,i| [e,s+=i] }
+s = 0; clpw = lpw.collect { |e,i| [e,s+=i] }
+s = 0; crpw0 = rpw0.collect { |e,i| [e,s+=i] }
+s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
+
+%>
+
+
 \documentclass{scrartcl}
 
 \usepackage[T1]{fontenc}
@@ -21,30 +132,6 @@
 \usepackage{attachfile}
 <% end %>
 
-<%# As we do not want to run TeX more than one time we predefine \ref: %>
-<%
-ref = {
-  'sec:statistics' => "#{count = 1}",
-  'sub:wiki_statistics' => "#{count}.1",
-  'sub:user_statistics' => "#{count}.2",
-  'sec:cumulative_distribution_functions' => "#{count += 1}",
-  'sec:revision_history' => "#{count += 1}",
-  'sec:author_participation' => "#{count += 1}",
-  'sec:network_visualization' => "#{count += 1}",
-  'sec:sonia' => "#{count += 1}",
-  'fig:cumulative_distribution_functions' => "#{count = 1}",
-  'fig:revisions_per_week' => "#{count += 1}",
-  'fig:cumulative_revisions_per_week' => "#{count += 1}",
-  'fig:links_per_week' => "#{count += 1}",
-  'fig:cumulative_links_per_week' => "#{count += 1}",
-  'fig:author_participation' => "#{count += 1}",
-  'fig:relative_author_participation' => "#{count += 1}",
-  'fig:coauthorship_network' => "#{count += 1}",
-  'fig:page_network' => "#{count += 1}"
-}
-%>
-
-
 \title{Mediawiki Report -- <%= wiki.to_s %>
 }
 \author{mediawikiparser (<\texttt{klaus.stein@uni-bamberg.de}>)}
@@ -56,17 +143,39 @@ ref = {
 \section{Introduction} % (fold)
 \label{sec:introduction}
 
-This is an automated report of your wiki. Section~<%=ref['sec:statistics']%> provides some basic statistics on the global level of the wiki (Subsection~<%=ref['sub:wiki_statistics']%>) as well as on the local level of wiki users (Subsection~<%=ref['sub:user_statistics']%>). This gives you a first and general impression of what is going on in your wiki. Section~<%=ref['sec:cumulative_distribution_functions']%> introduces a number of cumulative distribution functions. These functions allow for statements such as ``20\,\% of the users do 80\,\% of the work.'' Section~<%=ref['sec:revision_history']%> delves into the revision history of your wiki and with it takes a first look at the dynamics of your wiki. Section~<%=ref['sec:author_participation']%> continues the investigation of dynamics in terms of author participation. Section~<%=ref['sec:network_visualization']%> offers various visualizations of your wiki. In particular, it shows the hyperlink network and the coauthorship network. Finally, Section~<%=ref['sec:sonia']%> shows the corresponding file.
+This is an automated report of your wiki. 
+Section~<%=ref['sec:statistics']%> 
+provides some basic statistics on the global level of the wiki 
+(Subsection~<%=ref['sub:wiki_statistics']%>)
+as well as on the local level of wiki users 
+(Subsection~<%=ref['sub:user_statistics']%>).
+This gives you a first and general impression of what is 
+going on in your wiki. 
+Section~<%=ref['sec:cumulative_distribution_functions']%> 
+introduces a number of cumulative distribution functions. 
+These functions allow for statements such as ``20\,\% of 
+the users do 80\,\% of the work.'' 
+Section~<%=ref['sec:revision_history']%> 
+delves into the revision history of your wiki and with it takes a 
+first look at the dynamics of your wiki. 
+Section~<%=ref['sec:author_participation']%> continues the 
+investigation of dynamics in terms of author participation. 
+Section~<%=ref['sec:network_visualization']%> 
+offers various visualizations of your wiki. In particular, it shows 
+the hyperlink network and the coauthorship network. Finally, 
+Section~<%=ref['sec:sonia']%> 
+shows the corresponding file.
 
 % section introduction (end)
 
 \section{Statistics} % (fold)
 \label{sec:statistics}
 
-We have <%=@wiki.pages(full).length%> pages with 
-<%=@wiki.revisions(full).length%>  revisions from <%=users.length%> 
-users (<%=pages.length%> pages with <%=revisions.length%> revisions in 
-Namespace 0).
+We have <%=allpages.length%> pages with 
+<%=revisions0.length%>  revisions from <%=users.length%> 
+users (<%=allpages0.length%> pages with 
+<%=revisions.length %> 
+revisions in Namespace 0).
 
 \fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
 
@@ -102,36 +211,42 @@ wiki.global_userstats.collect { |a|
 
 <%
 destlinks = Hash.new(0)
-pages.each { |p| p.links.each { |q| destlinks[q] += 1 } }
-pagelist = pages.collect { |p| 
-  [p.title, 
+allpages.each { |p| p.links.each { |q| destlinks[q] += 1 } }
+n=7
+pagelist = allpages.collect { |p| 
+  r = p.revision
+  ns = p.namespace
+  [(ns == 0) ? p.title : p.title + "~(#{ns})",
    p.users.length, p.revisions.length,
-   p.links.length, destlinks[p]] }
-p_hubs   = pagelist.sort_by { |t,u,r,s,d| -s }[0..9]
-p_dests  = pagelist.sort_by { |t,u,r,s,d| -d }[0..9]
-p_revs   = pagelist.sort_by { |t,u,r,s,d| -r }[0..9]
-p_users  = pagelist.sort_by { |t,u,r,s,d| -u }[0..9]
+   p.links.length, destlinks[p], r ? r.length : 0] }
+p_hubs   = pagelist.sort_by { |t,u,r,s,d,l| -s }[0...n]
+p_dests  = pagelist.sort_by { |t,u,r,s,d,l| -d }[0...n]
+p_revs   = pagelist.sort_by { |t,u,r,s,d,l| -r }[0...n]
+p_users  = pagelist.sort_by { |t,u,r,s,d,l| -u }[0...n]
+p_size   = pagelist.sort_by { |t,u,r,s,d,l| -l }[0...n]
 
 def p_table(array, txt)
   "\\midrule
-\\textit{#{txt}}&&&&\\\\
+\\textit{#{txt}}&&&&&\\\\
 \\midrule
 #{array.collect { |a|
-  '%s & %i & %i & %i & %i' % a
+  '%s & %i & %i & %i & %i & %i' % a
 }.join('\\\\')}"
 end
 %>
 
 \begin{table}
   \centering\small 
-  \caption{Top Ten Wiki Pages}
-  \begin{tabularx}{\linewidth}{Xrrrr}\toprule
-    \textbf{title} &\textbf{\#users} &\textbf{\#edits} 
-    &\textbf{\#$\rightarrow$links} &\textbf{\#$\leftarrow$links}\\
+  \caption{Top Seven Wiki Pages}
+  \begin{tabularx}{\linewidth}{Xrrrrrr}\toprule
+    \textbf{title} & \textbf{\#users} &\textbf{\#edits} 
+    &\textbf{\#$\rightarrow$links} &\textbf{\#$\leftarrow$links}
+    &\textbf{size}\\
     <%=p_table(p_revs, 'by edits') %>\\
     <%=p_table(p_users, 'by users') %>\\
     <%=p_table(p_hubs, 'by outgoing links') %>\\
-    <%=p_table(p_dests, 'by incoming links') %>\\\bottomrule
+    <%=p_table(p_dests, 'by incoming links') %>\\
+    <%=p_table(p_size, 'by text size') %>\\\bottomrule
   \end{tabularx}
 \end{table}
 
@@ -147,14 +262,15 @@ end
 
 \begin{table}
   \centering
-  \caption{User overview}
-  \begin{tabular}{>{\bfseries}rrrrr}\toprule
+  \caption{User overview (top 20)}
+
+  \begin{tabular}{rrrrr}\toprule
     \textbf{\#edits} & \textbf{\#pages} &
     \textbf{edits/page} & \textbf{\#self edits} & \textbf{\#foreign
   edits}\\
 \midrule
 <%= 
-wiki.userstats.sort_by { |u,v| -v.first }[0..20].collect { |u,values| 
+wiki.userstats.sort_by { |u,v| -v.first }[0...20].collect { |u,values| 
   (values[0..4].collect { |v|
      if v.kind_of?(String)
        v
@@ -197,7 +313,7 @@ up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pa
 
 % Revisions vs. Pages
 <%
-pr = pages.collect { |p| p.revisions.length }
+pr = allpages.collect { |p| p.revisions.length }
 pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", topdf => 'cdfpr.pdf')
 %>
 
@@ -219,81 +335,16 @@ Figure~<%=ref['fig:cumulative_distribution_functions']%> shows three cumulative 
 
 % section cumulative_distribution_functions (end)
 
-%%% Set Filter and Time Raster %%%
-<%
-filter = wiki.filter.clone # clone filter
-raster = wiki.timeraster(:zero => :week, :step => :week) # set time raster to weekly spells
-
-# events
-events = wiki.users.collect{ |u| 
-	[ u.time_of_first_event, u.time_of_last_event ] 
-    }.select { |f,l| f && l }
-
-
-#crpw = raster[1..-2].collect { |e| filter.endtime = e 
-#  [ e, wiki.revisions(filter).length ]
-#}
-
-rpw = []
-aupart = []
-aurel = []
-lpw = []
-raster[1..-2].each_cons(2) { |s,e| 
-  filter.revision_timespan = (s..e)
-  rpw << [ e, wiki.revisions(filter).length ] # >>
-  nodesl = wiki.coauthorgraph(filter).remove_lonely_nodes.nodes.length.to_f
-  aupart << [ e, nodesl ] # >>
-  # The following could be done more efficiently:
-  aurel << [ e, nodesl / 
-                events.reject { |f,l| (f > e) || (l < s) }.length ] #>>
-  lpw << [e, pages.inject(0) { |s,p| s+p.links(filter).length } ] #>>
-}
-
-s = 0
-crpw = rpw.collect { |e,i| [e,s+=i] }
-clpw = lpw.collect { |e,i| [e,s+=i] }
-
-%>
 
 \section{Revision History} % (fold)
 \label{sec:revision_history}
 
-% Revisions per Week (RPW)
 <% 
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(rpw, :timefmt => '%Y-%m-%d',
-		:with => 'lines', 
-		:title => 'revisions' )
-	gp.set('xtics rotate')
-	gp.set('title "Revisions per Week"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "number of revisions"')
-#	gp.fit(:title => 'trend')
-#	gp.plot(:svg => 'rpw.svg')
-	gp.plot(topdf => 'rpw.pdf')
-end
-%>
-
-% Cumulative Revisions per Week (CRPW)
-
-<%
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(crpw, :timefmt => '%Y-%m-%d', 
-		:with => 'linespoints', 
-		:title => 'revisions')
-	gp.set('nokey')
-	gp.set('xtics rotate')
-	gp.set('title "Cumulative Revisions per Week"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "cumulative number of revisions"')
-	gp.plot(topdf => 'crpw.pdf')
-end
+gp_time('rpw.pdf', 'Revisions per Week', 'number of revisions', 
+        rpw, 'all', rpw0, 'namespace 0')
+gp_time('crpw.pdf', 'Cumulative Revisions per Week', 
+        'cumulative number of revisions',
+        crpw, 'all', crpw0, 'namespace 0')
 %>
 \begin{figure}
 	\centering
@@ -307,53 +358,26 @@ end
 	\label{fig:cumulative_revisions_per_week}
 \end{figure}
 
-% Links per Week (LPW)
 <% 
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(lpw, :timefmt => '%Y-%m-%d',
-		:with => 'lines', 
-		:title => 'links' )
-	gp.set('xtics rotate')
-	gp.set('title "Links per Week"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "number of links"')
-#	gp.fit(:title => 'trend')
-#	gp.plot(:svg => 'rpw.svg')
-	gp.plot(topdf => 'lpw.pdf')
-end
-%>
-
-% Cumulative Links per Week (CLPW)
-
-<%
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(clpw, :timefmt => '%Y-%m-%d', 
-		:with => 'linespoints', 
-		:title => 'links')
-	gp.set('nokey')
-	gp.set('xtics rotate')
-	gp.set('title "Cumulative Links per Week"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "cumulative number of links"')
-	gp.plot(topdf => 'clpw.pdf')
-end
+gp_time('lpw.pdf', 'Number of Links', 'number of links', 
+        lpw, 'all', lpw0, 'namespace 0')
 %>
 \begin{figure}
 	\centering
 	\includegraphics[width=0.95\textwidth]{lpw}
-	\caption{Links per Week}
-	\label{fig:links_per_week}
-        \vfill
+	\caption{Number of Links}
+	\label{fig:number_of_links}
+\end{figure}
 
-	\includegraphics[width=0.95\textwidth]{clpw}
-	\caption{Cumulative Links per Week}
-	\label{fig:cumulative_links_per_week}
+<% 
+gp_time('tpw.pdf', 'Amount of Text', 'text (in bytes)', 
+        tpw, 'all', tpw0, 'namespace 0')
+%>
+\begin{figure}
+	\centering
+	\includegraphics[width=0.95\textwidth]{tpw}
+	\caption{Amount of Text (in Bytes)}
+	\label{fig:amount_of_text}
 \end{figure}
 
 
@@ -367,56 +391,30 @@ Figures~<%=ref['fig:revisions_per_week']%> and <%=ref['fig:cumulative_revisions_
 
 % Author Participation per Week
 <%
-# Gnuplot
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(aupart, :timefmt => '%Y-%m-%d',
-		:with => 'lines',
-		:title => 'authors')
-	gp.set('nokey')
-	gp.set('xtics rotate')
-	gp.set('title "Author Participation"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "number of authors"')
-#	gp.fit(:title => 'trend')
-	gp.plot(topdf => 'author_participation.pdf')
-end
+gp_time('author_participation.pdf', 
+        'Author Participation', 'number of authors', 
+        aupart, 'authors')
 %>
 
 Figure~<%=ref['fig:author_participation']%> shows the number of authors who edited at least one document at any given week. While the absolute numbers are likely to fluctuate, the trend line gives an idea of just how many authors participate in the wiki.
 
 % Relative Author Participation per Week
 <%
-# Gnuplot
-Gnuplot.new do |gp|
-	gp.set('xdata', 'time')
-	gp.set('timefmt', '%Y-%m-%d', true)
-	gp.set('format x', '%b %y', true)
-	gp.add(aurel, :timefmt => '%Y-%m-%d',
-		:with => 'lines',
-		:title => 'authors')
-	gp.set('nokey')
-	gp.set('xtics rotate')
-	gp.set('title "Relative Author Participation"')
-	gp.set('xlabel "month"')
-	gp.set('ylabel "percentage of authors"')
-#	gp.fit(:title => 'trend')
-	gp.plot(topdf => 'relative_author_participation.pdf', :size => '640,480')
-end
+gp_time('relative_author_participation.pdf', 
+        'Relative Author Participation', 
+        'percentage of authors', 
+        aurel, '% of authors')
 %>
 
 \begin{figure}[htbp]
-  \parbox[t]{0.48\textwidth}{        
-    \includegraphics[width=\linewidth]{author_participation}
-    \caption{Author Participation}
-    \label{fig:author_participation}}
-  \hfill
-  \parbox[t]{0.48\textwidth}{        
-    \includegraphics[width=\linewidth]{relative_author_participation}
-    \caption{Relative Author Participation}
-    \label{fig:relative_author_participation}}
+  \includegraphics[width=0.95\linewidth]{author_participation}
+  \caption{Author Participation}
+  \label{fig:author_participation}
+  \vfill
+
+  \includegraphics[width=0.95\linewidth]{relative_author_participation}
+  \caption{Relative Author Participation}
+  \label{fig:relative_author_participation}
 \end{figure}
 
 Figure~<%=ref['fig:relative_author_participation']%> shows the percentage of authors who edit at least one document at any given week. For example, a value of 50\,\% indicates that half of all active authors participate in the wiki. Note that we define an author as active for the time between his first and his last edit. Therefore, and in contrast to Figure~<%=ref['fig:author_participation']%>, relative author participation adjusts for growth of the wiki in question. Again, while the absolute percentages are likely to fluctuate, the trend line gives an idea of just the percentage of authors who participate in the wiki.
