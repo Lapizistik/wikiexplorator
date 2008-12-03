@@ -1,29 +1,32 @@
 <%# some convenience definitions %>
 <% topdf = (ENV['RB_TOPDF'] || 'pspdf').to_sym %>
 <% sonia = @params[:sonia] %>
+
 <%
-# As we do not want to run TeX more than one time we predefine \ref: 
+# We do not want to run TeX more than once, therefore we define \ref:
 ref = {
     'sec:statistics' => "#{count = 1}",
-    'sub:wiki_statistics' => "#{count}.1",
-    'sub:user_statistics' => "#{count}.2",
+    'sub:user_statistics' => "#{count}.1",
+    'sub:page_statistics' => "#{count}.2",
     'sec:cumulative_distribution_functions' => "#{count += 1}",
     'sec:revision_history' => "#{count += 1}",
     'sec:author_participation' => "#{count += 1}",
     'sec:network_visualization' => "#{count += 1}",
     'sec:sonia' => "#{count += 1}",
     'fig:cumulative_distribution_functions' => "#{count = 1}",
-    'fig:revisions_per_week' => "#{count += 1}",
-    'fig:cumulative_revisions_per_week' => "#{count += 1}",
+    'fig:revisions_per_month' => "#{count += 1}",
+    'fig:cumulative_revisions_per_month' => "#{count += 1}",
     'fig:number_of_links' => "#{count += 1}",
     'fig:amount_of_text' =>  "#{count += 1}",
     'fig:author_participation' => "#{count += 1}",
     'fig:relative_author_participation' => "#{count += 1}",
     'fig:coauthorship_network' => "#{count += 1}",
-    'fig:page_network' => "#{count += 1}"
+    'fig:page_network' => "#{count += 1}",
+		'tab:global_user_statistics' => "#{count = 1}",
+		'tab:top-20-users' => "#{count += 1}",
+		'tab:top-5-pages' => "#{count += 1}"
   }
 %>
-
 
 <%
 # Gnuplot of timeline data
@@ -39,15 +42,13 @@ def gp_time(file, title, ylabel, *data)
              :title => label )
     end
     gp.set('xtics rotate')
-    gp.set("title \"#{title}\"")
+#    gp.set("title \"#{title}\"")
 #    gp.set('xlabel "month"')
     gp.set("ylabel \"#{ylabel}\"")
     gp.plot(topdf => file)
   end
 end
 %>
-
-
 
 <%
 wiki = @wiki
@@ -66,15 +67,13 @@ users = wiki.users.to_a
 revisions = wiki.revisions(full).to_a
 revisions0 = wiki.revisions(filter0).to_a
 
-
-# set time raster to weekly spells
-raster = wiki.timeraster(:zero => :week, :step => :week) 
+# set time raster to spells of 4 weeks
+raster = wiki.timeraster(:zero => :week, :step => 28*24*3600) 
 
 # events
 events = users.collect{ |u| 
 	[ u.time_of_first_event, u.time_of_last_event ] 
     }.select { |f,l| f && l }
-
 
 #crpw = raster[1..-2].collect { |e| filter.endtime = e 
 #  [ e, wiki.revisions(filter).length ]
@@ -162,7 +161,7 @@ Section~<%=ref['sec:author_participation']%> continues the
 investigation of dynamics in terms of author participation. 
 Section~<%=ref['sec:network_visualization']%> 
 offers various visualizations of your wiki. In particular, it shows 
-the hyperlink network and the coauthorship network. Finally, 
+the hyperlink network and the co-authorship network. Finally, 
 Section~<%=ref['sec:sonia']%> 
 shows the corresponding file.
 
@@ -177,17 +176,19 @@ users (<%=allpages0.length%> pages with
 <%=revisions.length %> 
 revisions in Namespace 0).
 
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
+\subsection{User Statistics} % (fold)
+\label{sub:user_statistics}
 
-\subsection{Wiki Statistics} % (fold)
-\label{sub:wiki_statistics}
+Table~<%=ref['tab:page_statistics']%> 
+shows the global user statistics. Most of these aggregated statistics are self-explanatory. For example, the mean number of edits points out how many edits, on average, a single user makes. The standard deviation (s.\,d.), median, minimum (min.), and maximum (max.) are likewise statistics for the number of edits, edited pages, edits per page. The statistics for self-edits and foreign-edits, however, require some explanation. Self-edits are two consecutive edits by one and the same user on a single page. Therefore, they indicate phenomena such as page savings and uninterrupted work on a page. In contrast, foreign-edits are two consecutive edits by two different users on a single page. These, then, indicate collaboration on a page. Last but not least, category-edits and image-edits pertain to the number of edits that add a category or an image to a page.
 
-\begin{table}
+\begin{table}[htbp]
   \centering
-  \caption{Wiki Overview}
+  \caption{Global User Statistics}
+	\label{tab:global_user_statistics}
   \begin{tabular}{>{\bfseries}lrrrrr}\toprule
-    &\textbf{avg} &\textbf{stddev} &\textbf{med} &\textbf{min}
-    &\textbf{max}\\
+    &\textbf{mean} &\textbf{s.\,d.} &\textbf{median} &\textbf{min.}
+    &\textbf{max.}\\
     \midrule
 <%=
 wiki.global_userstats.collect { |a|
@@ -208,62 +209,13 @@ wiki.global_userstats.collect { |a|
   \end{tabular}
 \end{table}
 
+Table~<%=ref['tab:top-20-users']%> 
+shows the top 20 users ranked by their number of edits. In addition, the number of edited pages, edits per page, self-edits, and foreign-edits are given. In general, users with many edits are likely to edits many pages, too. This is ever the more true for many foreign-edits, that is, collaboration is more likely to spread across many pages.
 
-<%
-destlinks = Hash.new(0)
-allpages.each { |p| p.links.each { |q| destlinks[q] += 1 } }
-n=7
-pagelist = allpages.collect { |p| 
-  r = p.revision
-  ns = p.namespace
-  [(ns == 0) ? p.title : p.title + "~(#{ns})",
-   p.users.length, p.revisions.length,
-   p.links.length, destlinks[p], r ? r.length : 0] }
-p_hubs   = pagelist.sort_by { |t,u,r,s,d,l| -s }[0...n]
-p_dests  = pagelist.sort_by { |t,u,r,s,d,l| -d }[0...n]
-p_revs   = pagelist.sort_by { |t,u,r,s,d,l| -r }[0...n]
-p_users  = pagelist.sort_by { |t,u,r,s,d,l| -u }[0...n]
-p_size   = pagelist.sort_by { |t,u,r,s,d,l| -l }[0...n]
-
-def p_table(array, txt)
-  "\\midrule
-\\textit{#{txt}}&&&&&\\\\
-\\midrule
-#{array.collect { |a|
-  '%s & %i & %i & %i & %i & %i' % a
-}.join('\\\\')}"
-end
-%>
-
-\begin{table}
-  \centering\small 
-  \caption{Top Seven Wiki Pages}
-  \begin{tabularx}{\linewidth}{Xrrrrrr}\toprule
-    \textbf{title} & \textbf{\#users} &\textbf{\#edits} 
-    &\textbf{\#$\rightarrow$links} &\textbf{\#$\leftarrow$links}
-    &\textbf{size}\\
-    <%=p_table(p_revs, 'by edits') %>\\
-    <%=p_table(p_users, 'by users') %>\\
-    <%=p_table(p_hubs, 'by outgoing links') %>\\
-    <%=p_table(p_dests, 'by incoming links') %>\\
-    <%=p_table(p_size, 'by text size') %>\\\bottomrule
-  \end{tabularx}
-\end{table}
-
-
-
-
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
-
-% subsection wiki_statistics (end)
-
-\subsection{User Statistics} % (fold)
-\label{sub:user_statistics}
-
-\begin{table}
+\begin{table}[htbp]
   \centering
-  \caption{User overview (top 20)}
-
+  \caption{Top 20 Users}
+	\label{tab:top-20-users}
   \begin{tabular}{rrrrr}\toprule
     \textbf{\#edits} & \textbf{\#pages} &
     \textbf{edits/page} & \textbf{\#self edits} & \textbf{\#foreign
@@ -288,9 +240,55 @@ wiki.userstats.sort_by { |u,v| -v.first }[0...20].collect { |u,values|
 \end{tabular}
 \end{table}
 
-\fbox{\parbox{0.8\textwidth}{\emph{Text to be added.}}}
-
 % subsection user_statistics (end)
+
+\subsection{Page Statistics} % (fold)
+\label{sub:page_statistics}
+
+<%
+destlinks = Hash.new(0)
+allpages.each { |p| p.links.each { |q| destlinks[q] += 1 } }
+# number of pages
+n=5
+pagelist = allpages.collect { |p| 
+  r = p.revision
+  ns = p.namespace
+  [(ns == 0) ? p.title : p.title + "~(#{ns})",
+   p.users.length, p.revisions.length,
+   p.links.length, destlinks[p], r ? r.length : 0] }
+p_hubs   = pagelist.sort_by { |t,u,r,s,d,l| -s }[0...n]
+p_dests  = pagelist.sort_by { |t,u,r,s,d,l| -d }[0...n]
+p_revs   = pagelist.sort_by { |t,u,r,s,d,l| -r }[0...n]
+p_users  = pagelist.sort_by { |t,u,r,s,d,l| -u }[0...n]
+p_size   = pagelist.sort_by { |t,u,r,s,d,l| -l }[0...n]
+
+def p_table(array, txt)
+  "\\midrule
+\\textit{#{txt}}&&&&&\\\\
+\\midrule
+#{array.collect { |a|
+  '%s & %i & %i & %i & %i & %i' % a
+}.join('\\\\')}"
+end
+%>
+
+\begin{table}[htbp]
+  \centering\small 
+  \caption{Top 5 Pages}
+	\label{tab:top-5-pages}
+  \begin{tabularx}{\linewidth}{Xrrrrrr}\toprule
+    \textbf{title} & \textbf{\#users} &\textbf{\#edits} 
+    &\textbf{\#$\rightarrow$links} &\textbf{\#$\leftarrow$links}
+    &\textbf{size}\\
+    <%=p_table(p_revs, 'by edits') %>\\
+    <%=p_table(p_users, 'by users') %>\\
+    <%=p_table(p_hubs, 'by outgoing links') %>\\
+    <%=p_table(p_dests, 'by incoming links') %>\\
+    <%=p_table(p_size, 'by text size') %>\\\bottomrule
+  \end{tabularx}
+\end{table}
+
+% subsection page_statistics (end)
 
 % section statistics (end)
 
@@ -331,31 +329,31 @@ pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revi
   \label{fig:cumulative_distribution_functions}
 \end{figure}
 
-Figure~<%=ref['fig:cumulative_distribution_functions']%> shows three cumulative distribution functions (a.\,k.\,a. Lorenz curves), one for each combination of authors, pages, and revisions. For example, plotting authors versus revisions allows for statements such as ``80\,\% of all revisions are made by 20\,\% of the authors.'' This ``80-20 rule'' or, as it is more commonly known, the \emph{Pareto principle} states that, for many events, roughly 80\,\% of the effects come from 20\,\% of the causes (e.\,g., 80\,\% of a nation's wealth is held by 20\,\% of its citizens). A distribution far less then the \emph{Pareto principle} suggests that your wiki is driven by very few people. In all likelihood, this may be an undesirable state, although the overall number of authors puts this finding into perspective. In the German Wikipedia, for example, approximately 80\,\% of the revisions are made by 2\,\% (!) of the 132,238 authors.
+Figure~<%=ref['fig:cumulative_distribution_functions']%> 
+shows three cumulative distribution functions (a.\,k.\,a. Lorenz curves), one for each combination of authors, pages, and revisions. For example, plotting authors versus revisions allows for statements such as ``80\,\% of all revisions are made by 20\,\% of the authors.'' This ``80-20 rule'' or, as it is more commonly known, the \emph{Pareto principle} states that, for many events, roughly 80\,\% of the effects come from 20\,\% of the causes (e.\,g., 80\,\% of a nation's wealth is held by 20\,\% of its citizens). A distribution far less then the \emph{Pareto principle} suggests that your wiki is driven by very few people. In all likelihood, this may be an undesirable state, although the overall number of authors puts this finding into perspective. In the German Wikipedia, for example, approximately 80\,\% of the revisions are made by 2\,\% (!) of the 132,238 authors.
 
 % section cumulative_distribution_functions (end)
-
 
 \section{Revision History} % (fold)
 \label{sec:revision_history}
 
 <% 
-gp_time('rpw.pdf', 'Revisions per Week', 'number of revisions', 
+gp_time('rpw.pdf', 'Revisions per Month', 'number of revisions', 
         rpw, 'all', rpw0, 'namespace 0')
-gp_time('crpw.pdf', 'Cumulative Revisions per Week', 
+gp_time('crpw.pdf', 'Cumulative Revisions per Month', 
         'cumulative number of revisions',
         crpw, 'all', crpw0, 'namespace 0')
 %>
 \begin{figure}
 	\centering
 	\includegraphics[width=0.95\textwidth]{rpw}
-	\caption{Revisions per Week}
-	\label{fig:revisions_per_week}
+	\caption{Revisions per Month}
+	\label{fig:revisions_per_month}
         \vfill
 
 	\includegraphics[width=0.95\textwidth]{crpw}
-	\caption{Cumulative Revisions per Week}
-	\label{fig:cumulative_revisions_per_week}
+	\caption{Cumulative Revisions per Month}
+	\label{fig:cumulative_revisions_per_month}
 \end{figure}
 
 <% 
@@ -380,9 +378,10 @@ gp_time('tpw.pdf', 'Amount of Text', 'text (in bytes)',
 	\label{fig:amount_of_text}
 \end{figure}
 
-
-
-Figures~<%=ref['fig:revisions_per_week']%> and <%=ref['fig:cumulative_revisions_per_week']%> show the absolute and cumulative number of revisions per week. On the one hand, this gives a first impression of the work that is being done in your wiki on a week to week basis, while this impression translates to the growth of the wiki, on the other hand. Note that the number of revisions does not necessarily point to work in terms of content, that is, content may easily come about few revisions. However, many revisions generally account for an active use of the wiki so that its content is up to date. In both figures, you should be able to identify holidays (Christmas, summer vacation, etc.) when the number of revisions is presumably low. If you ever tried to ``kick off'' or ``jump start'' your wiki, you should also be able to identify these events in the face of rather high numbers of revisions.
+Figures~<%=ref['fig:revisions_per_month']%> 
+and 
+<%=ref['fig:cumulative_revisions_per_month']%> 
+show the absolute and cumulative number of revisions per month. On the one hand, this gives a first impression of the work that is being done in your wiki on a monthly basis, while this impression translates to the growth of the wiki, on the other hand. Note that the number of revisions does not necessarily point to work in terms of content, that is, content may easily come about few revisions. However, many revisions generally account for an active use of the wiki so that its content is up to date. In both figures, you should be able to identify holidays (Christmas, summer vacation, etc.) when the number of revisions is presumably low. If you ever tried to ``kick off'' or ``jump start'' your wiki, you should also be able to identify these events in the face of rather high numbers of revisions.
 
 % section revision_history (end)
 
@@ -396,8 +395,6 @@ gp_time('author_participation.pdf',
         aupart, 'authors')
 %>
 
-Figure~<%=ref['fig:author_participation']%> shows the number of authors who edited at least one document at any given week. While the absolute numbers are likely to fluctuate, the trend line gives an idea of just how many authors participate in the wiki.
-
 % Relative Author Participation per Week
 <%
 gp_time('relative_author_participation.pdf', 
@@ -405,6 +402,13 @@ gp_time('relative_author_participation.pdf',
         'percentage of authors', 
         aurel, '% of authors')
 %>
+
+Figure~<%=ref['fig:author_participation']%> 
+shows the number of authors who edited at least one document at any given month. While the absolute numbers are likely to fluctuate, the trend line gives an idea of just how many authors participate in the wiki.
+
+Figure~<%=ref['fig:relative_author_participation']%> 
+shows the percentage of authors who edit at least one document at any given week. For example, a value of 50\,\% indicates that half of all active authors participate in the wiki. Note that we define an author as active for the time between his first and his last edit. Therefore, and in contrast to Figure~<%=ref['fig:author_participation']%>
+, relative author participation adjusts for growth of the wiki in question. Again, while the absolute percentages are likely to fluctuate, the trend line gives an idea of just the percentage of authors who participate in the wiki.
 
 \begin{figure}[htbp]
   \includegraphics[width=0.95\linewidth]{author_participation}
@@ -417,14 +421,12 @@ gp_time('relative_author_participation.pdf',
   \label{fig:relative_author_participation}
 \end{figure}
 
-Figure~<%=ref['fig:relative_author_participation']%> shows the percentage of authors who edit at least one document at any given week. For example, a value of 50\,\% indicates that half of all active authors participate in the wiki. Note that we define an author as active for the time between his first and his last edit. Therefore, and in contrast to Figure~<%=ref['fig:author_participation']%>, relative author participation adjusts for growth of the wiki in question. Again, while the absolute percentages are likely to fluctuate, the trend line gives an idea of just the percentage of authors who participate in the wiki.
-
 % section author_participation (end)
 
 \section{Network Visualization} % (fold)
 \label{sec:network_visualization}
 
-% Co-Authorship Network
+% Co-authorship Network
 <%
 filter = wiki.filter.clone # clone filter
 coauthorship_network = wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
@@ -437,16 +439,10 @@ coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", topdf, "outputord
 	\label{fig:coauthorship_network}
 \end{figure}
 
-Figure~<%=ref['fig:coauthorship_network']%> shows the coauthorship network in which the nodes are authors, and a link between any two nodes represents authorship of one or more pages. There are <%= coauthorship_network.nodes.length %> nodes connected by <%= coauthorship_network.links.length %> links in the network. The coauthorship network gives an idea of who is working with whom. Single nodes with above average links to others identify authors who work with many others, usually on many pages. Rather than content, these authors provide most of the structure to the wiki. Clusters of nodes identify authors working in close concert with each other. These authors provide most of the content to the wiki.
-
-
-%%% TO DO %%%
-% Top 5 Authors in terms of Revisions, Degree, Betweenness, Closeness
-% wiki.coauthorgraph.nodes.sort_by { |n| -n.revisions.length }.collect { |n| [ n.name, n.revisions.length ] }[0..4]
-% wiki.coauthorgraph.degrees.collect { |k,v| [ k, v[0] + v[1] ] }.sort_by { |k,v| -v }.collect { |k,v| [ k.name, v ] }[0..4]
-% wiki.coauthorgraph.betweenness.sort_by { |k,v| -v }.collect { |k,v| [ k.name, v ] }[0..4]
-% wiki.coauthorgraph.closeness.sort_by { |k,v| -v }.collect { |k,v| [ k.name, v ] }[0..4]
-%%% TO DO %%%
+Figure~<%=ref['fig:coauthorship_network']%> 
+shows the co-authorship network in which the nodes are authors, and a link between any two nodes represents authorship of one or more pages. There are <%= coauthorship_network.nodes.length %> 
+nodes connected by <%= coauthorship_network.links.length %> 
+links in the network. The co-authorship network gives an idea of who is working with whom. Single nodes with above average links to others identify authors who work with many others, usually on many pages. Rather than content, these authors provide most of the structure to the wiki. Clusters of nodes identify authors working in close concert with each other. These authors provide most of the content to the wiki.
 
 % Document Network
 <%
@@ -462,24 +458,10 @@ page_network.to_graphviz("pagegraph.pdf", "neato", topdf, "outputorder=edgesfirs
 	\label{fig:page_network}
 \end{figure}
 
-Figure~<%=ref['fig:page_network']%> shows the page network in which the nodes are pages, and a link between any two nodes represents a hyperlink from one to the other page. There are <%= page_network.nodes.length %> nodes connected by <%= page_network.links.length %> links in the network.  The page network gives an idea of which page links to which other. Single nodes with above average links to others identify pages which serve as portals. These pages provide most of the structure of the wiki. Clusters of nodes identify pages which revolve around a common theme or topic. These pages provide most of the content of the wiki.
-
-
-%%% TO DO %%%
-% Top 10 Pages (Indegree)
-% wiki.pagegraph.degrees.collect {|k,v| [ k, v[0] ] }.sort_by { |k,v| -v }.collect { |k,v| [ k.title, k.revisions.length, v ] }[0..9]
-%\begin{tabular}{>{\bfseries}llrrrrr}
-%	\toprule
-%	\textbf{Title} & \textbf{Indegree} & \textbf{Revisions} &
-%...
-
-% Top 10 Pages (Outdegree)
-% wiki.pagegraph.degrees.collect {|k,v| [ k, v[1] ] }.sort_by { |k,v| -v }.collect { |k,v| [ k.title, k.revisions.length, v ] }[0..9]
-%\begin{tabular}{>{\bfseries}llrrrrr}
-%	\toprule
-%	\textbf{Title} & \textbf{Outdegree} & \textbf{Revisions} &
-%...
-%%% TO DO %%%
+Figure~<%=ref['fig:page_network']%>
+shows the page network in which the nodes are pages, and a link between any two nodes represents a hyperlink from one to the other page. There are <%= page_network.nodes.length %> 
+nodes connected by <%= page_network.links.length %> 
+links in the network.  The page network gives an idea of which page links to which other. Single nodes with above average links to others identify pages which serve as portals. These pages provide most of the structure of the wiki. Clusters of nodes identify pages which revolve around a common theme or topic. These pages provide most of the content of the wiki.
 
 % section network_visualization (end)
 
@@ -493,9 +475,8 @@ This report contains an embedded source file for later use with Stanford's Socia
 <% wiki.timedinterlockingresponsegraph(:nid => false) { |n| '' }.to_sonfile('interlocking.son') %>
 \bigskip
 
-\textattachfile[mimetype=text/plain,subject=SONIA-File,description=Der Interlocking-Kollaborations-Graph im Zeitverlauf,color=0.7 0.3 0.3,author=Wiki Explorator]{interlocking.son}{\texttt{interlocking.son}}
+\textattachfile[mimetype=text/plain,subject=SoNIA-File,description=The interlocking communication graph over time,color=0.7 0.3 0.3,author=Wiki Explorator]{interlocking.son}{\texttt{interlocking.son}}
 <% end %>
-
 
 % section sonia (end)
 
