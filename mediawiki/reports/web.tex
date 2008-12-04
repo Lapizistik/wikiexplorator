@@ -53,6 +53,7 @@ end
 <%
 wiki = @wiki
 full = wiki.filter.clone; full.include_all_namespaces
+full.deny_user(0)
 # Set Filter and Time Raster
 filter = full.clone # clone filter
 filter0 = full.clone
@@ -63,7 +64,7 @@ sfilter0 = filter0.clone
 allpages = wiki.pages(full).to_a
 allpages0 = wiki.pages(filter0).to_a
 
-users = wiki.users.to_a
+users = wiki.users(full).to_a
 revisions = wiki.revisions(full).to_a
 revisions0 = wiki.revisions(filter0).to_a
 
@@ -191,7 +192,7 @@ shows the global user statistics. Most of these aggregated statistics are self-e
     &\textbf{max.}\\
     \midrule
 <%=
-wiki.global_userstats.collect { |a|
+wiki.global_userstats(full).collect { |a|
   a.collect { |v| 
     if v.kind_of?(String)
       v
@@ -222,7 +223,7 @@ shows the top 20 users ranked by their number of edits. In addition, the number 
   edits}\\
 \midrule
 <%= 
-wiki.userstats.sort_by { |u,v| -v.first }[0...20].collect { |u,values| 
+wiki.userstats(full).sort_by { |u,v| -v.first }[0...20].collect { |u,values| 
   (values[0..4].collect { |v|
      if v.kind_of?(String)
        v
@@ -284,7 +285,8 @@ end
     <%=p_table(p_users, 'by users') %>\\
     <%=p_table(p_hubs, 'by outgoing links') %>\\
     <%=p_table(p_dests, 'by incoming links') %>\\
-    <%=p_table(p_size, 'by text size') %>\\\bottomrule
+    <%=p_table(p_size, 'by text size') %>\\
+    \bottomrule
   \end{tabularx}
 \end{table}
 
@@ -299,19 +301,19 @@ end
 
 % Authors vs. Revisions
 <%
-ur = users.collect { |u| u.revisions.length }
+ur = users.collect { |u| u.revisions(full).length }
 ur.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "revisions", topdf => 'cdfar.pdf')
 %>
 
 % Authors vs. Pages
 <%
-up = users.collect { |u| u.pages.length }
+up = users.collect { |u| u.pages(full).length }
 up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", :ylabel => "pages", topdf => 'cdfap.pdf')
 %>
 
 % Revisions vs. Pages
 <%
-pr = allpages.collect { |p| p.revisions.length }
+pr = allpages.collect { |p| p.revisions(full).length }
 pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", topdf => 'cdfpr.pdf')
 %>
 
