@@ -171,19 +171,15 @@ shows the corresponding file.
 \section{Statistics} % (fold)
 \label{sec:statistics}
 
-We have <%=allpages.length%> pages with 
-<%=revisions0.length%>  revisions from <%=users.length%> 
-users (<%=allpages0.length%> pages with 
-<%=revisions.length %> 
-revisions in Namespace 0).
+First, a word on notation. An \emph{edit} is a change made to a page by a user (as in, \emph{edit this page}). A \emph{revision}, too, is a change to a page made by a user, but from the global view of the wiki (as in, the \emph{revision history} of a page). Therefore, we say that the wiki has <%=allpages.length%> pages with <%=revisions.length%> altogether revisions, and there are <%=users.length%> users with altogether <%=revisions.length%> edits.
 
 \subsection{User Statistics} % (fold)
 \label{sub:user_statistics}
 
-Table~<%=ref['tab:page_statistics']%> 
+Table~<%=ref['tab:global_user_statistics']%> 
 shows the global user statistics. Most of these aggregated statistics are self-explanatory. For example, the mean number of edits points out how many edits, on average, a single user makes. The standard deviation (s.\,d.), median, minimum (min.), and maximum (max.) are likewise statistics for the number of edits, edited pages, edits per page. The statistics for self-edits and foreign-edits, however, require some explanation. Self-edits are two consecutive edits by one and the same user on a single page. Therefore, they indicate phenomena such as page savings and uninterrupted work on a page. In contrast, foreign-edits are two consecutive edits by two different users on a single page. These, then, indicate collaboration on a page. Last but not least, category-edits and image-edits pertain to the number of edits that add a category or an image to a page.
 
-\begin{table}[htbp]
+\begin{table}[htb]
   \centering
   \caption{Global User Statistics}
 	\label{tab:global_user_statistics}
@@ -211,9 +207,9 @@ wiki.global_userstats(full).collect { |a|
 \end{table}
 
 Table~<%=ref['tab:top-20-users']%> 
-shows the top 20 users ranked by their number of edits. In addition, the number of edited pages, edits per page, self-edits, and foreign-edits are given. In general, users with many edits are likely to edits many pages, too. This is ever the more true for many foreign-edits, that is, collaboration is more likely to spread across many pages.
+shows the top 20 users ranked by their number of edits. In addition, the number of edited pages, edits per page, self-edits, and foreign-edits are given. In general, users with many edits are likely to edits many pages, too. This is ever the more true for many foreign-edits, that is, collaboration is more likely to spread across many pages, too.
 
-\begin{table}[htbp]
+\begin{table}[htb]
   \centering
   \caption{Top 20 Users}
 	\label{tab:top-20-users}
@@ -245,6 +241,8 @@ wiki.userstats(full).sort_by { |u,v| -v.first }[0...20].collect { |u,values|
 
 \subsection{Page Statistics} % (fold)
 \label{sub:page_statistics}
+
+Table~<%=ref['tab:top-5-pages']%> shows the top 5 pages ranked by the number of edits, users, outgoing links (links$\rightarrow$, a.\,k.\,a. outdegree), incoming links ($\rightarrow$links, a.\,k.\,a. indegree), and text size (in bytes, i.\,e., characters). 
 
 <%
 destlinks = Hash.new(0)
@@ -279,7 +277,7 @@ end
 	\label{tab:top-5-pages}
   \begin{tabularx}{\linewidth}{Xrrrrrr}\toprule
     \textbf{title} & \textbf{\#users} &\textbf{\#edits} 
-    &\textbf{\#$\rightarrow$links} &\textbf{\#$\leftarrow$links}
+    &\textbf{\#links$\rightarrow$} &\textbf{\#$\rightarrow$links}
     &\textbf{size}\\
     <%=p_table(p_revs, 'by edits') %>\\
     <%=p_table(p_users, 'by users') %>\\
