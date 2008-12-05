@@ -22,9 +22,10 @@ ref = {
     'fig:relative_author_participation' => "#{count += 1}",
     'fig:coauthorship_network' => "#{count += 1}",
     'fig:page_network' => "#{count += 1}",
-		'tab:global_user_statistics' => "#{count = 1}",
-		'tab:top-20-users' => "#{count += 1}",
-		'tab:top-5-pages' => "#{count += 1}"
+    'tab:global_statistics' => "#{count = 1}",
+    'tab:global_user_statistics' => "#{count += 1}",
+    'tab:top-20-users' => "#{count += 1}",
+    'tab:top-5-pages' => "#{count += 1}"
   }
 %>
 
@@ -53,7 +54,9 @@ end
 <%
 wiki = @wiki
 full = wiki.filter.clone; full.include_all_namespaces
-full.deny_user(0)
+ufilter = full.clone
+ufilter.deny_anons = true
+ufilter.deny_user(0)
 # Set Filter and Time Raster
 filter = full.clone # clone filter
 filter0 = full.clone
@@ -64,9 +67,40 @@ sfilter0 = filter0.clone
 allpages = wiki.pages(full).to_a
 allpages0 = wiki.pages(filter0).to_a
 
-users = wiki.users(full).to_a
-revisions = wiki.revisions(full).to_a
-revisions0 = wiki.revisions(filter0).to_a
+allrevisions = wiki.revisions(full).to_a
+
+users = wiki.users(ufilter).to_a
+
+wn = wiki.name.tr(' ','_')
+
+ns_default = {}
+NS_Default_Mapping.each { |k,v| 
+  ns_default[v] = k.gsub(/_/, '\_') if k.kind_of?(String) }
+ns_default[NS_PROJECT] = 
+  NS_Default_Mapping[:project].gsub('%', wn).gsub(/_/, '\_')
+ns_default[NS_PROJECT_TALK] = 
+  NS_Default_Mapping[:project_talk].gsub('%', wn).gsub(/_/, '\_')
+ns_lang = ns_default.clone
+nsl=false
+nsl = NS_Mappings[wiki.language]
+if nsl
+  nsl.each { |k,v| ns_lang[v] = k.gsub(/_/, '\_') if k.kind_of?(String)}
+  if p = nsl[:project]
+    ns_lang[NS_PROJECT] = p.gsub('%', wn).gsub(/_/, '\_')
+  end
+  if p = nsl[:project_talk]
+    ns_lang[NS_PROJECT_TALK] = p.gsub('%', wn).gsub(/_/, '\_')
+  end
+end
+
+
+ns_pages = Hash.new(0)
+ns_revs = Hash.new(0)
+allpages.each { |p| 
+  ns = p.namespace
+  ns_pages[ns] +=1 
+  ns_revs[ns] += p.revisions(full).length
+}
 
 # set time raster to spells of 4 weeks
 raster = wiki.timeraster(:zero => :week, :step => 28*24*3600) 
@@ -102,12 +136,22 @@ raster[1..-2].each_cons(2) { |s,e|
   # The following could be done more efficiently:
   aurel << [ e, nodesl / 
                 events.reject { |f,l| (f > e) || (l < s) }.length ]
-  lpw << [e, allpages.inject(0) { |s,p| s+p.links(sfilter).length } ]
-  lpw0 << [e, allpages0.inject(0) { |s,p| s+p.links(sfilter0).length } ]
-  tpw << [e, pages.inject(0) { |s,p| 
-            (r=p.revision(sfilter)) ? s + r.size : s }]
-  tpw0 << [e, pages0.inject(0) { |s,p| 
-             (r=p.revision(sfilter0)) ? s + r.size : s }]
+  # I learned inject is expensive (at least in ruby 1.8), so i do it
+  # by hand:
+  s=0; allpages.each { |p| s+= p.links(sfilter).length }
+  lpw << [e, s]
+  s=0; allpages0.each { |p| s+= p.links(sfilter0).length }
+  lpw0 << [e, s]
+  s=0; pages.each { |p| 
+    if r=p.revision(sfilter)
+      s+= r.size
+    end }
+  tpw << [e, s]
+  s=0; pages0.each { |p| 
+    if r=p.revision(sfilter0)
+      s+= r.size
+    end }
+  tpw0 << [e, s]
 }
 
 s = 0; crpw = rpw.collect { |e,i| [e,s+=i] }
@@ -171,13 +215,83 @@ shows the corresponding file.
 \section{Statistics} % (fold)
 \label{sec:statistics}
 
-First, a word on notation. An \emph{edit} is a change made to a page by a user (as in, \emph{edit this page}). A \emph{revision}, too, is a change to a page made by a user, but from the global view of the wiki (as in, the \emph{revision history} of a page). Therefore, we say that the wiki has <%=allpages.length%> pages with <%=revisions.length%> altogether revisions, and there are <%=users.length%> users with altogether <%=revisions.length%> edits.
+% First, a word on notation. 
+
+A wiki consists of \emph{pages} written by \emph{users}. Each time an
+user edits (i.\,e. creates or changes) a page this gives a new
+\emph{revision} of the page. You can see this in the \emph{revision
+  history}.
+
+
+Pages are grouped in namespaces. Ordinary pages belong to the main
+namespace (namespace 0). There are namespaces for user pages
+(indicated by prefix ``<%=d=ns_default[2]%>:''%
+<% if (p=ns_lang[2]) != d  %>, or ``<%=p%>:''<% end%>),
+help pages (prefix  ``<%=d=ns_default[12]%>:''%
+<% if (p=ns_lang[12]) != d  %>, or ``<%=p%>:''<% end%>),
+and others, and each page may have a corresponding discussion page
+(prefix ``<%=d=ns_default[1]%>:''
+<% if (p=ns_lang[1]) != d  %>, or ``<%=p%>:''<% end%> for the main
+namespace, ``<%=d=ns_default[3]%>:''
+<% if (p=ns_lang[3]) != d  %>, or ``<%=p%>:''<% end%> for user
+discussion pages and so on).
+
+As each revision is the result of the edit of one user you can tell
+\emph{who} contributed to which page -- at least if the user was
+logged in. As many wikis allow for anonymous edits an user mapping is
+not possible here.\footnote{An anonymous edit only gives the
+  IP-address of the computer used to edit, and IP-addresses change if
+  the user uses a dial-in connection (as most users have at home).}
+We therefore decided not to include anonymous users into
+user-dependend statistics. Same holds for the system user. It is the
+owner of default and automatically generated pages, and is therefore
+excluded from these measures as well.
+
+This wiki has <%=allpages.length%> 
+pages with <%=allrevisions.length%> 
+altogether revisions, and there are <%=users.length%> 
+non-anonymous users. Table~<%=ref['tab:global_statistics']%> 
+gives a more detailed overview.
+
+\begin{table}[htb]
+  \centering
+  \caption{Global Wiki Statistics}
+  \label{tab:global_statistics}
+
+  \begin{tabular}{>{\bfseries}lrrr}\toprule
+    Namespace && \#pages & \#revisions\\
+    \midrule
+<% ns_pages.keys.sort.each do |ns| %>
+      <%if ns==0 %>
+        \textit{main}
+      <%else%>
+        <%=ns_lang[ns]%>
+      <%end%> & (<%=ns%>) & <%=ns_pages[ns]%> & <%=ns_revs[ns]%>\\
+<%end%>
+    \midrule
+    total & <%=s=0;ns_pages.values.each {|i| s+=i};s%> 
+    & <%=s=0;ns_revs.values.each {|i| s+=i};s%>\\\bottomrule
+  \end{tabular}
+\end{table}
+
 
 \subsection{User Statistics} % (fold)
 \label{sub:user_statistics}
 
 Table~<%=ref['tab:global_user_statistics']%> 
-shows the global user statistics. Most of these aggregated statistics are self-explanatory. For example, the mean number of edits points out how many edits, on average, a single user makes. The standard deviation (s.\,d.), median, minimum (min.), and maximum (max.) are likewise statistics for the number of edits, edited pages, edits per page. The statistics for self-edits and foreign-edits, however, require some explanation. Self-edits are two consecutive edits by one and the same user on a single page. Therefore, they indicate phenomena such as page savings and uninterrupted work on a page. In contrast, foreign-edits are two consecutive edits by two different users on a single page. These, then, indicate collaboration on a page. Last but not least, category-edits and image-edits pertain to the number of edits that add a category or an image to a page.
+shows the global user statistics. Most of these aggregated statistics
+are self-explanatory. For example, the mean number of edits points out
+how many edits, on average, a single user makes. The standard
+deviation (s.\,d.), median, minimum (min.), and maximum (max.) are
+likewise statistics for the number of edits, edited pages, edits per
+page. The statistics for self-edits and foreign-edits, however,
+require some explanation. Self-edits are two consecutive edits by one
+and the same user on a single page. Therefore, they indicate phenomena
+such as page savings and uninterrupted work on a page. In contrast,
+foreign-edits are two consecutive edits by two different users on a
+single page. These, then, indicate collaboration on a page. Last but
+not least, category-edits and image-edits pertain to the number of
+edits that add a category or an image to a page. 
 
 \begin{table}[htb]
   \centering
@@ -188,7 +302,7 @@ shows the global user statistics. Most of these aggregated statistics are self-e
     &\textbf{max.}\\
     \midrule
 <%=
-wiki.global_userstats(full).collect { |a|
+wiki.global_userstats(ufilter).collect { |a|
   a.collect { |v| 
     if v.kind_of?(String)
       v
@@ -219,7 +333,7 @@ shows the top 20 users ranked by their number of edits. In addition, the number 
   edits}\\
 \midrule
 <%= 
-wiki.userstats(full).sort_by { |u,v| -v.first }[0...20].collect { |u,values| 
+wiki.userstats(ufilter).sort_by { |u,v| -v.first }[0...20].collect { |u,values| 
   (values[0..4].collect { |v|
      if v.kind_of?(String)
        v

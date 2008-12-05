@@ -37,6 +37,8 @@ module Mediawiki
     attr_accessor :filter
     # a list of namespaces found in this wiki
     attr_reader :namespaces
+    # the hash used to map namespace name to id
+    attr_reader :ns_mapping
     # a boolean indicating whether all IP-adresses of anonymous edits
     # are mapped to one default User (ips=false) or different IP-adresses
     # are represented by different Users (ips=true).
@@ -1203,6 +1205,10 @@ module Mediawiki
     # Set of users to be skipped (empty by default).
     attr_accessor :denied_users
 
+    # Boolean indicating whether anonymous users (users with uid<0)
+    # should be skipped (false by default)
+    attr_accessor :deny_anons
+
     # how to deal with redirected pages:
     # [:keep] like normal pages (default)
     # [:filter] skip them.
@@ -1226,13 +1232,13 @@ module Mediawiki
     # 
     # +true+ by default.
     attr_accessor :genreinclude
-
+    
     # All Users with one or more roles matching this Regex are
     # included/excluded (dependent on _rolesinclude_).
     #
     # Default is <tt>//</tt> (matches always)
     attr_accessor :roleregexp
-
+    
     # Boolean deciding whether only Users with roles
     # matching the Regexp _roleregexp_ are included or all
     # Users with matching rules are excluded by this Filter.
@@ -1256,12 +1262,13 @@ module Mediawiki
       @roleregexp = // # matches on everything
       @roleinclude = true
       @denied_users = Set.new
+      @deny_anons = false
       # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       # When adding new attributes do _not_ forget to adjust #clone_attrs
       # and attach_links, detach_links
       # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end
-
+    
     # add user to the Set of denied users
     #
     # ua is one or more users to be filtered or its uid or name.
@@ -1274,11 +1281,11 @@ module Mediawiki
         @denied_users << u
       end
     end
-
+    
     # remove user from the Set of denied users
     #
     # ua is one or more users not longer to be filtered or its uid or name.
-     def undeny_user(*ua)
+    def undeny_user(*ua)
       ua.each do |u|
         case u
         when Integer    : u = @wiki.user_by_id(u)
@@ -1286,6 +1293,11 @@ module Mediawiki
         end
         @denied_users.delete(u)
       end
+    end
+    
+    # test if user _u_ is denied
+    def denied_user?(u)
+      (@deny_anons && u.uid < 0) || @denied_users.include?(u)
     end
 
 
@@ -1476,7 +1488,7 @@ module Mediawiki
   class UsersView < View
     # whether a given User is seen through this filter.
     def allowed?(user)
-      !@filter.denied_users.include?(user) &&
+      !@filter.denied_user?(user) &&
         !(@filter.roleinclude ^ user.has_role?(@filter.roleregexp))
     end
   end
@@ -1512,7 +1524,7 @@ module Mediawiki
     # genre of the corresponding page :: 
     #   Filter#genregexp and Filter#genreinclude
     def allowed?(revision)
-      !@filter.denied_users.include?(revision.user) &&
+      !@filter.denied_user?(revision.user) &&
         @filter.namespaces.include?(revision.namespace) &&
         @filter.revision_timespan.include?(revision.timestamp) &&
         (@filter.minor_edits || !revision.minor_edit?) &&
