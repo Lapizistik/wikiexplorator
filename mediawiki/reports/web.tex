@@ -269,7 +269,7 @@ gives a more detailed overview.
       <%end%> & (<%=ns%>) & <%=ns_pages[ns]%> & <%=ns_revs[ns]%>\\
 <%end%>
     \midrule
-    total & <%=s=0;ns_pages.values.each {|i| s+=i};s%> 
+    total && <%=s=0;ns_pages.values.each {|i| s+=i};s%> 
     & <%=s=0;ns_revs.values.each {|i| s+=i};s%>\\\bottomrule
   \end{tabular}
 \end{table}
