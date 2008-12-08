@@ -48,6 +48,7 @@
 
 require 'util/trytoreq'
 require 'mediawiki/core'
+# require 'mediawiki/db'
 require 'mediawiki/functions'
 require 'mediawiki/graph'
 require 'mediawiki/report'
