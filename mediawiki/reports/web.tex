@@ -168,9 +168,9 @@ s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
 \usepackage[utf8]{inputenc}
 %\usepackage{german}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{graphicx}
 %\usepackage{subfigure}
-\usepackage{tabularx}
 <% if sonia %>
 \usepackage{textcomp}
 \usepackage{attachfile}
@@ -179,7 +179,6 @@ s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
 \title{Mediawiki Report -- <%= wiki.to_s %>
 }
 \author{mediawikiparser (<\texttt{klaus.stein@uni-bamberg.de}>)}
-
 
 \begin{document}
 \maketitle
@@ -200,32 +199,24 @@ introduces a number of cumulative distribution functions.
 These functions allow for statements such as ``20\,\% of 
 the users do 80\,\% of the work.'' 
 Section~<%=ref['sec:revision_history']%> 
-delves into the revision history of your wiki and with it takes a 
+delves into the revision history and with it takes a 
 first look at the dynamics of your wiki. 
-Section~<%=ref['sec:author_participation']%> continues the 
-investigation of dynamics in terms of author participation. 
+Section~<%=ref['sec:author_participation']%>
+continues the investigation of dynamics in terms of author participation. 
 Section~<%=ref['sec:network_visualization']%> 
 offers various visualizations of your wiki. In particular, it shows 
 the hyperlink network and the co-authorship network. Finally, 
 Section~<%=ref['sec:sonia']%> 
-shows the corresponding file.
+shows the corresponding SoNIA file (i.\,e., if you chose to have it included in the first place)
 
 % section introduction (end)
 
 \section{Statistics} % (fold)
 \label{sec:statistics}
 
-% First, a word on notation. 
+For those unfamiliar with wikis, we briefly introduce some of the most common terminology. A wiki consists of \emph{pages} or \emph{articles} which, in turn, are written by \emph{users} or \emph{authors}. Each time a user edits (i.\,e., creates or changes) a page, a new \emph{revision} of the page is added to the \emph{revision history}.
 
-A wiki consists of \emph{pages} written by \emph{users}. Each time an
-user edits (i.\,e. creates or changes) a page this gives a new
-\emph{revision} of the page. You can see this in the \emph{revision
-  history}.
-
-
-Pages are grouped in namespaces. Ordinary pages belong to the main
-namespace (namespace 0). There are namespaces for user pages
-(indicated by prefix ``<%=d=ns_default[2]%>:''%
+Pages are grouped in \emph{namespaces}. Ordinary pages (e.\,g., articles) belong to the main namespace (namespace 0). There are namespaces for personal user pages (indicated by prefix ``<%=d=ns_default[2]%>:''%
 <% if (p=ns_lang[2]) != d  %>, or ``<%=p%>:''<% end%>),
 help pages (prefix  ``<%=d=ns_default[12]%>:''%
 <% if (p=ns_lang[12]) != d  %>, or ``<%=p%>:''<% end%>),
@@ -236,18 +227,10 @@ namespace, ``<%=d=ns_default[3]%>:''
 <% if (p=ns_lang[3]) != d  %>, or ``<%=p%>:''<% end%> for user
 discussion pages and so on).
 
-As each revision is the result of the edit of one user you can tell
-\emph{who} contributed to which page -- at least if the user was
-logged in. As many wikis allow for anonymous edits an user mapping is
-not possible here.\footnote{An anonymous edit only gives the
-  IP-address of the computer used to edit, and IP-addresses change if
-  the user uses a dial-in connection (as most users have at home).}
-We therefore decided not to include anonymous users into
-user-dependend statistics. Same holds for the system user. It is the
-owner of default and automatically generated pages, and is therefore
-excluded from these measures as well.
+Since aach revision is the result of a single edit by a single user, we know \emph{who} contributed to \emph{which} page---at least if the user is
+logged in. In case the wiki allows for anonymous edits, such as user mapping not possible. Anonymous edit are clearly visible in the revision history with the IP address of the computer used to edit. Unfortunately, private Internet Service Provides (ISPs) assign a different IP address to a computer every time a user connects to the Internet. Therefore, we exclude anonymous users into user-dependent statistics. In similar vein, we exclude the system user, who is the owner of default and automatically generated pages
 
-This wiki has <%=allpages.length%> 
+Now, your wiki has <%=allpages.length%> 
 pages with <%=allrevisions.length%> 
 altogether revisions, and there are <%=users.length%> 
 non-anonymous users. Table~<%=ref['tab:global_statistics']%> 
@@ -356,7 +339,8 @@ wiki.userstats(ufilter).sort_by { |u,v| -v.first }[0...20].collect { |u,values|
 \subsection{Page Statistics} % (fold)
 \label{sub:page_statistics}
 
-Table~<%=ref['tab:top-5-pages']%> shows the top 5 pages ranked by the number of edits, users, outgoing links (links$\rightarrow$, a.\,k.\,a. outdegree), incoming links ($\rightarrow$links, a.\,k.\,a. indegree), and text size (in bytes, i.\,e., characters). 
+Table~<%=ref['tab:top-5-pages']%> 
+shows the top 5 pages ranked by the number of edits, users, outgoing links (links$\rightarrow$, a.\,k.\,a. outdegree), incoming links ($\rightarrow$links, a.\,k.\,a. indegree), and text size (in bytes, i.\,e., characters). Again, these statistics are self-explanatory.
 
 <%
 destlinks = Hash.new(0)
