@@ -1297,7 +1297,7 @@ module Mediawiki
     
     # test if user _u_ is denied
     def denied_user?(u)
-      (@deny_anons && u.uid < 0) || @denied_users.include?(u)
+      (@deny_anons && u && (u.uid < 0)) || @denied_users.include?(u)
     end
 
 

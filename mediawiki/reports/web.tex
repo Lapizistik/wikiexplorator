@@ -458,19 +458,16 @@ gp_time('crpw.pdf', 'Cumulative Revisions per Month',
 gp_time('lpw.pdf', 'Number of Links', 'number of links', 
         lpw, 'all', lpw0, 'namespace 0')
 %>
-\begin{figure}
-	\centering
-	\includegraphics[width=0.95\textwidth]{lpw}
-	\caption{Number of Links}
-	\label{fig:number_of_links}
-\end{figure}
-
 <% 
 gp_time('tpw.pdf', 'Amount of Text', 'text (in bytes)', 
         tpw, 'all', tpw0, 'namespace 0')
 %>
 \begin{figure}
 	\centering
+	\includegraphics[width=0.95\textwidth]{lpw}
+	\caption{Number of Links}
+	\label{fig:number_of_links}
+
 	\includegraphics[width=0.95\textwidth]{tpw}
 	\caption{Amount of Text (in Bytes)}
 	\label{fig:amount_of_text}
