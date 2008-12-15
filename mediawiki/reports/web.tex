@@ -5,7 +5,7 @@
 <%
 # We do not want to run TeX more than once, therefore we define \ref:
 ref = {
-    'sec:statistics' => "#{count = 1}",
+    'sec:statistics' => "#{count = 2}",
     'sub:user_statistics' => "#{count}.1",
     'sub:page_statistics' => "#{count}.2",
     'sec:cumulative_distribution_functions' => "#{count += 1}",
@@ -188,10 +188,9 @@ s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
 
 This is an automated report of your wiki. 
 Section~<%=ref['sec:statistics']%> 
-provides some basic statistics on the global level of the wiki 
-(Subsection~<%=ref['sub:wiki_statistics']%>)
-as well as on the local level of wiki users 
-(Subsection~<%=ref['sub:user_statistics']%>).
+provides some basic statistics on the global level of the wiki,
+on the local level of wiki users (Subsection~<%=ref['sub:user_statistics']%>)
+and on the local level of wiki pages (Subsection~<%=ref['sub:page_statistics']%>).
 This gives you a first and general impression of what is 
 going on in your wiki. 
 Section~<%=ref['sec:cumulative_distribution_functions']%> 
@@ -205,9 +204,11 @@ Section~<%=ref['sec:author_participation']%>
 continues the investigation of dynamics in terms of author participation. 
 Section~<%=ref['sec:network_visualization']%> 
 offers various visualizations of your wiki. In particular, it shows 
-the hyperlink network and the co-authorship network. Finally, 
-Section~<%=ref['sec:sonia']%> 
-shows the corresponding SoNIA file (i.\,e., if you chose to have it included in the first place)
+the hyperlink network and the co-authorship network.
+<% ifsonia %>
+Finally, Section~<%=ref['sec:sonia']%> 
+shows the corresponding SoNIA file.
+<% end %>
 
 % section introduction (end)
 
@@ -227,7 +228,7 @@ namespace, ``<%=d=ns_default[3]%>:''
 <% if (p=ns_lang[3]) != d  %>, or ``<%=p%>:''<% end%> for user
 discussion pages and so on).
 
-Since aach revision is the result of a single edit by a single user, we know \emph{who} contributed to \emph{which} page---at least if the user is
+Since each revision is the result of a single edit by a single user, we know \emph{who} contributed to \emph{which} page---at least if the user is
 logged in. In case the wiki allows for anonymous edits, such as user mapping not possible. Anonymous edit are clearly visible in the revision history with the IP address of the computer used to edit. Unfortunately, private Internet Service Provides (ISPs) assign a different IP address to a computer every time a user connects to the Internet. Therefore, we exclude anonymous users into user-dependent statistics. In similar vein, we exclude the system user, who is the owner of default and automatically generated pages
 
 Now, your wiki has <%=allpages.length%> 
