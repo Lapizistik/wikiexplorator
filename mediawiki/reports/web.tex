@@ -236,9 +236,10 @@ altogether revisions, and there are <%=users.length%>
 non-anonymous users. Table~<%=ref['tab:global_statistics']%> 
 gives a more detailed overview.
 
-\begin{table}[htb]
+\begin{table}
   \centering
-  \caption{Global Wiki Statistics}
+  \caption{Global Wiki Statistics}\vspace{0.2ex}
+
   \label{tab:global_statistics}
 
   \begin{tabular}{>{\bfseries}lrrr}\toprule
@@ -255,31 +256,11 @@ gives a more detailed overview.
     total && <%=s=0;ns_pages.values.each {|i| s+=i};s%> 
     & <%=s=0;ns_revs.values.each {|i| s+=i};s%>\\\bottomrule
   \end{tabular}
-\end{table}
+  \vspace{1ex}
 
+  \caption{Global User Statistics}\vspace{0.2ex}
 
-\subsection{User Statistics} % (fold)
-\label{sub:user_statistics}
-
-Table~<%=ref['tab:global_user_statistics']%> 
-shows the global user statistics. Most of these aggregated statistics
-are self-explanatory. For example, the mean number of edits points out
-how many edits, on average, a single user makes. The standard
-deviation (s.\,d.), median, minimum (min.), and maximum (max.) are
-likewise statistics for the number of edits, edited pages, edits per
-page. The statistics for self-edits and foreign-edits, however,
-require some explanation. Self-edits are two consecutive edits by one
-and the same user on a single page. Therefore, they indicate phenomena
-such as page savings and uninterrupted work on a page. In contrast,
-foreign-edits are two consecutive edits by two different users on a
-single page. These, then, indicate collaboration on a page. Last but
-not least, category-edits and image-edits pertain to the number of
-edits that add a category or an image to a page. 
-
-\begin{table}[htb]
-  \centering
-  \caption{Global User Statistics}
-	\label{tab:global_user_statistics}
+  \label{tab:global_user_statistics}
   \begin{tabular}{>{\bfseries}lrrrrr}\toprule
     &\textbf{mean} &\textbf{s.\,d.} &\textbf{median} &\textbf{min.}
     &\textbf{max.}\\
@@ -303,10 +284,29 @@ wiki.global_userstats(ufilter).collect { |a|
   \end{tabular}
 \end{table}
 
+
+\subsection{User Statistics} % (fold)
+\label{sub:user_statistics}
+
+Table~<%=ref['tab:global_user_statistics']%> 
+shows the global user statistics. Most of these aggregated statistics
+are self-explanatory. For example, the mean number of edits points out
+how many edits, on average, a single user makes. The standard
+deviation (s.\,d.), median, minimum (min.), and maximum (max.) are
+likewise statistics for the number of edits, edited pages, edits per
+page. The statistics for self-edits and foreign-edits, however,
+require some explanation. Self-edits are two consecutive edits by one
+and the same user on a single page. Therefore, they indicate phenomena
+such as page savings and uninterrupted work on a page. In contrast,
+foreign-edits are two consecutive edits by two different users on a
+single page. These, then, indicate collaboration on a page. Last but
+not least, category-edits and image-edits pertain to the number of
+edits that add a category or an image to a page. 
+
 Table~<%=ref['tab:top-20-users']%> 
 shows the top 20 users ranked by their number of edits. In addition, the number of edited pages, edits per page, self-edits, and foreign-edits are given. In general, users with many edits are likely to edits many pages, too. This is ever the more true for many foreign-edits, that is, collaboration is more likely to spread across many pages, too.
 
-\begin{table}[htb]
+\begin{table}
   \centering
   \caption{Top 20 Users}
 	\label{tab:top-20-users}
@@ -369,7 +369,7 @@ def p_table(array, txt)
 end
 %>
 
-\begin{table}[htbp]
+\begin{table}
   \centering\small 
   \caption{Top 5 Pages}
 	\label{tab:top-5-pages}
@@ -413,7 +413,7 @@ pr = allpages.collect { |p| p.revisions(full).length }
 pr.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "pages", :ylabel => "revisions", topdf => 'cdfpr.pdf')
 %>
 
-\begin{figure}[htbp]
+\begin{figure}
   \centering
   \begin{tabular}{@{}ccc@{}}
     \includegraphics[width=0.3\textwidth]{cdfar} &
@@ -505,7 +505,7 @@ Figure~<%=ref['fig:relative_author_participation']%>
 shows the percentage of authors who edit at least one document at any given week. For example, a value of 50\,\% indicates that half of all active authors participate in the wiki. Note that we define an author as active for the time between his first and his last edit. Therefore, and in contrast to Figure~<%=ref['fig:author_participation']%>
 , relative author participation adjusts for growth of the wiki in question. Again, while the absolute percentages are likely to fluctuate, the trend line gives an idea of just the percentage of authors who participate in the wiki.
 
-\begin{figure}[htbp]
+\begin{figure}
   \includegraphics[width=0.95\linewidth]{author_participation}
   \caption{Author Participation}
   \label{fig:author_participation}
@@ -546,7 +546,7 @@ page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links
 page_network.to_graphviz("pagegraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
 %>
 
-\begin{figure}[htbp]
+\begin{figure}
 	\centering
 	\includegraphics[width=0.95\textwidth]{pagegraph}
 	\caption{Page Network}
