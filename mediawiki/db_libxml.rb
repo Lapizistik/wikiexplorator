@@ -140,11 +140,17 @@ module Mediawiki
       Floats = ['float', 'double', 'real', 'decimal', 'dec', 'fixed']
 
       def initialize(xml, table)
+
+        warn "XML in table: #{table}"
+
         @table = table
         @xml = xml
         @types = Hash.new(:to_s)
         tn = @xml.find("/mysqldump/database/table_structure[@name=\"#{@table}\"]/field")
         tn.each do |node|
+
+          warn "Found type #{node['Type']} for field #{node['Field']}"
+
           node['Type'].downcase =~ /^(\w*)/
           sql_t = $1
           @types[node['Field']] = if Ints.member?(sql_t)

@@ -96,6 +96,13 @@ module Mediawiki
         warn err # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error handling!
       end
 
+      warn "users: #{@users_id.length}"
+      warn "revisions: #{@revisions_id.length}"
+      warn "timeline length: #{@timeline.length}"
+      warn "firsttime: #{@timeline.first.inspect}"
+      warn "lasttime: #{@timeline.last.inspect}"
+
+
       @filter = Filter.new(self) # must be last
 
       puts "Done." if DEBUG
@@ -743,7 +750,7 @@ module Mediawiki
       @wiki = wiki
       @pid = pid
       @namespace = namespace
-      @title = title.tr('_',' ')
+      @title = title ? title.tr('_',' ') : "p#{pid}"
       @restrictions = restrictions # not used in 1.10
       @counter = counter
       @is_redirect = (redirect!=0)
@@ -1324,7 +1331,7 @@ module Mediawiki
 
     # sets the revision_timespan to include the whole wiki timeline
     def full_timespan
-      @revision_timespan = (@wiki.timeline.first..@wiki.timeline.last)      
+      @revision_timespan = (@wiki.timeline.first..@wiki.timeline.last)
     end
 
     # Gives the begin of the revision timespan
