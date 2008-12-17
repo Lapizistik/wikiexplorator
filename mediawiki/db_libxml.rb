@@ -91,12 +91,12 @@ module Mediawiki
     end
 
     def initialize(xml, name)
-      @xml = xml
+      @xmlfile = xml
       @name = name
     end
 
     def connect
-      @xml = XML::Document.file('/tmp/wikidb.xml')
+      @xml = XML::Document.file(@xmlfile)
       yield(self)
     end
 
@@ -175,10 +175,10 @@ module Mediawiki
   end
 end
 
-def test
-  Mediawiki::DB_libXML.open('/tmp/wikidb.xml').connect do |db|
-    t = db.table('user')
-    puts t.types.inspect
-    db.users { |a,b,c| puts a,b }
-  end
-end
+#def test
+#  Mediawiki::DB_libXML.open('/tmp/wikidb.xml').connect do |db|
+#    t = db.table('user')
+#    puts t.types.inspect
+#    db.users { |a,b,c| puts a,b }
+#  end
+#end
