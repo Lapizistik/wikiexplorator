@@ -91,12 +91,11 @@ module Mediawiki
     end
 
     def initialize(xml, name)
-      @xmlfile = xml
+      @xml = xml
       @name = name
     end
 
     def connect
-      @xml = XML::Document.file(@xmlfile)
       yield(self)
     end
 
