@@ -191,8 +191,8 @@ module Mediawiki
       wiki
     end
 
-    # Loads a Wiki from a marshaled dump as created by Wiki#marshal_save.
-    # (to be fair: it simply loads any marshaled object)
+    # Loads a Wiki from a marshalled dump as created by Wiki#marshal_save.
+    # (to be fair: it simply loads any marshalled object)
     def Wiki.marshal_load(filename)
       puts 'MARSHAL load...'
       wiki = File.open(filename) { |f| Marshal::load(f) }

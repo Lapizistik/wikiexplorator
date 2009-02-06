@@ -10,6 +10,9 @@ require 'set'
 #
 # More and more stuff was added and now it's nearly a full featured graph
 # class with support for R and others and some drawbacks due to its history.
+#
+# Perhaps I should rewrite this to use rgl (by subclassing?) 
+# <http://rgl.rubyforge.org/rgl/index.html> (which I found to late)
 class DotGraph
   # the ps2pdf command (reading from stdin)
   PS2PDF = ENV['RB_PS2PDF'] || 'epstopdf --filter --outfile'
@@ -129,6 +132,14 @@ class DotGraph
       @destlinks[l.dest].delete(l)       # always true
     }
     self
+  end
+
+  # remove all links establishing a oneway connection, if there is a
+  # link _l_ from node _a_ to _b_ but none from _b_ to _a_, _l_ is removed.
+  def remove_oneway_links
+    @links.delete_if { |k,l|
+      l.oneway?
+    }
   end
 
   # remove all links from this graph, where source and destination are equal.
@@ -311,66 +322,64 @@ class DotGraph
   # Take care: if the graph is _indirected_, it is random whether a link
   # counts as in- or outlink so only the degree is valid.
   #
-  # _weight_:: indicates how the degree is counted:
+  # _counts_:: indicates how the degree is counted:
   #            _true_, <tt>:add</tt>:: sum of link weights
-  #            _false_, <tt>:count</tt>:: number of links
+  #            _false_, <tt>:nodes</tt>:: number of links
   #            <tt>:log</tt>:: sum of log(linkweight+1)
-  def degrees(weight=false)
-    
+  #            FIXME:: :squares, :rootsqrs, :max
+  def degrees(counts=false, k=2)
     h = Hash.new { |h,k| h[k] = [0,0,0] }
     @nodes.each { |n|
-      h[n] = [n_outdegree(n,weight), n_indegree(n,weight), n_degree(n,weight)]
+      h[n] = [n_outdegree(n,counts,k), n_indegree(n,counts,k), n_degree(n,counts,k)]
     }
     h
   end
 
+  def n_inoutdegree(node, links, counts, k)
+    # important: adjust n_degree if you change something here!
+    case counts
+    when true, :add
+      s=0; links[node].each { |l| s += l.weight }; s
+    when false, nil, :nodes
+      links[node].length
+    when :log
+      s=0; links[node].each { |l| s += Math.log(l.weight+1) }; s
+    when :squares, :rootsqrs
+      s = 0
+      links[node].each { |l| s += l.weight**k }
+      s **= (1.0/k) if counts == :rootsqrs
+      s
+    when :max
+      links[node].collect { |l| l.weight }.max || 0
+    end
+  end
+  private :n_inoutdegree
+
   # computes the (weighted) out-degree of node n
   #
-  # _weight_:: indicates how the degree is counted:
-  #            _true_, <tt>:add</tt>:: sum of link weights
-  #            _false_, <tt>:count</tt>:: number of links
-  #            <tt>:log</tt>:: sum of log(linkweight+1)
-  def n_outdegree(node, weight=false)
-    case weight
-    when true, :add
-      @sourcelinks[node].inject(0) { |s,l| s+l.weight }
-    when false, nil, :count
-      @sourcelinks[node].length
-    when :log
-      @sourcelinks[node].inject(0) { |s,l| s+Math.log(l.weight+1) }
-    end
+  # _counts_:: see #degrees.
+  def n_outdegree(node, counts=false, k=2)
+    n_inoutdegree(node, @sourcelinks, counts, k)
   end
 
   # computes the (weighted) in-degree of node n
   #
-  # _weight_:: indicates how the degree is counted:
-  #            _true_, <tt>:add</tt>:: sum of link weights
-  #            _false_, <tt>:count</tt>:: number of links
-  #            <tt>:log</tt>:: sum of log(linkweight+1)
-  def n_indegree(node, weight=false)
-    case weight
-    when true, :add
-      @destlinks[node].inject(0) { |s,l| s+l.weight }
-    when false, nil, :count
-      @destlinks[node].length
-    when :log
-      @destlinks[node].inject(0) { |s,l| s+Math.log(l.weight+1) }
-    end
+  # _counts_:: see #degrees.
+  def n_indegree(node, counts=false, k=2)
+    n_inoutdegree(node, @destlinks, counts, k)
   end
 
   # computes the (weighted) degree of node n
   #
   # (please note: if the graph contains self-links, degree may be smaller
-  # than indegree+outdegree)
+  # than indegree+outdegree). FIXME: can be wrong for some _counts_!
   #
-  # _weight_:: indicates how the degree is counted:
-  #            _true_, <tt>:add</tt>:: sum of link weights
-  #            _false_, <tt>:count</tt>:: number of links
-  #            <tt>:log</tt>:: sum of log(linkweight+1)
-  def n_degree(node, weight=false)
-    d = n_indegree(node,weight) + n_outdegree(node,weight)
+  # _counts_:: see #degrees.
+  def n_degree(node, counts=false, k=2)
+    d = n_indegree(node,counts,k) + n_outdegree(node,counts,k)
     if l=@links[[node,node]]
-      if weight 
+      # to be repaired!
+      if counts 
         d -= l.weight
       else
         d -= 1
@@ -500,7 +509,10 @@ class DotGraph
   # Calls the graphviz utility given in _cmd_.
   #
   # _filename_ :: name of the file to be created
-  # _cmd_  :: command line to be executed
+  # _cmd_  :: command line to be executed.
+  #           You can use <tt>:nop</tt>, <tt>:nop2</tt> for
+  #           <tt>"neato -n"</tt> and <tt>"neato -n2"</tt>. This increases
+  #           compatibility with the dotgraph-gv package.
   # _lang_ :: the output format (given as String or Symbol). Besides all
   #           formats understood by _cmd_ -T _lang_ you may use
   #           <tt>:pspdf</tt> to generate pdf files using ps.
@@ -510,7 +522,14 @@ class DotGraph
   # Example:
   #   g.to_graphviz('graph.svg', 'twopi', :svg, "outputorder=edgesfirst", "node [ shape=point, style=filled ]" ])
   #   g.to_graphviz('graph.pdf', 'twopi', :pspdf)
-  def to_graphviz(filename, cmd, lang, *attrs, &block)
+  def to_graphviz_cmd(filename, cmd, lang, *attrs, &block)
+    case cmd.to_sym
+    when :nop, :nop1
+      cmd = 'neato -n'
+    when :nop2
+      cmd = 'neato -n2'
+    end
+
     if lang == :pspdf
       IO.popen("#{cmd} -Tps|#{PS2PDF} #{filename}","w") do |io| 
         io << to_dot(*attrs, &block)
@@ -521,6 +540,39 @@ class DotGraph
       end
     end
   end
+
+  alias to_graphviz to_graphviz_cmd    # if dotgraph-gv.rb is not required
+
+  # Calls the graphviz utility given in _cmd_ to render the graph.
+  #
+  # _cmd_  :: command line to be executed.
+  #
+  # All other attributes are propagated to #to_dot.
+  #
+  # Returns a hash of node names (as returned by #nid) and node positions
+  # as strings.
+  #
+  # Usage:
+  #  gp = g.render_graphviz(:twopi, "overlap=scale", "splines=true", ...) # Render the graph with the layout wanted
+  #  g.nodeblock { |n| ["pos=\"#{gp[g.nid(n)]}\"", 'pin'] } # Set a new node attributes block. pos gives the positions, pin tells to stick on them.
+  #  g.to_graphviz('graph1.pdf', :nop, :pdf) # output the resulting graph (the :nop render engine respects node positions)
+  #  # change the graph, e.g. remove links etc...
+  #  g.to_graphviz('graph2.pdf', :nop, :pdf) # output the changed graph with identical node positions
+  def render_graphviz_cmd(cmd, *attrs, &block) 
+    node_pos = Hash.new
+    IO.popen("#{cmd}", 'r+') do |c| 
+      c << to_dot(*attrs, &block)
+      c.close_write
+      c.read
+    end.each_line do |line|
+      if line =~ /^\s*(\S+)\s+\[.*pos="([^"]+)".*\];\s*$/
+        node_pos[$1] = $2
+      end
+    end
+    return node_pos
+  end
+
+  alias render_graphviz render_graphviz_cmd  # if dotgraph-gv.rb is not required
 
   # Creates a LaTeX String representing   
   #
@@ -857,9 +909,10 @@ class DotGraph
     end
 
     # String representation of this Link in dotfile syntax.
-    def to_dot
+    def to_dot(*attrs)
       s = "  \"#{nid(@src)}\" #{edgesymbol} \"#{nid(@dest)}\" "
       s << "[#{@attrs.join(',')}]" unless @attrs.empty?
+      s << "[#{attrs.join(',')}]" unless attrs.empty?
       if block_given?
         s << yield(@weight)
       else
@@ -885,7 +938,12 @@ class DotGraph
     def directed # :nodoc:
       @graph.directed
     end
-    
+
+    # true if there is no link from _dest_ to _source_ in this graph
+    def oneway?
+      !@graph.links.has_key?([@dest, @src])
+    end
+
     # weight label of this Link in dotfile syntax
     def weightlabel(count)
     "[weight=#{count},taillabel=\"#{count}\",fontcolor=\"grey\",fontsize=5,labelangle=0]"

@@ -163,6 +163,14 @@ module Mediawiki
     #       _a_ to _b_ on page _p_ (see Page#interlockingresponses) and
     #       _k_=2 (default), can be changed with <tt>:k</tt>. The function
     #       kind of reverts for _k_<1.
+    #     <tt>:rootsqrs</tt>::
+    #       for any pair of users _a_, _b_ the link weight of the link from
+    #       _a_ to _b_ is 
+    #       <tt>sum_{<i>p</i>\in P}(il_<i>p</i>(_a_->_b_)^k)</tt> with
+    #       <tt>il_<i>p</i>(_a_->_b_)</tt> the interlockingresponse from
+    #       _a_ to _b_ on page _p_ (see Page#interlockingresponses) and
+    #       _k_=2 (default), can be changed with <tt>:k</tt>. The function
+    #       kind of reverts for _k_<1.
     #     <tt>:max</tt>::
     #       for any pair of users _a_, _b_ the link weight of the link from
     #       _a_ to _b_ is the maximum of all Page#interlockingresponses between
@@ -218,14 +226,16 @@ module Mediawiki
             to.each_pair { |v,n| g.link(u,v,Math.log(n+1)) }
           }
         end
-      when :squares
+      when :squares, :rootsqrs
         pages(filter).each do |p| 
           p.interlockingresponses(filter).each_pair { |u,to|
             to.each_pair { |v,n| g.link(u,v,n**k) }
           }
         end
-        kk = 1.0/k
-        g.links.each_value { |l| l.weight = l.weight**kk}
+        if counts == :rootsqrs
+          kk = 1.0/k
+          g.links.each_value { |l| l.weight = l.weight**kk}
+        end
       when :max
         pages(filter).each do |p|
           p.interlockingresponses(filter).each_pair { |u,to|
