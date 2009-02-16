@@ -73,6 +73,22 @@ class DotGraph
     end
   end
   
+  def undirected(mode=:add)
+    g = DotGraph.new(@nodes, 
+                     :directed => false, 
+                     :linkcount => @linkcount,
+                     :nid => @use_nid,
+                     &@lproc)
+    @links.each do |k,l|
+      if (mode==:min) && @directed
+        g.link(k[0], k[1], l.weight, :min) if @links[k.reverse]
+      else
+        g.link(k[0], k[1], l.weight, mode)
+      end
+    end
+    return g
+  end
+
   # sets the block to be used to generate note labels for each node.
   # If no block is given it just returns the current block.
   def nodeblock(&nodeblock)
@@ -86,11 +102,14 @@ class DotGraph
   #   source and destination of this link. If the graph is undirected
   #   they are sorted in canonical order (using #object_id).
   # _w_ :: weight of this link
-  # _add_ :: addmode. 
-  #   * if _true_ and the link (same _src_ and _dest_) already exists, _w_ 
-  #     is added to the link weight.
-  #   * if _false_, the maximum of the old link weight and _w_ is used.
-  def link(src, dest, w=1, add=true)
+  # _add_ :: 
+  #   addmode. 
+  #   <tt>:add</tt>, _true_ :: if the link (same _src_ and _dest_) 
+  #                            already exists, _w_ is added to the link weight.
+  #   <tt>:max</tt>, _false_ :: the maximum of the old link weight and _w_ is 
+  #                             used.
+  #   <tt>:min</tt> :: the minimum of the old link weight and _w_ is used.
+  def link(src, dest, w=1, add=:add)
     src, dest = dest, src  if (!@directed) && (src.object_id > dest.object_id)
     key = [src,dest]
     unless l = @links[key]
@@ -100,10 +119,13 @@ class DotGraph
       @links[key] = l
     end
 
-    if add
-      l.addweight(w)
-    else
+    case add
+    when :max, false
       l.maxweight(w)
+    when :min
+      l.minweight(w)
+    else # add
+      l.addweight(w)
     end
     l
   end
@@ -558,7 +580,7 @@ class DotGraph
   #  g.to_graphviz('graph1.pdf', :nop, :pdf) # output the resulting graph (the :nop render engine respects node positions)
   #  # change the graph, e.g. remove links etc...
   #  g.to_graphviz('graph2.pdf', :nop, :pdf) # output the changed graph with identical node positions
-  def render_graphviz_cmd(cmd, *attrs, &block) 
+  def render_graphviz_cmd(cmd, *attrs, &block)
     node_pos = Hash.new
     IO.popen("#{cmd}", 'r+') do |c| 
       c << to_dot(*attrs, &block)
@@ -906,6 +928,11 @@ class DotGraph
     # sets link weight to the maximum of the old link weight and _w_.
     def maxweight(w)
       @weight = w if w>@weight
+    end
+
+    # sets link weight to the minimum of the old link weight and _w_.
+    def minweight(w)
+      @weight = w if w<@weight
     end
 
     # String representation of this Link in dotfile syntax.
