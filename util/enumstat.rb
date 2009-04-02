@@ -12,6 +12,7 @@ module Enumerable
   # Returns an Array of Arrays representing x and y coordinates of the curve
   # scaled to [0,1][0,1]
   def stat_lorenz
+    return [[0,0],[1,1]] if empty? # or should we throw an error?
     sum = 0
     a = sort.collect { |s| sum += s }
     xmax = a.length.to_f

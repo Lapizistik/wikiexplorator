@@ -312,7 +312,11 @@ class Gnuplot
       @sets << ['terminal', "png enhanced size #{size}"]
       @sets << ['output', "'#{file}'"]
     elsif file = p[:pdf]
-      @sets << ['terminal', "pdf"]
+      if size = p[:size]
+        @sets << ['terminal', "pdf size #{size}"]
+      else
+        @sets << ['terminal', "pdf"]
+      end
       @sets << ['output', "'#{file}'"]
     elsif file = p[:svg]
       size = p[:size] || 'dynamic'
@@ -322,7 +326,11 @@ class Gnuplot
       @sets << ['terminal', "fig"]
       @sets << ['output', "'#{file}'"]
     elsif file = p[:pspdf]
-      @sets << ['terminal', "postscript eps enhanced color"]
+      if size = p[:size]
+        @sets << ['terminal', "postscript eps enhanced color size #{size}"]
+      else
+        @sets << ['terminal', "postscript eps enhanced color"]
+      end
       @sets << ['output', "'| #{PS2PDF} #{file}'"]
     end
   end

@@ -1,6 +1,7 @@
 #!/usr/bin/ruby -w
 
 require 'util/enumstat'
+require 'set'
 
 class Gnuplot
   # :call-seq:
@@ -74,6 +75,112 @@ class Gnuplot
       gp.set('size', 'ratio -1')
       gp.plot(params) if params[:plot]
     end
+  end
+  
+  # Creates a Gnuplot object containing a 3d representation of successing 
+  # Lorenz curves and plots it (unless <tt>:plot</tt>=>false). Returns the
+  # generated Gnuplot object.
+  # 
+  # ars:: an array: [[x1, [z1, z2, z3]], [x2, [z4, z5, z6, z7]], ...]
+  #       the lorenz curve of arrays [z1, z2, z3], ... is computed
+  #       and displayed side by side.
+  #
+  # This allows e.g. to show changes in time.
+  # Example:
+  #   tr = wiki.timeraster(:step => :week, :zero => :week)
+  #   r1 = tr.collect { |t| wiki.filter.endtime=t
+  #     [t,wiki.users.collect {|u| u.revisions.length}.reject {|rr| rr==0 }] }
+  #   Gnuplot.plot_lorenz_3d(r1, :view => 'map')
+  def Gnuplot.plot_lorenz_3d(ars, ps={})
+    params = {
+      :title => "Lorenz Curves",
+      :xlabel => "curves",
+      :ylabel => "curve",
+      :zlabel => "cumulative values",
+      :key => "off",
+      :pm3d => true,
+      :interpolate => '1,1',
+      :palette => 'grey',
+      :gamma => 2,
+      :plot => true
+    }
+
+    params.merge!(ps)
+
+    
+    xx = Set.new
+
+    ars = ars.collect do |t,a|
+      puts t.inspect, a.inspect
+      a = a.stat_lorenz
+      a.each { |x,y| xx << x }
+      [t, a]
+    end
+
+    xx = xx.sort
+
+    data = []
+    ars.each do |t, a|
+      Gnuplot.interpolate(a,xx).each do |y, z|
+        data << [t,y,z]
+      end
+      data << []
+    end
+
+#    return data
+
+    Gnuplot.new do |gp|
+      if view = params[:view]
+        gp.set('view', view)
+      end
+      gp.set('title', params[:title], true)
+      gp.set('key', params[:key])
+      gp.set('xlabel', params[:xlabel], true)
+      gp.set('ylabel', params[:ylabel], true)
+      gp.set('zlabel', params[:zlabel], true)
+      gp.set('ytics', '0.1')
+      gp.set('yrange','[0:1]')
+      gp.set('zrange','[0:1]')
+#      gp.set('size', 'ratio -1')
+      if params[:pm3d]
+        gp.set('pm3d')
+        gp.set('pm3d',"interpolate #{params[:interpolate]} flush center ftriangles")
+        gp.set('palette',params[:palette])
+        gamma = params[:gamma]
+        if gamma<0
+          gp.set('palette','negative')
+          gamma = -gamma
+        end
+        gp.set('palette', "gamma #{gamma}")
+        gp.set('style', 'data pm3d')
+      end
+      if view = params[:view]
+        gp.set('view', view)
+      end
+
+      gp.add(data,params)
+      gp.splot(params) if params[:plot]
+    end
+
+  end
+
+  private
+  # the following will only work for the specially prepaired arrays 
+  # from plot_lorenz_3d (they are guaranteed to contain [0,0] and [1,1])
+  def Gnuplot.interpolate(a,xx)
+    i=0
+    aa = []
+    a.each_cons(2) do |l,r|
+      aa << l
+      lx, ly = *l
+      rx, ry = *r
+      i+=1 while (x=xx[i]) && (x <= lx)  # search for first coord within slice.
+      while (x=xx[i]) && (x < rx)
+        aa << [x, (x-lx)*(ry-ly)/(rx-lx)+ly]
+        i+=1
+      end
+    end
+    aa << a.last
   end
 end
 
