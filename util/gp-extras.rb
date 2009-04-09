@@ -5,8 +5,9 @@ require 'set'
 
 class Gnuplot
   # :call-seq:
-  # Gnuplot.plot_lorenz(a1, ..., an, :title => 'Lorenz Curve', :xlabel => 'items', :ylabel => 'cumulative values', ...)
-  # Gnuplot.plot_lorenz(a)
+  # plot_lorenz(a1, ..., an, :title => 'Lorenz Curve', :xlabel => 'items', :ylabel => 'cumulative values', ...) { |gp| ... }
+  # plot_lorenz(a1, ..., an, :title => 'Lorenz Curve', :xlabel => 'items', :ylabel => 'cumulative values', ...)
+  # plot_lorenz(a)
   #
   # Creates a Gnuplot object containing the Lorenz curve of any number of 
   # Enumerables and plots it (unless <tt>:plot</tt>=>false). Returns the
@@ -34,6 +35,9 @@ class Gnuplot
   #   plotted. Use this if you want to add further settings or other plots
   #   to the Gnuplot object returned.
   #   
+  # If a block is given it is yielded with the Gnuplot object as parameter
+  # before the plot command. This allows "last minute" customization.
+  #
   # All parameters are forwarded to Gnuplot#plot.
   def Gnuplot.plot_lorenz(*args)
     params = {
@@ -73,17 +77,45 @@ class Gnuplot
       gp.set('xrange','[0:1]')
       gp.set('yrange','[0:1]')
       gp.set('size', 'ratio -1')
+      yield(gp) if block_given?
       gp.plot(params) if params[:plot]
     end
   end
   
+  # :call-seq:
+  # plot_lorenz_3d(ars, :title => 'Lorenz Curves', ...) { |gp| ... }
+  # plot_lorenz_3d(ars, :title => 'Lorenz Curves', ...)
+  # plot_lorenz_3d(ars)
+  #
   # Creates a Gnuplot object containing a 3d representation of successing 
   # Lorenz curves and plots it (unless <tt>:plot</tt>=>false). Returns the
   # generated Gnuplot object.
   # 
-  # ars:: an array: [[x1, [z1, z2, z3]], [x2, [z4, z5, z6, z7]], ...]
-  #       the lorenz curve of arrays [z1, z2, z3], ... is computed
-  #       and displayed side by side.
+  # _ars_ is an array of the form 
+  # [[<i>x1</i>, [<i>z1</i>, <i>z2</i>, <i>z3</i>]], 
+  # [<i>x2</i>, [<i>z4</i>, <i>z5</i>, <i>z6</i>, <i>z7</i>]], ...].
+  # The lorenz curve of arrays [<i>z1</i>, <i>z2</i>, <i>z3</i>], ... 
+  # is computed and displayed side by side, where <i>xi</i> gives the 
+  # x-values.
+  #
+  # The following named parameters are recogniced:
+  # <tt>:title => "Lorenz Curves"</tt>:: the plot title
+  # <tt>:xlabel => "curves"</tt>:: x axis label
+  # <tt>:ylabel => "curve"</tt>:: y axis label
+  # <tt>:zlabel => "cumulative values"</tt>:: z axis label
+  # <tt>:key => "off"</tt>:: key position. <tt>"off"</tt> means no key
+  # <tt>:pm3d => true</tt>:: 
+  #   whether to use <tt>pm3d</tt> coloring. The following parameters
+  #   (besides <tt>:plot</tt>) are only used if this is true.
+  # <tt>:interpolate => '1,1'</tt>:: number of interpolation steps
+  # <tt>:palette => 'grey'</tt>:: palette to be used
+  # <tt>:maxcolors => false</tt>:: 
+  #   if a number is given it denotes the number of different colors to use 
+  # <tt>:gamma => 2</tt>:: gamma correction
+  # <tt>:plot => true</tt>:: 
+  #   Boolean indicating whether the generated Gnuplot object should be
+  #   plotted. Use this if you want to add further settings or other plots
+  #   to the Gnuplot object returned.
   #
   # This allows e.g. to show changes in time.
   # Example:
@@ -91,6 +123,11 @@ class Gnuplot
   #   r1 = tr.collect { |t| wiki.filter.endtime=t
   #     [t,wiki.users.collect {|u| u.revisions.length}.reject {|rr| rr==0 }] }
   #   Gnuplot.plot_lorenz_3d(r1, :view => 'map')
+  #
+  # If a block is given it is yielded with the Gnuplot object as parameter
+  # before the plot command. This allows "last minute" customization.
+  #
+  # All parameters are forwarded to Gnuplot#plot.
   def Gnuplot.plot_lorenz_3d(ars, ps={})
     params = {
       :title => "Lorenz Curves",
@@ -101,6 +138,7 @@ class Gnuplot
       :pm3d => true,
       :interpolate => '1,1',
       :palette => 'grey',
+      :maxcolors => false,
       :gamma => 2,
       :plot => true
     }
@@ -145,6 +183,8 @@ class Gnuplot
       if params[:pm3d]
         gp.set('pm3d')
         gp.set('pm3d',"interpolate #{params[:interpolate]} flush center ftriangles")
+        maxcolors = params[:maxcolors]
+        gp.set('palette', "maxcolors #{maxcolors}") if maxcolors
         gp.set('palette',params[:palette])
         gamma = params[:gamma]
         if gamma<0
@@ -159,6 +199,7 @@ class Gnuplot
       end
 
       gp.add(data,params)
+      yield(gp) if block_given?
       gp.splot(params) if params[:plot]
     end
 

@@ -63,6 +63,7 @@ module Mediawiki
       @name = options[:name] || 'wiki'
       @language = options[:language] || 'en'
       @ips = options[:ips]
+      @includetexts = options[:includetexts] || :include
 
       @owner = options[:owner] 
 
@@ -443,10 +444,11 @@ module Mediawiki
           
           # Read all the raw text data
           @texts_id = {}
-          dbh.texts do |tid, t, flags|
-#            puts("»%s« (%s); »%s« (%s); »%s« (%s)" % 
-#                 [tid, tid.class, t, t.class, flags, flags.class])
-            @texts_id[tid] = Text.new(self, tid, t, flags)
+          if [:include, true, :linksonly].include?(@includetexts)
+            dbh.texts do |tid, t, flags|
+              @texts_id[tid] = Text.new(self, tid, t, flags, 
+                                        @includetexts != :linksonly)
+            end
           end
           
           # and the pages
@@ -1103,6 +1105,8 @@ module Mediawiki
   
   # the pure plain text
   class Text
+
+    DeletedText = '<deleted>'
     
     # the text id
     attr_reader :tid
@@ -1121,7 +1125,7 @@ module Mediawiki
     # creates a new Text. _wiki_ is the Wiki the revision belongs to, all
     # other parameters correspond to the fields in the corresponding database
     # table. 
-    def initialize(wiki, tid, text, flags)
+    def initialize(wiki, tid, text, flags, keeptext=true)
       @wiki = wiki
       @tid = tid
       @text = text
@@ -1130,6 +1134,8 @@ module Mediawiki
       @internal_links = []
 
       parse_text
+
+      @text = DeletedText unless keeptext
     end
     
     # the raw text as found in the database
