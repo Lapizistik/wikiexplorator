@@ -24,6 +24,7 @@ Rake::RDocTask.new(:html) do |rd|
   rd.main = rd_main
   rd.rdoc_files.include(*rd_include)
   rd.options << "-S"
+  rd.template = 'mwrdoc'
 end
 
 desc 'Package files for release'

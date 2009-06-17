@@ -608,8 +608,10 @@ module Mediawiki
     # (exact matching) or Regexp.
     def has_role?(r)
       case r
-      when String : @roles.include?(r)
-      when Regexp : @roles.find { |s| s =~ r }
+      when String 
+        @roles.include?(r)
+      when Regexp 
+        @roles.find { |s| s =~ r }
       end
     end
 
@@ -812,8 +814,10 @@ module Mediawiki
     # TODO: better in Revision?
     def has_genre?(g)
       case g
-      when String : @genres.include?(g)
-      when Regexp : @genres.find { |s| s =~ g }
+      when String 
+        @genres.include?(g)
+      when Regexp 
+        @genres.find { |s| s =~ g }
       end
     end
 
@@ -1288,8 +1292,10 @@ module Mediawiki
     def deny_user(*ua)
       ua.each do |u|
         case u
-        when Integer    : u = @wiki.user_by_id(u)
-        when String     : u = @wiki.user_by_name(u)
+        when Integer
+          u = @wiki.user_by_id(u)
+        when String
+          u = @wiki.user_by_name(u)
         end
         @denied_users << u
       end
@@ -1301,8 +1307,10 @@ module Mediawiki
     def undeny_user(*ua)
       ua.each do |u|
         case u
-        when Integer    : u = @wiki.user_by_id(u)
-        when String     : u = @wiki.user_by_name(u)
+        when Integer
+          u = @wiki.user_by_id(u)
+        when String
+          u = @wiki.user_by_name(u)
         end
         @denied_users.delete(u)
       end
