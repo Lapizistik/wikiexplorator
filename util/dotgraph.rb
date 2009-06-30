@@ -16,6 +16,9 @@ require 'set'
 class DotGraph
   # the ps2pdf command (reading from stdin)
   PS2PDF = ENV['RB_PS2PDF'] || 'epstopdf --filter --outfile'
+  # path the graphviz binaries can be found. No need to set this if they 
+  # can be fount in the path.
+  GRAPHVIZ_PATH = ENV['RB_GRAPHVIZ_PATH']
 
   # the objects representing the nodes of the graph. This is subject to change 
   # as we will introduce special DotGraph::Node objects in future when needed
@@ -550,6 +553,10 @@ class DotGraph
       cmd = 'neato -n'
     when :nop2
       cmd = 'neato -n2'
+    end
+
+    if GRAPHVIZ_PATH
+      cmd = File.join(GRAPHVIZ_PATH, cmd)
     end
 
     if lang == :pspdf

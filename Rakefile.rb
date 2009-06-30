@@ -17,7 +17,7 @@ end
 
 # Documentation
 rd_main = "mediawiki.rb"
-rd_include = [rd_main, "mywikis.rb", "mediawiki/", "util/"]
+rd_include = [rd_main, "mywikis.rb", "mediawiki/", "util/", "INSTALL"]
 
 desc 'Generate the documentation in html'
 Rake::RDocTask.new(:html) do |rd|
@@ -28,7 +28,7 @@ Rake::RDocTask.new(:html) do |rd|
 end
 
 desc 'Package files for release'
-Rake::PackageTask.new('mwparser','0.8') do |p|
+Rake::PackageTask.new('mwparser','0.82') do |p|
   globs = %w(mediawiki util test html).collect { |w| w + '/**/*' } +
     %w(Rakefile.rb mediawiki.rb mywikis.rb)
   p.package_files.include(*globs)
