@@ -116,7 +116,6 @@ module Mediawiki
     # _pw_:: database password
     # _options_:: 
     #   a hash with further options:
-    #   <tt>:engine</tt>=><tt>"Mysql"</tt>:: the database engine to be used.
     #   <tt>:version</tt>=><tt>1.8</tt>:: 
     #     used, if reading the database is different in different Mediawiki 
     #     versions. Not really implemented until now!
@@ -152,8 +151,9 @@ module Mediawiki
     #     additional namespaces Custom and Custom_talk with id 100 and 101 
     #     in your wiki you use:
     #       :ns_mapping=>{'Custom' => 100, 'Custom_talk' => 101}
-    #   <tt>:owner</tt> :: a Hash with additional information about the wiki 
-    #     owner.
+    #   <tt>:owner</tt> :: 
+    #     a Hash with additional information about the wiki owner.
+    #   For database specific options see Mediawiki::DB.new
     def Wiki.open(db, host, user, pw, options={})
       Wiki.new(DB.new(db, host, user, pw, options), options)
     end

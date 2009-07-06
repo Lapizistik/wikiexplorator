@@ -1,12 +1,37 @@
 #!/usr/bin/ruby -w
 
+require 'util/epstopdf'
+
+# The Gnuplot class is a kind of wrapper for the gnuplot program.
+# I was aware of the +gnuplot+ GEM but needed something slightly different.
+# (In the beginning I tried to stay kind of compatible but skipped this later)
+# 
+# On windows you may use either the win32 or the dj2 (DOS, command line) 
+# gnuplot version (or if you are a cygwin user the cygwin version which works
+# best). Both have some advantages/disadvantages:
+# * The dos version (<tt>gnuplot.exe</tt>) is best for batch, i.e. to create 
+#   nice bitmap or vector graphics, but the interactive graph display is 
+#   somehow limited.
+# * The windows version (<tt>wgnuplot</tt> and <tt>pgnuplot</tt>) gives a
+#   nice graphical window but has known problems with larger data sets
+#   (data miss by buffer overflow).
+#   So to use this version set the environment variable <tt>RB_GNUPLOT</tt>
+#   to <tt>"pgnuplot"</tt> (you may also specify the full path) and the
+#   environment variable <tt>RB_GNUPLOT_DELAY</tt> to <tt>0.01</tt> which
+#   slows down the data stream.
 class Gnuplot
+  include Epstopdf
+
   # the gnuplot command
   CMD = ENV['RB_GNUPLOT'] || 'gnuplot'
-  # the ps2pdf command (reading from stdin)
-  PS2PDF = ENV['RB_PS2PDF'] || 'epstopdf --filter --outfile'
-  
-  T0 = Time.gm(2000) # gnuplot zero time
+
+  # gnuplot pipe delay in seconds (only for pgnuplot on windows!).
+  # If there are problems with hanging gnuplot processes try to set this to
+  # something around 0.01
+  PIPEDELAY = ((pd = ENV['RB_GNUPLOT_DELAY']) && pd.to_f)
+
+  # gnuplot zero time
+  T0 = Time.gm(2000)
 
   # A collection of all datasets to be plottet 
   attr_reader :datasets
@@ -154,11 +179,9 @@ class Gnuplot
 
   # Add cmd to the sequence of commands to be passed to gnuplot and
   # call gnuplot with the whole chain.
-  def command!(cmd)
+  def command!(cmd, persist=true)
     @sets << cmd
-    Gnuplot.open { |io|
-      io << sets_to_s
-    }
+    gnuplot(sets_to_s, persist)
   end
 
   # Adds _data_ to the datasets to be plotted by the next #plot or #splot 
@@ -191,28 +214,22 @@ class Gnuplot
   # those given in _params_ and calls the gnuplot +plot+ command with
   # all datasets (2d plotting).
   #
-  # See #xplot_to_s for details.
+  # See #xplot for details.
   def plot(params={})
-    Gnuplot.open { |io| 
-      io << xplot_to_s('plot', params)
-    }
+    xplot('plot', params)
   end
 
   # Starts the gnuplot process, pipes all settings to it, including
   # those given in _params_ and calls the gnuplot +splot+ command with
   # all datasets (3d plotting).
   #
-  # See #xplot_to_s for details.
+  # See #xplot for details.
   def splot(params={})
-    Gnuplot.open { |io| 
-      io << xplot_to_s('splot', params)
-    }
+    xplot('splot', params)
   end
 
-  # Creates a string representation of this Gnuplot object in +gnuplot+
-  # format with a +plot+ or +splot+ command plotting all datasets as last
-  # command. Saving the resulting string to a file and starting gnuplot 
-  # with this file should give the according plot.
+  # Calls gnuplot with the appropriate +plot+ or +splot+ command
+  # plotting all datasets as last command.
   #
   # You normally do not call this method directly but use #plot or
   # #splot.
@@ -227,13 +244,76 @@ class Gnuplot
   #  gp.plot(:svg => 'test.svg', :size => '640 400') # a nice SVG.
   #  gp.plot(:pdf => 'test.pdf') # a nice PDF.
   #  gp.plot(:fig => 'test.fig') # a nice xfig.
-  def xplot_to_s(plotcmd, params={})
-    set_params(params)
-    s = sets_to_s 
-    s << "#{plotcmd} #{params[:ranges] || params[:range]} "
+  def xplot(plotcmd, params={})
+
+    if file = params[:pspdf]  # this needs special handling
+      if size = params[:size]
+        @sets << ['terminal', "postscript eps enhanced color size #{size}"]
+      else
+        @sets << ['terminal', "postscript eps enhanced color"]
+      end
+
+      epstopdf(file) do |tmpfile|
+        @sets << ['output', "'#{tmpfile}'"]
+        s = xplot_to_s(plotcmd, params[:ranges] || params[:range])
+        gnuplot(s, params[:persist])
+      end
+
+    else # other output devices
+      persist = false  # we assume output to go to file.
+      if file = params[:png]
+        size = params[:size] || '900,675'
+        @sets << ['terminal', "png enhanced size #{size}"]
+        @sets << ['output', "'#{file}'"]
+      elsif file = params[:pdf]
+        if size = params[:size]
+          @sets << ['terminal', "pdf size #{size}"]
+        else
+          @sets << ['terminal', "pdf"]
+        end
+        @sets << ['output', "'#{file}'"]
+      elsif file = params[:svg]
+        size = params[:size] || 'dynamic'
+        @sets << ['terminal', "svg enhanced size #{size}"]
+        @sets << ['output', "'#{file}'"]
+      elsif file = params[:fig]
+        @sets << ['terminal', "fig"]
+        @sets << ['output', "'#{file}'"]
+      else
+        persist = true # output to GUI.
+      end
+      persist = params[:persist] if params.has_key?(:persist) # user overwrite
+
+      s = xplot_to_s(plotcmd, params[:ranges] || params[:range])
+      gnuplot(s, persist)
+    end
+  end
+
+  def xplot_to_s(plotcmd, range) # :nodoc:
+    s = sets_to_s
+    s << "#{plotcmd} #{range} "
     s << @datasets.collect { |d| d.params_to_s }.join(', ') << "\n"
     s << @datasets.collect { |d| d.data_to_s }.compact.join
+    s << "\n"
   end
+
+  # this was a one-liner before I had to do the windows port...
+  # (and I confess, it's kind of a hack)
+  def gnuplot(s, persist=true) # :nodoc:
+    Gnuplot.open(persist) do |io|
+      if PIPEDELAY
+        io.sync = true
+        # special slowdown due to stupid windows pgnuplot limitations!
+        s.split("\n").each do |ss| 
+          io << ss << "\n"
+          sleep(PIPEDELAY) 
+        end
+      else # the normal easy way:
+        io << s
+      end
+    end
+  end
+
 
   # computes a fit function and adds it to the plotables to be plotted
   # on #plot or #splot. If you add more than one fitting function
@@ -304,35 +384,6 @@ class Gnuplot
         set
       end
     }.join(";\n") + "\n"
-  end
-
-  def set_params(p)
-    if file = p[:png]
-      size = p[:size] || '900,675'
-      @sets << ['terminal', "png enhanced size #{size}"]
-      @sets << ['output', "'#{file}'"]
-    elsif file = p[:pdf]
-      if size = p[:size]
-        @sets << ['terminal', "pdf size #{size}"]
-      else
-        @sets << ['terminal', "pdf"]
-      end
-      @sets << ['output', "'#{file}'"]
-    elsif file = p[:svg]
-      size = p[:size] || 'dynamic'
-      @sets << ['terminal', "svg enhanced size #{size}"]
-      @sets << ['output', "'#{file}'"]
-    elsif file = p[:fig]
-      @sets << ['terminal', "fig"]
-      @sets << ['output', "'#{file}'"]
-    elsif file = p[:pspdf]
-      if size = p[:size]
-        @sets << ['terminal', "postscript eps enhanced color size #{size}"]
-      else
-        @sets << ['terminal', "postscript eps enhanced color"]
-      end
-      @sets << ['output', "'| #{PS2PDF} #{file}'"]
-    end
   end
 
   # Start the +gnuplot+ process and connect IO to it.

@@ -3,6 +3,7 @@
 # =  Dot Graph Library
 
 require 'set'
+require 'util/epstopdf.rb'
 
 # = Graph class for creating dot-Files
 #
@@ -14,8 +15,8 @@ require 'set'
 # Perhaps I should rewrite this to use rgl (by subclassing?) 
 # <http://rgl.rubyforge.org/rgl/index.html> (which I found to late)
 class DotGraph
-  # the ps2pdf command (reading from stdin)
-  PS2PDF = ENV['RB_PS2PDF'] || 'epstopdf --filter --outfile'
+  include Epstopdf
+
   # path the graphviz binaries can be found. No need to set this if they 
   # can be fount in the path.
   GRAPHVIZ_PATH = ENV['RB_GRAPHVIZ_PATH']
@@ -560,11 +561,13 @@ class DotGraph
     end
 
     if lang == :pspdf
-      IO.popen("#{cmd} -Tps|#{PS2PDF} #{filename}","w") do |io| 
-        io << to_dot(*attrs, &block)
+      epstopdf(filename) do |tmpfile|
+        IO.popen("#{cmd} -Tps -o \"#{tmpfile}\"","w") do |io| 
+          io << to_dot(*attrs, &block)
+        end
       end
     else
-      IO.popen("#{cmd} -T#{lang} -o '#{filename}'","w") do |io| 
+      IO.popen("#{cmd} -T#{lang} -o \"#{filename}\"","w") do |io| 
         io << to_dot(*attrs, &block)
       end
     end

@@ -23,10 +23,14 @@
 #  puts r.efficiency(adjm) # compute the efficiency using R
 #  r.gplot(adjm)           # and plot the graph using R
 
-
-r_home = `R cmd BATCH RHOME`.chomp
-if $?.exitstatus>0
-  warn 'R not found! rsruby will _not_ work!'
+begin # let's see whether R is there and available
+  # Unfortunately windows and unices (Linux, MacOS, ...) differ here:
+  # While windows throws an exception if the command is missing,
+  # unix just reports by exitstatus.
+  r_home = `R cmd BATCH RHOME`.chomp     # Windows: Errno::ENOENT if missing
+  raise Errno::ENOENT if $?.exitstatus>0 # Unix: we raise the error by hand
+rescue 
+  raise LoadError, 'R not found! rsruby will _not_ work!'
 else
   ENV['R_HOME']=r_home
   require 'rsruby'

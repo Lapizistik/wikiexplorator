@@ -61,22 +61,79 @@ module Mediawiki
 
   class DB
 
+    # Setup for a new database connection. The connection itself is initiated
+    # by calling #connect.
+    #
+    # _db_:: database name
+    # _host_:: database host
+    # _user_:: database user
+    # _pw_:: database password
+    # _options_:: 
+    #   a hash with further options:
+    #   <tt>:engine</tt>=><tt>"Mysql"</tt>:: the database engine to be used.
+    #   <tt>:driver</tt> :: The driver for the ODBC engine.
+    #   <tt>:port</tt> :: database port (of not default port)
+    #   <tt>:connectionstring</tt> ::
+    #     if a connectionstring is given it is used as provided and 
+    #     _db_, _host_, <tt>:engine</tt>, <tt>:port</tt> are ignored.
+    #   <tt>:prefix</tt>=><tt>""</tt> :: table names prefix
+    #   <tt>:version</tt>=><tt>1.8</tt>:: 
+    #     used, if reading the database is different in different Mediawiki 
+    #     versions. Not really implemented until now!
+    # 
+    # Creating DBI connections is a mess, as the connection string heavily 
+    # depends on the engine used. So if connecting does not work try to 
+    # provide a connection string.
+    #
+    # You may get problems if you have a ";" or "{" in your password 
+    # (I do not know how to fix this, see source code).
+    #
+    # Patches on this are certainly welcome.
     def initialize(db, host, user, pw, options={})
       @db = db
       @host = host
       @dbuser = user
       @dbpassword = pw
-      @dbengine = options[:engine] || 'Mysql'
       @version = options[:version] || 1.8
       @prefix = options[:prefix] || ''
-      @port = options[:port]
-    end
-    
-    def connect
-      dbs = "DBI:#{@dbengine}:database=#{@db};host=#{@host}"
-      dbs << ";port=#{@port}" if @port
+      dbengine = options[:engine] || 'Mysql'
+      driver = options[:driver]
+      port = options[:port]
 
-      DBI.connect(dbs, @dbuser, @dbpassword) do |dbh| 
+      @dbs = options[:connectionstring] || 
+        begin
+          # now things get complicated as the DBI connection string is DBD 
+          # specific (and may depend on whatever). It's all a big mess as
+          # you can see here:
+          # http://www.connectionstrings.com/Articles/Show/important-rules-for-connection-strings
+          # (and the roles given there do not really apply everywhere).
+          s = "DBI:#{dbengine}:database=#{@db};"
+          s << "driver=#{driver};" if driver
+          s << case dbengine.downcase # some DBD want "host", others "server"
+               when 'mysql','pg'
+                 'host'
+               when 'odbc'
+                 'server'
+               else # unknown database engine
+                 'server'  # hm, what should be the default here?
+               end
+          s << "=#{@host}"
+          s << ";port=#{port}" if port
+          # We include username and passwort in the connectionstring
+          # as ODBC with Mysql DBD did not work with user and password provided
+          # as additional parameters (when I tried on Windows).
+          s << ";user=#{@dbuser}"
+          # As "{" and ";" have special meaning and I did not find any
+          # quoting mechanism working with all drivers (and I tried a lot) 
+          # we only add the password if it does not include these characters:
+          s << ";password=#{@dbpassword}" unless (@dbpassword.include?(?;) ||
+                                                  @dbpassword.include?(?{))
+          s 
+        end
+    end
+
+    def connect
+      DBI.connect(@dbs, @dbuser, @dbpassword) do |dbh| 
         yield(MWDBI.new(dbh, @prefix))
       end
     end
