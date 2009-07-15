@@ -47,7 +47,7 @@ def gp_time(file, title, ylabel, *data)
 #    gp.set('xlabel "month"')
     gp.set("ylabel \"#{ylabel}\"")
     gp.plot(topdf => file)
-  end
+  end 
 end
 %>
 
@@ -171,6 +171,7 @@ s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
 \usepackage{tabularx}
 \usepackage{graphicx}
 %\usepackage{subfigure}
+\usepackage{url}
 <% if sonia %>
 \usepackage{textcomp}
 \usepackage{attachfile}
@@ -178,7 +179,7 @@ s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
 
 \title{Mediawiki Report -- <%= wiki.to_s %>
 }
-\author{mediawikiparser (<\texttt{klaus.stein@uni-bamberg.de}>)}
+\author{Wiki Explorator\footnote{\protect\url{http://wiki-explorator.rubyforge.org}}}
 
 \begin{document}
 \maketitle
@@ -575,5 +576,15 @@ This report contains an embedded source file for later use with Stanford's Socia
 <% end %>
 
 % section sonia (end)
+
+\section*{Acknowledgements}
+
+This report was created using Wiki Explorator\footnote{\protect\url{http://wiki-explorator.rubyforge.org}}, a ruby library for scientific research on wikis (and other CMS, focus: Mediawiki) for interactive exploration, statistics and visualization of (network) data.\\[2ex]
+Wiki Explorator was developed by\\[2ex]
+Dr.\,Klaus Stein\\
+Laboratory for Semantic Information Technology\\
+Chair of Computing in the Cultural Sciences\\
+Otto-Friedrich Univerity Bamberg\\[2ex]
+and is available as open source.
 
 \end{document}

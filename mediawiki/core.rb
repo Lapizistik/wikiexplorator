@@ -1278,7 +1278,7 @@ module Mediawiki
       @genreinclude = true
       @roleregexp = // # matches on everything
       @roleinclude = true
-      @denied_users = Set.new
+      @denied_users = Set.new << nil # deny the missing user by default.
       @deny_anons = false
       # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       # When adding new attributes do _not_ forget to adjust #clone_attrs

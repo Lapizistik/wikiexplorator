@@ -28,7 +28,7 @@ Rake::RDocTask.new(:html) do |rd|
 end
 
 desc 'Package files for release'
-Rake::PackageTask.new('mwparser','0.825') do |p|
+Rake::PackageTask.new('mwparser','0.827') do |p|
   globs = %w(mediawiki util test html).collect { |w| w + '/**/*' } +
     %w(Rakefile.rb mediawiki.rb mywikis.rb)
   p.package_files.include(*globs)
