@@ -44,6 +44,7 @@ class Gnuplot
       :title => "Lorenz Curve",
       :xlabel => "items",
       :ylabel => "cumulative values",
+      :size => :square,
       :key => "top left box",
       :equality => "equality",
       :pareto => "80:20 (pareto)",

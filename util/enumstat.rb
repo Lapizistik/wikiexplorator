@@ -177,5 +177,11 @@ module Enumerable
     stat_variance**0.5
   end
 
+  # computes a histogram of the values in this collection
+  def stat_histogram
+    h = Hash.new(0)
+    each { |v| h[v] +=1 }
+    h
+  end
 end
 

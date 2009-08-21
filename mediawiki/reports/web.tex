@@ -270,7 +270,9 @@ gives a more detailed overview.
 <%=
 wiki.global_userstats(ufilter).collect { |a|
   a.collect { |v| 
-    if v.kind_of?(String)
+    if v.nil?
+      '-/-'
+    elsif v.kind_of?(String)
       v
     elsif v.integer? 
       '%5i' % v

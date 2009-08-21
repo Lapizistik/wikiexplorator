@@ -41,7 +41,7 @@ h2,h3,h4 { margin-top: 1em; }
 
 a { background: none; color: #039; text-decoration: none; padding:1px;}
 a:hover { background: #039; color: #eef; }
-a[name] { display:none;} 
+a[name] { position:absolute; } 
 /* === Structural elements =================================== */
 
 div#index {
@@ -454,7 +454,7 @@ ENDIF:includes
 START:sections
     <div id="section">
 IF:sectitle
-      <h2 class="section-title"><a name="%secsequence%">%sectitle%</a></h2>
+      <h2 class="section-title"><a name="%secsequence%" id="%secsequence%">%sectitle%</a></h2>
 IF:seccomment
       <div class="section-comment">
         %seccomment%
@@ -551,7 +551,7 @@ IF:methods
 
 START:methods
       <div id="method-%aref%" class="method-detail">
-        <a name="%aref%"></a>
+        <a name="%aref%" id="%aref%"></a>
 
         <div class="method-heading">
 IF:codeurl

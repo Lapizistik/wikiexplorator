@@ -243,11 +243,13 @@ class Gnuplot
   #  gp.plot(:png => 'test.png', :size => '640,400') # a nice bitmap.
   #  gp.plot(:svg => 'test.svg', :size => '640 400') # a nice SVG.
   #  gp.plot(:pdf => 'test.pdf') # a nice PDF.
+  #  gp.plot(:pspdf => 'test.pdf') # Use this if your gnuplot does not support native pdf (see Epstopdf).
   #  gp.plot(:fig => 'test.fig') # a nice xfig.
   def xplot(plotcmd, params={})
-
+    size = params[:size]
     if file = params[:pspdf]  # this needs special handling
-      if size = params[:size]
+      if size
+        size = '10,10' if size == :square
         @sets << ['terminal', "postscript eps enhanced color size #{size}"]
       else
         @sets << ['terminal', "postscript eps enhanced color"]
@@ -262,18 +264,21 @@ class Gnuplot
     else # other output devices
       persist = false  # we assume output to go to file.
       if file = params[:png]
-        size = params[:size] || '900,675'
+        size ||= '900,675'
+        size = '675,675' if size == :square
         @sets << ['terminal', "png enhanced size #{size}"]
         @sets << ['output', "'#{file}'"]
       elsif file = params[:pdf]
-        if size = params[:size]
+        if size
+          size = '10,10' if size == :square
           @sets << ['terminal', "pdf size #{size}"]
         else
           @sets << ['terminal', "pdf"]
         end
         @sets << ['output', "'#{file}'"]
       elsif file = params[:svg]
-        size = params[:size] || 'dynamic'
+        size = '675 675' if size == :square
+        size ||= '900 675'
         @sets << ['terminal', "svg enhanced size #{size}"]
         @sets << ['output', "'#{file}'"]
       elsif file = params[:fig]

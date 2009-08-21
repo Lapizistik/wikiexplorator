@@ -14,8 +14,17 @@ module Mediawiki
     def userstats(filter=@filter)
       se = Hash.new(0)
       fe = Hash.new(0)
-      ke = typelinkusers(/^Kategorie:/, filter) 
-      ie = typelinkusers(/^Bild:/, filter) 
+
+      # find the Category (ns 14) and Image (ns 6) names 
+      # (this is needed for foreign languages):
+      c_n = []
+      i_n = []
+      ns_mapping.each_pair do |k,v|
+        c_n << k if v == 14
+        i_n << k if v == 6
+      end
+      ke = typelinkusers(/^(#{c_n.join('|')}):/, filter) 
+      ie = typelinkusers(/^(#{ir_n.join('|')}):/, filter) 
       pages(filter).each { |p| 
         p.self_edits(filter).each { |u,n| se[u] += n }
         p.foreign_edits(filter).each { |u,n| fe[u] += n }
@@ -32,6 +41,21 @@ module Mediawiki
     end
 
     # Pretty print user statistics
+    #
+    # Prints a table with the following columns:
+    # user name::
+    # real name::
+    # uid::
+    # edits:: (revisions) of this user
+    # pages:: number of pages the user has at least one revision
+    # edits/page:: average number of edits per page
+    # self edits:: number of times an user edited a page on which the edit
+    #              before was by himself
+    # foreign edits:: number of times an user edited a page on which the edit 
+    #                 before was by someone else
+    # category edits:: number of revisions in which the user added categories
+    #                  to a page
+    # image edits:: number of revisions in which the user added images to a page
     def pp_userstats(filter=@filter, &sortby)
       ul = userstats(filter)
       if sortby
@@ -39,9 +63,13 @@ module Mediawiki
       else
         ul = ul.sort_by { |u,| u.name }
       end
+      hfmt = '%-12s %-23s %4s %4s %4s %6s %4s %4s %4s %4s'
+      rfmt = '%-12s %-23s %4s %4i %4i %6.2f %4i %4i %4i %4i'
+      
+      puts(hfmt % %w{user realname uid e p e/p se fe ke ie})
+      puts '=' * 79
       puts ul.collect { |u,values|
-        ('%-12s %-23s %4s %4i %4i %6.2f %4i %4i %4i %4i' %
-         ([u.name, u.real_name, u.uid] + values))
+        rfmt % ([u.name, u.real_name, u.uid] + values)
       }.join("\n")
     end    
 
