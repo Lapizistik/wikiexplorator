@@ -11,5 +11,8 @@ require 'util/latex'
 require 'util/ngnuplot'
 require 'util/enumstat'
 require 'util/gp-extras'
+
+try_to_require('util/dotgraph-gv', 'gv library missing', 'Fallback to graphviz')
+
 try_to_require('util/jbridge/dotgraphdataset',
                'The Java based Visualizer will not work.')

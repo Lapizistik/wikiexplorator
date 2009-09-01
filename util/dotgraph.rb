@@ -94,6 +94,14 @@ class DotGraph
   end
 
   # sets the block to be used to generate note labels for each node.
+  # This block can also be given at DotGraph#new.
+  #
+  # The nodeblock is called for each node to generate the node 
+  # labels on output. If the block returns a string it is used as the
+  # label. Otherwise it should return an Enumerable whose elements are
+  # used as node parameters. E.g.:
+  #   DotGraph.new(nodes) { |n| ["label=#{n.name}", 'style=filled', "fillcolor=#{n.size}"] }
+  #
   # If no block is given it just returns the current block.
   def nodeblock(&nodeblock)
     @lproc = nodeblock    if nodeblock
@@ -377,6 +385,8 @@ class DotGraph
       s
     when :max
       links[node].collect { |l| l.weight }.max || 0
+    else
+      raise "Argument error on #{node}: #{counts.inspect}, #{k}"
     end
   end
   private :n_inoutdegree
@@ -421,14 +431,14 @@ class DotGraph
   # pp_degrees(:sortby => 0, :up => true, ...)
   # pp_degrees(:sortby => 0, :up => true, ...) { |n| ... }
   # Pretty print the degrees of all nodes.
-  # <tt>:sortnr</tt>:: 
+  # <tt>:sortby</tt>:: 
   #    by which column the output should be sorted
   #    0 or :node   :: by node
   #    1 or :degree :: by degree
   #    2 or :out    :: by outdegree
   #    3 or :in     :: by indegree
   # <tt>:up</tt>:: _true_ for ascending, _false_ for descending sort.
-  # <tt>:weight</tt>:: see degrees.
+  # <tt>:counts</tt>:: see degrees.
   # <i>&block</i>:: 
   #   if a block is given it is called with each node and its 
   #   return value (preferable a String) is used for printing the node.
@@ -436,8 +446,8 @@ class DotGraph
   #   block is used, respectively.
   def pp_degrees(params={}, &block)
     sortnr = params[:sortby] || 0
-    up = params[:up] || true
-    weight = params[:weight] || :count
+    up = params[:up]
+    counts = params[:counts]
     sortnr = DEGREESSORTNR[sortnr] if sortnr.kind_of?(Symbol)
     lproc = block || @lproc
     if @directed
@@ -446,7 +456,7 @@ class DotGraph
       fmt = "%-30s: %4s"
     end
     puts fmt % ["Node","deg","out","in"]
-    d = degrees(weight).collect { |n,a|
+    d = degrees(counts).collect { |n,a|
       [lproc.call(n), a[0]+a[1]]+a
     }
     d = if up
@@ -512,8 +522,10 @@ class DotGraph
   # (e.g. <tt>"overflow=scale"</tt> or 
   # <tt>"node [shape=circle,fixedsize=true,width=0.1]"</tt>).
   #
-  # if a block is given it is called with the link count of each link 
-  # and the return value is used as link attribute (don't forget the []).
+  # if a block is given it is called with the link count of each link to
+  # generate the link labels on output. If the block returns a String it 
+  # is used as the label. Otherwise it should return an Enumerable whose
+  # elements are used as link parameters.
   def to_dot(*attrs, &block)
     d = "#{'di' if @directed}graph G {\n"
     d << attrs.collect { |a| "  #{a};\n"}.join
@@ -951,7 +963,11 @@ class DotGraph
       s << "[#{@attrs.join(',')}]" unless @attrs.empty?
       s << "[#{attrs.join(',')}]" unless attrs.empty?
       if block_given?
-        s << yield(@weight)
+        wl = yield(@weight)
+        s << '[' << case wl
+                    when String, Symbol : "label=\"#{wl.tr('"',"'")}\""
+                    when Enumerable : wl.join(', ')
+                    end << ']'
       else
         s << weightlabel(@weight) if linkcount
       end

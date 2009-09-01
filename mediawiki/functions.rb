@@ -24,7 +24,7 @@ module Mediawiki
         i_n << k if v == 6
       end
       ke = typelinkusers(/^(#{c_n.join('|')}):/, filter) 
-      ie = typelinkusers(/^(#{ir_n.join('|')}):/, filter) 
+      ie = typelinkusers(/^(#{i_n.join('|')}):/, filter) 
       pages(filter).each { |p| 
         p.self_edits(filter).each { |u,n| se[u] += n }
         p.foreign_edits(filter).each { |u,n| fe[u] += n }
@@ -280,7 +280,7 @@ module Mediawiki
     # 
     # If a block <i>&sort_by</i> is given, it is used for sorting:
     # <tt>pp_dist(h) { |k,v| k }</tt>:: sorts by the key
-    # <tt>pp_dist(h) { |k,v| v }</tt>:: sorts by the key
+    # <tt>pp_dist(h) { |k,v| v }</tt>:: sorts by the value
     def pp_dist(hash, &sortby)
       if sortby
         hs = hash.sort_by(&sortby)
@@ -343,7 +343,7 @@ module Mediawiki
     #  tr = wiki.timeraster(:step => :week, :zero => :week)
     #  r1 = tr.collect { |t|
     #    filter.endtime = t
-    #    [t1, wiki.revisions.length]
+    #    [t, wiki.revisions.length]
     #  }
     #  require 'enumerator'
     #  r2 = tr.enum_cons(3).collect { |ta| 
@@ -387,6 +387,7 @@ module Mediawiki
         d = ct.wday-wday
         d = d + 7 if d < 0
         ct = ct - (d*3600*24)
+        ct = Time.local(ct.year, ct.month, ct.day)
       when :month
         ct = Time.local(ct.year, ct.month, 1)
       when :year

@@ -165,6 +165,8 @@ s = 0; clpw0 = lpw0.collect { |e,i| [e,s+=i] }
 \documentclass{scrartcl}
 
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{ccfonts}
 \usepackage[utf8]{inputenc}
 %\usepackage{german}
 \usepackage{booktabs}
@@ -582,7 +584,7 @@ This report contains an embedded source file for later use with Stanford's Socia
 \section*{Acknowledgements}
 
 This report was created using Wiki Explorator\footnote{\protect\url{http://wiki-explorator.rubyforge.org}}, a ruby library for scientific research on wikis (and other CMS, focus: Mediawiki) for interactive exploration, statistics and visualization of (network) data.\\[2ex]
-Wiki Explorator was developed by\\[2ex]
+Wiki Explorator was developed\footnote{in the WiO project supported by a grant from the Volkswagen Stiftung.} by\\[2ex]
 Dr.\,Klaus Stein\\
 Laboratory for Semantic Information Technology\\
 Chair of Computing in the Cultural Sciences\\

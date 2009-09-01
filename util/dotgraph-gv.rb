@@ -73,7 +73,14 @@ class DotGraph
   def to_gv(filename, engine, lang, *attrs, &block)
     g = Gv.readstring(to_dot(*attrs, &block)) # stupid, but simple
     Gv.layout(g, engine.to_s)
-    Gv.render(g, lang.to_s, filename)
+
+    if lang == :pspdf
+      epstopdf(filename) do |tmpfile|
+        Gv.render(g, 'ps', tmpfile)
+      end
+    else
+      Gv.render(g, lang.to_s, filename)
+    end
   end
 
   alias to_graphviz to_gv

@@ -249,7 +249,7 @@ class Gnuplot
     size = params[:size]
     if file = params[:pspdf]  # this needs special handling
       if size
-        size = '10,10' if size == :square
+        size = '4,4' if size == :square
         @sets << ['terminal', "postscript eps enhanced color size #{size}"]
       else
         @sets << ['terminal', "postscript eps enhanced color"]
@@ -270,7 +270,7 @@ class Gnuplot
         @sets << ['output', "'#{file}'"]
       elsif file = params[:pdf]
         if size
-          size = '10,10' if size == :square
+          size = '4,4' if size == :square
           @sets << ['terminal', "pdf size #{size}"]
         else
           @sets << ['terminal', "pdf"]

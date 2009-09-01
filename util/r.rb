@@ -105,8 +105,8 @@ else
     end
     
     # :call-seq:
-    # pp_betweenness(:sortby => 0, :up => true, ...)
-    # pp_betweenness(:sortby => 0, :up => true, ...) { |n| ... }
+    # pp_betweenness(:sortby => 0, :up => false, ...)
+    # pp_betweenness(:sortby => 0, :up => false, ...) { |n| ... }
     #
     # Pretty print the betweenness of all nodes (using R/sna).
     #
@@ -116,7 +116,7 @@ else
     # #betweenness (see there).
     def pp_betweenness(params={}, &block)
       sortby = params.delete(:sortby) || 0
-      up = params.delete(:up) || true
+      up = params.delete(:up)
       puts "%-30s: %20s" % ["Node","betweenness"]
       pp_key_value(betweenness(params), sortby, up, &block)
     end
@@ -140,8 +140,8 @@ else
     end
 
     # :call-seq:
-    # pp_closeness(:sortby => 0, :up => true, ...)
-    # pp_closeness(:sortby => 0, :up => true, ...) { |n| ... }
+    # pp_closeness(:sortby => 0, :up => false, ...)
+    # pp_closeness(:sortby => 0, :up => false, ...) { |n| ... }
     #
     # Pretty print the closeness of all nodes (using R).
     #
@@ -151,7 +151,7 @@ else
     # #closeness (see there).
     def pp_closeness(params={}, &block)
       sortby = params.delete(:sortby) || 0
-      up = params.delete(:up) || true
+      up = params.delete(:up)
       puts "%-30s: %20s" % ["Node","closeness"]
       pp_key_value(closeness(params), sortby, up, &block)
     end
@@ -175,8 +175,8 @@ else
     end
 
     # :call-seq:
-    # pp_stresscent(:sortby => 0, :up => true, ...)
-    # pp_stresscent(:sortby => 0, :up => true, ...) { |n| ... }
+    # pp_stresscent(:sortby => 0, :up => false, ...)
+    # pp_stresscent(:sortby => 0, :up => false, ...) { |n| ... }
     #
     # Pretty print the stress centrality scores of all nodes (using R/sna).
     #
@@ -186,7 +186,7 @@ else
     # #stresscent (see there).
     def pp_stresscent(params={}, &block)
       sortby = params.delete(:sortby) || 0
-      up = params.delete(:up) || true
+      up = params.delete(:up)
       puts "%-30s: %20s" % ["Node","stresscent"]
       pp_key_value(stresscent(params), sortby, up, &block)
     end
@@ -211,8 +211,8 @@ else
     end
 
     # :call-seq:
-    # pp_prestige(:sortby => 0, :up => true, ...)
-    # pp_prestige(:sortby => 0, :up => true, ...) { |n| ... }
+    # pp_prestige(:sortby => 0, :up => false, ...)
+    # pp_prestige(:sortby => 0, :up => false, ...) { |n| ... }
     #
     # Pretty print the prestige of all nodes (using R/sna).
     #
@@ -222,7 +222,7 @@ else
     # #prestige (see there).
     def pp_prestige(params={}, &block)
       sortby = params.delete(:sortby) || 0
-      up = params.delete(:up) || true
+      up = params.delete(:up)
       puts "%-30s: %20s" % ["Node","prestige"]
       pp_key_value(prestige(params), sortby, up, '%20i', &block)
     end
