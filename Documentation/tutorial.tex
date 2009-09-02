@@ -73,6 +73,15 @@
 \section{Introduction}
 \label{sec:intro}
 
+WikiExplorator is a ruby toolset and library for wiki exploration. It
+allows you to interactively analyse your wiki as well as to generate
+nice HTML or PDF reports customized to your needs. This includes
+various statistics as well as graph visualizations. The current version
+focusses on Mediawiki, other wiki engines can be used with some
+tricks.\footnote{If someone wants to contribute a full featured module
+for some other wiki engine do not hesitate to contact me, I may be able to
+give useful hints.}
+
 In this document I want to give some hints how to use WikiExplorator
 in a way that fits your needs. It is a tutorial, not a manual, this
 means that all steps given are examples, you will learn one or two
@@ -128,7 +137,9 @@ the rest of the parameters is documented. To fit everything to my
 environment I change the name of the database to \file{wiodb}, give
 the database host, the database user and the name and language of the
 wiki\footnote{if our tables have some prefix ``\code{xxx}'', we would
-  add \cmd{:prefix => 'xxx'} within the braces.}:
+  add \cmd{:prefix => 'xxx'} within the braces.}:\footnote{if you have
+to use ODBC to access your database the second example should fit your
+needs}
 \begin{File}
   def Mediawiki.mywiki(pw, options=\{\})
     Wiki.open("wiodb", "wiowiki.kinf.wiai.uni-bamberg.de", "wiouser", pw,
@@ -557,7 +568,7 @@ network measures \file{R} (or rather the \file{R} library \file{sna})
 provides using ruby. The method documentation states which
 \code{DotGraph} methods are based on \file{R}. So we can
 e.\,g. compute betweenness, closeness and others (for full
-\file{R} access see section~\ref{sec:Rfull}):%
+\file{R} access see \rdoc{util/r.rb} in the manual):
 \begin{typed}
 \p{irb(main):093:0>} \c{cgraph.pp_betweenness(:sortby => :value)}
 Node                          :          betweenness
@@ -1081,17 +1092,344 @@ to session~\ref{typed:revtr} (figure~\ref{fig:gp_revtr})):
 \end{typed}
 Here we directly use the revision timespans to generate the graph.
 
+\section{Load and save}
+\label{sec:load}
+
+Until now we played with a wiki we loaded directly from the database
+(we come back to this at the end of this section,
+see~\ref{sec:Wiki.open}). 
+
+\subsection{Loading and dumping}
+\label{sec:loaddump}
+
+Sometimes it would be nice to take the wiki with us to be able to do some
+statistics, reporting, working through this tutorial etc. on our
+laptop while sitting in the train without internet access. To support
+this we can dump the wiki on disk to load it later.
+
+\subsubsection{Remove sensible data}
+\label{sec:obliterate}
+
+Taking a wiki with us means dumping wiki contents on our hard
+disk. You may want to analyze the wiki of your customer containing
+sensible data, and you may want to dump it on your laptop, but your
+customer would not like to see sensible data leaving the intranet.
+
+As we nearly do not need the contents of the wiki pages for most
+analyses the \cmd{obliterate} method is our friend. This method
+removes page contents, user names, page titles etc. from the wiki and
+keeps only the structure which is enough to do nearly anything we want
+(except for text corpus and text size analysis):
+\begin{typed}
+\p{irb(main):471:0>} \c{page = wiki.page_by_id(1)}
+=> #<Mediawiki::Page id=1 title="Hauptseite">
+\p{irb(main):472:0>} \c{page.content}
+=> "'''Wikis in Organizations''' ..."
+\p{irb(main):473:0>} \c{wiki.obliterate}
+=> #<Mediawiki::Wiki WiO: wiowiki.kinf.wiai.uni-bamberg.de/wiodb,
+\hfill 271 pages, 1362 revisions, 15 users>
+\p{irb(main):474:0>} \c{page.content}
+=> ""
+\p{irb(main):475:0>} \c{page}
+=> #<Mediawiki::Page id=1 title="p1">
+\end{typed}
+What exactly is removed/kept by \cmd{obliterate} is freely selectable
+by the user (see \rdoc{Mediawiki::Wiki.obliterate} for details).
+
+\subsubsection{Marshal dump and load}
+\label{sec:marshal}
+
+Now we can dump our wiki to disk for later usage:
+\begin{typed}
+\p{irb(main):478:0>} \c{wiki.marshal_save('wio.marshal')}
+=> #<File:~/mwparser/wio.marshal (closed)>
+\p{irb(main):479:0>} \c{exit}
+\end{typed}%
+We leave irb, have a break, meet people and do real world stuff, and
+later we come back and start again, now loading our wiki from
+file:\footnote{``\cmd{-r wio}'' is needed to pull in the
+  WikiExplorator library. As we do not need a customized database
+  connector we could also have used ``\cmd{-r mediawiki/full}'' instead.}
+\begin{typed}
+\p{~/mwparser/>} \c{irb -r wio}
+...
+\p{irb(main):001:0>} \c{wiki = Mediawiki::Wiki.marshal_load('wio.marshal')}
+MARSHAL load...
+done
+=> #<Mediawiki::Wiki WiO: wiowiki.kinf.wiai.uni-bamberg.de/wiodb,
+\hfill 271 pages, 1362 revisions, 15 users>\quad
+\end{typed}
+
+I have obliterated marshal dumps of all of the wikis I am working on
+and use only these for daily work.\footnote{this has the nice
+  side effect that it works on platforms where installing a
+  Mysql connector gets laborious.}
+
+\subsubsection{YAML dump and load}
+\label{sec:yaml}
+
+Marshalling is fast and reliable, but it dumps the wiki to some binary
+format, so your customer cannot control what data you want to take
+with you. YAML is much slower than marshal but writes human readable
+files so you can show what you want to take with you:
+\begin{typed}
+\p{irb(main):002:0>} \c{wiki.yaml_save('wio.yaml')}
+preprocessing (detach links)...
+YAML save (may take some time)...
+postprocessing (attach links)...
+done
+=> #<Mediawiki::Wiki WiO: wiowiki.kinf.wiai.uni-bamberg.de/wiodb, 
+\hfill 271 pages, 1362 revisions, 15 users>
+\p{irb(main):004:0>} \c{exit}
+\end{typed}
+This time we do some sports before we come back. Oh, and have a look
+into ``\file{wio.yaml}'' to see what's inside (figure~\ref{fig:yaml})
+\begin{typed}
+\p{~/mwparser/>} \c{irb -r wio}
+...
+\p{irb(main):001:0>} \c{wiki = Mediawiki::Wiki.yaml_load('wio.yaml')}
+YAML load...
+postprocessing (attach links)...
+done
+=> #<Mediawiki::Wiki WiO: wiowiki.kinf.wiai.uni-bamberg.de/wiodb,
+\hfill 271 pages, 1362 revisions, 15 users>\quad
+\end{typed}
+YAML is an ordinary ruby library, but as you can see by the messages
+above I had to provide a customized version as yaml has problems with
+large nested cyclic structures. So please only use the methods given
+above to YAML save and load your wiki and not the original ones.
+
+\begin{figure}
+  \centering
+  \begin{File}\footnotesize
+--- &id001 !ruby/object:Mediawiki::Wiki 
+dburl: wiowiki.kinf.wiai.uni-bamberg.de/wiodb
+filter: !ruby/object:Mediawiki::Filter 
+  revision_timespan: !ruby/range 
+    begin: &id002 2007-03-20 19:23:15 +01:00
+    end: &id003 2009-07-28 15:53:09 +02:00
+    excl: false
+  ...
+language: de
+name: WiO
+...
+pages_id: 
+  1440: !ruby/object:Mediawiki::Page 
+    len: 864
+    namespace: 0
+    pid: 1440
+    ...
+  1641: !ruby/object:Mediawiki::Page 
+    ...
+  ...
+pages_title: 
+  ...
+revisions_id: 
+  1556: !ruby/object:Mediawiki::Revision 
+    page: 1425
+    rid: 1556
+    text: 1556
+    timestamp: &id156 2007-05-23 13:26:52 +02:00
+    user: 5
+    ...
+  2405: !ruby/object:Mediawiki::Revision 
+    ...
+  ...
+texts_id: 
+  1823: !ruby/object:Mediawiki::Text 
+    text: ""
+    tid: 1823
+    ...
+  ...
+users_id: 
+  5: !ruby/object:Mediawiki::User 
+    name: u5
+    revisions: 
+      ...
+    uid: 5
+    ...
+  0: !ruby/object:Mediawiki::User 
+    ...
+  ...
+users_name: 
+  ...
+version: 1.8
+\end{File}\vspace{-\topskip}
+  \caption{YAML dump of the wiki (excerpt)}
+  \label{fig:yaml}
+\end{figure}
+
+\subsection{Wiki.open}
+\label{sec:Wiki.open}
+
+At the beginning of this tutorial (section~\ref{sec:start}) we
+created our Wiki object by adapting some values in \file{mywikis.rb}. 
+We could have done this directly:
+\begin{typed}
+\p{~/mwparser/>} \c{irb -r mediawiki/full}
+...
+\p{irb(main):001:0>} \c{wiki = Mediawiki::Wiki.open("wiodb", 
+\hfill "wiowiki.kinf.wiai.uni-bamberg.de", "wiouser", 'secret',
+\hfill :language => 'de', :name => 'WiO')}
+connecting to database wiowiki.kinf.wiai.uni-bamberg.de/wiodb
+...
+Done.
+=> #<Mediawiki::Wiki WiO: wiowiki.kinf.wiai.uni-bamberg.de/wiodb, 
+\hfill 271 pages, 1362 revisions, 15 users>\quad
+\end{typed}
+Using a startup file is just convenient. 
+
+Please have a detailed look at \rdoc{Mediawiki::Wiki.open} (and
+\rdoc{Mediawiki::DB.new}) in the manual for the various parameters. It
+is important to set the right wiki name, the right language and give
+mappings for additional namespaces to get correct link structures.
+
+Mediawiki unfortunately does not put everything into the database,
+the correct interpretation of various data depends on the values in
+\file{Localsettings.php}, so I had no choice than to give these as
+parameter. 
+
+Two of the parameters allow special customation: \cmd{:ips} and
+\cmd{:uid\_aliases}.
+
+\subsubsection{:ips}
+\label{sec:ips}
+
+If a wiki allows anonymous edits the IP address of the editing
+anonymous user is saved for each revision. Normally it is not useful
+to distinguish between different IPs as the same user may come back
+with a different IP the next day (at least if he has a dialup
+connection to the internet), so all anonymous edits are mapped to one
+default IP user.
+
+Within an intranet things may different as the workstations of the
+staff may have fixed IP addresses. In this case simply add ``\cmd{:ips
+=> true}'' to the parameters and a new user is created for each IP.
+
+\subsubsection{:uid\_aliases}
+\label{sec:uid_aliases}
+
+On many of the wiki we analyzed we found users with more than one
+login, either because login name policy of the company changed after
+the wiki started or users sometimes logged in and sometimes forgot and
+did anonymous edits from a fixed IP address etc.\footnote{we even had
+  a company where we could map sets of IP addresses to certain roles
+  but not one IP address to one user.}
+
+To deal with these situations WikiExplorator allows to merge
+users. For example, in our example wiki I know that ``WikiSysop'' and
+``Klaus'' are the same person, so we may want to merge
+them\footnote{on the other hand it may be a bad idea, but, well, we do
+  it to have an example.}:
+\begin{typed}
+\p{irb(main):002:0>} \c{wiki.user_by_name('Klaus')}
+=> #<Mediawiki::User id=2 name="Klaus">
+\p{irb(main):003:0>} \c{wiki.user_by_name('WikiSysop')}
+=> #<Mediawiki::User id=1 name="WikiSysop">
+\p{irb(main):004:0>} \c{wiki = Mediawiki::Wiki.open("wiodb", 
+                    "wiowiki.kinf.wiai.uni-bamberg.de", "wiouser", 'MyCoMeT',
+                    :language => 'de', :name => 'WiO', :uid_aliases => \{1 => 2\})}
+connecting to database wiowiki.kinf.wiai.uni-bamberg.de/wiodb
+connected.
+Table wio_genres in DB not found
+Table wio_roles in DB not found
+...
+Done.
+=> #<Mediawiki::Wiki WiO: wiowiki.kinf.wiai.uni-bamberg.de/wiodb, 
+\hfill 271 pages, 1362 revisions, 14 users>
+\p{irb(main):017:0>} \c{wiki.user_by_id(1)}
+=> nil
+\end{typed}
+It worked. We first looked up the ids of ``Klaus'' and ``WikiSysop''
+and then opened the wiki aliasing 1 to 2. All revisions of user 1 now
+belong to user 2.
+
+\subsubsection{wio\_roles and wio\_genres}
+\label{sec:wioroles}
+
+Every time we open the wiki it claims that it did not find the tables
+\code{wio\_genres} and \code{wio\_roles} in the database. These tables
+are an add-on by us and do normally not exist in a Mediawiki
+installation. We use them to map each page to its genres (this is
+\emph{not} the same than its category) and each user to its roles. So
+if you know the role of every user in the company (manager,
+programmer, culprit, \dots) you can create a \code{wio\_roles} table
+and later you can use filters to get different statistics for
+different roles (to prove the managers do all the work or whatever).
+For the genres we did a text analysis of the wiki pages using
+TAMS/GTAMS\footnote{\url{http://tamsys.sourceforge.net}}. 
+
+\code{wio\_genres} \code{(page\_id, genres}) maps
+page ids to lists of genres seperated by ``,''. \code{wio\_roles}
+\code{(user\_id, roles)} maps user ids to lists of roles also
+separated by ``,''.
+
+So feel free to use these tables if they seem useful to
+you.\footnote{I know I should provide a way to give these as text
+  files.}
+
+\subsubsection{wio\_user}
+\label{sec:wio_user}
+
+Accessing a wiki database remotely means that the database
+administrator has to provide a database user with read access for at
+least the tables ``\code{user}'', ``\code{user\_groups}'',
+``\code{text}'', ``\code{page}'' and ``\code{revision}''.
+
+The user table contains various sensible data, especially user
+passwords. While WikiExplorator denies to read this fields it would be
+better if it had no access at all. This can be accomplished by
+creating a view called ``\code{wio\_user}'' which exposes only some of
+the fields from the ``\code{user}'' table. If ``\code{wio\_user}'' is
+found, ``\code{user}'' is not read at all.
+
+\bigskip
+
+Wiki farms often have one common user table for all wikis. This is a
+problem for Wiki Analysis as most users only belong to one or two
+wikis. ``\code{wio\_user}'' can also help here: simply create this
+table for each of the wikis to be analyzed by copying the users which
+show up in at least one revision.\footnote{ask your local SQL guru how
+to do this.}
+
+\subsection{Wiki.open\_XML}
+\label{sec:Wiki.open_XML}
+
+Reading the database directly is fine if we can connect to it from our
+machine which is not always true.  If we do not have database
+access at all from the computer where WikiExplorator is installed on
+we can do an XML dump of the database and load this using
+\cmd{Wiki.open\_XML} (see \rdoc{Mediawiki::Wiki.open\_XML} for
+details).\footnote{this requires \file{libxml} to be installed which
+  may not be available on Windows.} Besides reading from a file
+instead of connecting to the database \cmd{Wiki.open\_XML} is very
+similar to \cmd{Wiki.open}, all the parameters also apply here.
+
+\bigskip
+
+WikiExplorator tries to be very tolerant regarding missing fields in
+the database/XML file. As long as the XML file has the right structure
+and the most important fields are present everything will work
+fine. See \rdoc{mediawiki/db\_libxml.rb} in the manual for a
+description of the file format.
+
+So if you are working with a different wiki engine and can provide an
+XML output following this structure you will be able to analyze it
+using WikiExplorator. We even tested this with data from other domains
+not connected to wikis at all. As long as there is something you can
+call a page, something you can call an user and something you can call
+a revision which connects pages to users and has a creation time
+chances are good that it will work.
+
+
 \clearpage
 
 \section{ToDo}
 \label{sec:todo}
 
 \begin{itemize}
-\item user aliasing
-\item Full R access (manual, \file{r.rb})
 \item further graph generation methods
 \item sonia
-\item loading and dumping (marshal, yaml), obliterate
 \item more sophisticated examples
 \item scripting
 \item customized reports (html, \LaTeX)

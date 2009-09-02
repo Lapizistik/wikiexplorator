@@ -6,8 +6,6 @@
 # analysis. It is based on the RSRuby library which uses the statistical
 # computing environment R <http://www.r-project.org> and on the R library sna. 
 # 
-# Please require explicitly (for R, sna, RSRuby  may not be installed 
-# everywhere).
 #
 # == Usage
 # 
@@ -22,6 +20,14 @@
 #  adjm = g.to_r_matrix    # get the adjacency matrix as R object
 #  puts r.efficiency(adjm) # compute the efficiency using R
 #  r.gplot(adjm)           # and plot the graph using R
+#
+# The main methods for direct R access are <tt>to_r_matrix</tt> and
+# <tt>to_r_network</tt>, which both return R objects. How to deal with them
+# from within ruby is described in the RSRuby manual 
+# (http://rubyforge.org/docman/?group_id=1909).
+#
+# Alternatively you can dump an R network to disk using 
+# <tt>to_r_network_file</tt> and load it in R afterwards.
 
 begin # let's see whether R is there and available
   # Unfortunately windows and unices (Linux, MacOS, ...) differ here:

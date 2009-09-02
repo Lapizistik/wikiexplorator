@@ -46,7 +46,7 @@ def gp_time(file, title, ylabel, *data)
 #    gp.set("title \"#{title}\"")
 #    gp.set('xlabel "month"')
     gp.set("ylabel \"#{ylabel}\"")
-    gp.plot(topdf => file)
+    gp.plot(topdf => file, :range => '[][0:]')
   end 
 end
 %>
@@ -131,10 +131,12 @@ raster[1..-2].each_cons(2) { |s,e|
   pages0 = wiki.pages(sfilter0).to_a # should be faster
   rpw << [ e, wiki.revisions(filter).length ]
   rpw0 << [ e, wiki.revisions(filter0).length ]
-  nodesl = wiki.coauthorgraph(filter).remove_lonely_nodes.nodes.length.to_f
-  aupart << [ e, nodesl ]
+#  nodesl = wiki.coauthorgraph(filter).remove_lonely_nodes.nodes.length.to_f
+  awe = 0.0
+  users.each { |u| awe += 1 if u.revisions(filter).length > 0 }
+  aupart << [ e, awe ]
   # The following could be done more efficiently:
-  aurel << [ e, nodesl / 
+  aurel << [ e, awe / 
                 events.reject { |f,l| (f > e) || (l < s) }.length ]
   # I learned inject is expensive (at least in ruby 1.8), so i do it
   # by hand:
@@ -153,7 +155,6 @@ raster[1..-2].each_cons(2) { |s,e|
     end }
   tpw0 << [e, s]
 }
-
 s = 0; crpw = rpw.collect { |e,i| [e,s+=i] }
 s = 0; clpw = lpw.collect { |e,i| [e,s+=i] }
 s = 0; crpw0 = rpw0.collect { |e,i| [e,s+=i] }
@@ -531,7 +532,7 @@ shows the percentage of authors who edit at least one document at any given week
 <%
 filter = wiki.filter.clone # clone filter
 coauthorship_network = wiki.coauthorgraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
-coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
+coauthorship_network.to_graphviz("coauthorgraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  ["weight=#{w}"] }
 %>
 \begin{figure}[htbp]
 	\centering
@@ -549,7 +550,7 @@ links in the network. The co-authorship network gives an idea of who is working 
 <%
 filter = wiki.filter.clone # clone filter
 page_network = wiki.pagegraph(filter) { |n| [ "label=\"\"" ] }.remove_self_links.remove_lonely_nodes
-page_network.to_graphviz("pagegraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  "[ weight=#{w} ]" }
+page_network.to_graphviz("pagegraph.pdf", "neato", topdf, "outputorder=edgesfirst", "node [ shape=point, style=filled, fillcolor=white ]" ) { |w|  ["weight=#{w}"] }
 %>
 
 \begin{figure}

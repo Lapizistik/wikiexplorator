@@ -432,16 +432,17 @@ module Mediawiki
             end
           end
           
-          # Assign groups to them
+          # Assign groups to Users
           # TODO: how to deal with aliasing here?
           @usergroups = Hash.new { |h,k| h[k]=[] }
           dbh.usergroups do |uid,g|
-            user = @users_id[uid]
-            user.groups << g
-            @usergroups[g] << user unless @uid_aliases[uid]
+            if user = @users_id[uid] 
+              user.groups << g
+              @usergroups[g] << user unless @uid_aliases[uid]
+            end
           end
           @usergroups.default = nil # delete default proc (allows Marshalling)
-          
+
           # Read all the raw text data
           @texts_id = {}
           if [:include, true, :linksonly].include?(@includetexts)
@@ -653,6 +654,7 @@ module Mediawiki
       @editcount += (other.editcount || 0) if @editcount
       # we do not merge @groups. Think about!
       @revisions += other.all_revisions
+      # currently user groups are not merged.
     end
 
     # returns registration timestamp
