@@ -954,9 +954,8 @@ We use \cmd{clone} to get a real copy of the filter \cmd{f} and save
 it in \cmd{f2},\footnote{cloning is important, otherwise both
   varfiables would point to the \emph{same} object!} after that we
 restrict the namespace of \cmd{f2} to 0 and then we use \cmd{f2} for
-the \cmd{revisions} view. Any method of Wiki returning a view as well
-as many of the other methods\footnote{i.\,e. graph generation and
-  statistics methods} take a filter as optional
+the \cmd{revisions} view. Many Wiki methods\footnote{i.\,e. graph
+  generation and statistics methods} take a filter as optional
 parameter.\footnote{send a bug report if I missed a method.}
 
 A cloned filter inherits the attributes of the original
@@ -974,8 +973,9 @@ See \rdoc{Mediawiki::Filter} to learn about filter attributes.
 \label{sec:filter-time}
 
 One nice feature of a wiki is the page history. We can reconstruct how
-the wiki looked like months or years ago, and we do this using
-filters.
+the wiki looked like months or years ago,\footnote{WikiExplorator
+  currently does not handle deleted pages, this is considered a bug.}
+and we do this using filters.
 
 So let's see how the wiki looked like a year ago:
 \begin{typed}
@@ -1074,7 +1074,7 @@ enumerator). We use a time raster of four weeks:
 As you can see I put some efforts in gnuplot to get nice formatted output.
 So I hope you got an idea about what filters can do for you, even if
 sometimes the direct way is faster (this results in a graph very close
-to session~\ref{typed:revtr} (figure~\ref{fig:gp_revtr}):
+to session~\ref{typed:revtr} (figure~\ref{fig:gp_revtr})):
 \begin{typed}
 \p{irb(main):416:0>} \c{c = 0; wiki.revisions.sort_by \{ |r| r.timestamp \}.collect \{ |r| 
                              [r.timestamp, c += 1] \}.gp_plot(:with => 'lines')}
