@@ -668,17 +668,17 @@ class DotGraph
   # This method depends on 
   # <tt>dot2tex</tt> (http://www.fauskes.net/code/dot2tex/),
   # (pdf)latex (with package pgf) and certainly graphviz to be installed.
-  def to_tex(params={})
+  def to_tex(params={}, &block)
     params = { :alg => 'dot', :fmt => 'pgf', :figonly => true,
       :exp => 0.2, :texmode => 'raw',
       :attrs => [] }.merge(params)
     exp = params[:exp]
     maxc = @links.collect { |k,l| l.weight }.max
     if block_given?
-      srcdot = to_dot(*params[:attrs])
+      srcdot = to_dot(*params[:attrs], &block)
     else
       srcdot = to_dot(*params[:attrs]) { |c|
-        "[style=\"color=black!#{(c.to_f/maxc)**exp*100}\"]" }
+        ["style=\"color=black!#{(c.to_f/maxc)**exp*100}\""] }
     end
     return srcdot if params[:dotonly] # for debugging
     p=""
@@ -706,8 +706,8 @@ class DotGraph
   end
   
   # Writes graph to texfile. See #to_tex.
-  def to_texfile(filename, params={})
-    File.open(filename,'w') { |file| file << to_tex(params) }
+  def to_texfile(filename, params={}, &block)
+    File.open(filename,'w') { |file| file << to_tex(params, &block) }
   end
 
   SONIA_DURATION = 7*24*60*60

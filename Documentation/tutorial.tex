@@ -4,11 +4,15 @@
 \usepackage[T1]{fontenc}
 
 \usepackage{alltt}
-\usepackage{xcolor}
+\usepackage[x11names, rgb]{xcolor}
 \usepackage{graphicx}
 \usepackage{framed}
 \usepackage[utf8]{inputenc}
 \usepackage{mdwlist}
+\usepackage{booktabs}
+
+\usepackage{tikz}
+\usetikzlibrary{snakes,arrows,shapes}
 
 \DefineNamedColor{named}{Link}{rgb}{0,0,0.3}
 \DefineNamedColor{named}{Cite}{rgb}{0,0.3,0}
@@ -45,7 +49,7 @@
 \newcommand{\tcount}{\makebox[0pt][r]{\tiny\thetcounter~}}
 
 \newenvironment{typed}{\refstepcounter{tcounter}\bgroup\setlength{\topsep}{0pt}\renewcommand{\FrameCommand}[1]{\fcolorbox{black!30}{bgcolor}{##1}\tcount}\MakeFramed{\FrameRestore}\begin{alltt}\small}{\end{alltt}\endMakeFramed\egroup\par\aftergroup\noindent\aftergroup\ignorespaces}
-\newenvironment{File}{\bgroup\colorlet{bgcolor}{blue!5}\begin{typed}}{\end{typed}\egroup}
+\newenvironment{File}{\bgroup\colorlet{bgcolor}{blue!5}\begin{typed}}{\end{typed}\egroup\aftergroup\ignorespaces}
 \newcommand{\file}[1]{\texttt{\color{file}#1}}
 \newcommand{\code}[1]{\texttt{\color{code}#1}}
 \newcommand{\prompt}{\textcolor{prompt}}
@@ -186,7 +190,7 @@ edit in March 2007 and the last one in July 2009.
 
 \clearpage
 
-\subsection{Interactive usage}
+\subsection{Interactive Usage}
 \label{sec:interactive}
 
 So let's see what WikiExplorator can tell about our wiki. We use the
@@ -637,10 +641,12 @@ different ways and with different layout algorithms using either
 \subsubsection{Graphviz}
 \label{sec:graphviz}
 
-\file{graphviz} can be used in two ways: if \file{ruby-graphviz}
-(module \file{gv}) is present it is used, otherwise it is silently
-substituted by calls to the \file{graphviz} executables.\footnote{the
-  main drawback here is that it is slow.} We start by using the
+\file{graphviz} can be used in two ways: by default the graphviz
+executables are called from ruby.\footnote{If you have the ruby gv library
+installed you could require \file{util/dotgraph-gv.rb} for direct
+library access. This is not done by default because of a graphviz bug
+(which we would trigger in section~\ref{sec:edgefilter}).}
+We start by using
 different graphviz layout engines\footnote{see the \file{graphviz} manpage and
 \url{http://www.graphviz.org/} for details} and create some PDFs:\footnote{(you may need to use \cmd{:pspdf} instead, see
   footnote~\ref{fnt:pspdf}, Sec.\,\ref{sec:gnuplot}), others
@@ -944,7 +950,7 @@ What we see here is that changing the filter affects the corresponding
 view.
 
 
-\subsection{Multiple filters}
+\subsection{Multiple Filters}
 \label{sec:filter-dup}
 
 In the last section we changed the current filter of the wiki to get
@@ -980,7 +986,7 @@ excluded users, \dots).
 
 See \rdoc{Mediawiki::Filter} to learn about filter attributes.
 
-\subsection{Back and forth in time}
+\subsection{Back and Forth in Time}
 \label{sec:filter-time}
 
 One nice feature of a wiki is the page history. We can reconstruct how
@@ -1092,14 +1098,14 @@ to session~\ref{typed:revtr} (figure~\ref{fig:gp_revtr})):
 \end{typed}
 Here we directly use the revision timespans to generate the graph.
 
-\section{Load and save}
+\section{Load and Save}
 \label{sec:load}
 
 Until now we played with a wiki we loaded directly from the database
 (we come back to this at the end of this section,
 see~\ref{sec:Wiki.open}). 
 
-\subsection{Loading and dumping}
+\subsection{Loading and Dumping}
 \label{sec:loaddump}
 
 Sometimes it would be nice to take the wiki with us to be able to do some
@@ -1107,13 +1113,14 @@ statistics, reporting, working through this tutorial etc. on our
 laptop while sitting in the train without internet access. To support
 this we can dump the wiki on disk to load it later.
 
-\subsubsection{Remove sensible data}
+\subsubsection{Remove Sensible Data}
 \label{sec:obliterate}
 
 Taking a wiki with us means dumping wiki contents on our hard
 disk. You may want to analyze the wiki of your customer containing
-sensible data, and you may want to dump it on your laptop, but your
-customer would not like to see sensible data leaving the intranet.
+sensible data, and you may want to take it with you on your laptop,
+but your customer would not like to see sensible data leaving the
+intranet.
 
 As we nearly do not need the contents of the wiki pages for most
 analyses the \cmd{obliterate} method is our friend. This method
@@ -1136,7 +1143,7 @@ keeps only the structure which is enough to do nearly anything we want
 What exactly is removed/kept by \cmd{obliterate} is freely selectable
 by the user (see \rdoc{Mediawiki::Wiki.obliterate} for details).
 
-\subsubsection{Marshal dump and load}
+\subsubsection{Marshal Dump and Load}
 \label{sec:marshal}
 
 Now we can dump our wiki to disk for later usage:
@@ -1145,7 +1152,8 @@ Now we can dump our wiki to disk for later usage:
 => #<File:~/mwparser/wio.marshal (closed)>
 \p{irb(main):479:0>} \c{exit}
 \end{typed}%
-We leave irb, have a break, meet people and do real world stuff, and
+We leave irb, have a break, meet people and do real world stuff, you
+know, things that really matter, thinks you don't need a computer for, and
 later we come back and start again, now loading our wiki from
 file:\footnote{``\cmd{-r wio}'' is needed to pull in the
   WikiExplorator library. As we do not need a customized database
@@ -1165,13 +1173,13 @@ and use only these for daily work.\footnote{this has the nice
   side effect that it works on platforms where installing a
   Mysql connector gets laborious.}
 
-\subsubsection{YAML dump and load}
+\subsubsection{YAML Dump and Load}
 \label{sec:yaml}
 
 Marshalling is fast and reliable, but it dumps the wiki to some binary
 format, so your customer cannot control what data you want to take
 with you. YAML is much slower than marshal but writes human readable
-files so you can show what you want to take with you:
+files so you can show them what you want to take away:
 \begin{typed}
 \p{irb(main):002:0>} \c{wiki.yaml_save('wio.yaml')}
 preprocessing (detach links)...
@@ -1197,7 +1205,8 @@ done
 YAML is an ordinary ruby library, but as you can see by the messages
 above I had to provide a customized version as yaml has problems with
 large nested cyclic structures. So please only use the methods given
-above to YAML save and load your wiki and not the original ones.
+above to YAML save and load your wiki and not the original ones
+privided by the YAML lib.
 
 \begin{figure}
   \centering
@@ -1327,7 +1336,7 @@ them\footnote{on the other hand it may be a bad idea, but, well, we do
 \p{irb(main):003:0>} \c{wiki.user_by_name('WikiSysop')}
 => #<Mediawiki::User id=1 name="WikiSysop">
 \p{irb(main):004:0>} \c{wiki = Mediawiki::Wiki.open("wiodb", 
-                    "wiowiki.kinf.wiai.uni-bamberg.de", "wiouser", 'MyCoMeT',
+                    "wiowiki.kinf.wiai.uni-bamberg.de", "wiouser", 'secret',
                     :language => 'de', :name => 'WiO', :uid_aliases => \{1 => 2\})}
 connecting to database wiowiki.kinf.wiai.uni-bamberg.de/wiodb
 connected.
@@ -1347,6 +1356,40 @@ belong to user 2.
 \subsubsection{wio\_roles and wio\_genres}
 \label{sec:wioroles}
 
+\begin{figure}
+  \parbox[b]{.5\textwidth}{\centering
+  \begin{tabular}{rll}\toprule
+    \multicolumn{2}{l}{\code{page\_id}} & \code{genres}\\\midrule
+    1 && portal\\
+    1410 && description>project\\
+    1424 && list>todo\\
+    1471 && list>collection, article\\
+    1477 && howto, article\\
+    1554 && description>project\\
+    1623 && calendar, event\\
+    && \dots\\
+    \bottomrule
+  \end{tabular}
+  \caption{\code{wio\_genres} table}
+  \label{fig:wio_genres}}
+  \parbox[b]{.5\textwidth}{\centering
+  \begin{tabular}{rll}\toprule
+    \multicolumn{2}{l}{\code{user\_id}} & \code{roles}\\\midrule
+     2 && Support\\
+     4 && Staff\\
+     5 && ProjectManagement\\
+     6 && ProjectManagement\\
+     7 && Staff\\
+     8 && Interns\\
+    10 && Interns\\
+    && \dots\\
+    \bottomrule
+  \end{tabular}
+  \caption{\code{wio\_roles} table}
+  \label{fig:wio_roles}}
+
+\end{figure}
+
 Every time we open the wiki it claims that it did not find the tables
 \code{wio\_genres} and \code{wio\_roles} in the database. These tables
 are an add-on by us and do normally not exist in a Mediawiki
@@ -1356,17 +1399,24 @@ if you know the role of every user in the company (manager,
 programmer, culprit, \dots) you can create a \code{wio\_roles} table
 and later you can use filters to get different statistics for
 different roles (to prove the managers do all the work or whatever).
-For the genres we did a text analysis of the wiki pages using
-TAMS/GTAMS\footnote{\url{http://tamsys.sourceforge.net}}. 
 
 \code{wio\_genres} \code{(page\_id, genres}) maps
 page ids to lists of genres seperated by ``,''. \code{wio\_roles}
 \code{(user\_id, roles)} maps user ids to lists of roles also
-separated by ``,''.
+separated by ``,'' (see figures~\ref{fig:wio_genres}
+and~\ref{fig:wio_roles}).
+
+In figure~\ref{fig:wio_genres} you see strings connected with
+``>''. This is output from
+TAMS/GTAMS\footnote{\url{http://tamsys.sourceforge.net}}, the tool we
+used to do text analysis of the wiki pages. No splitting is done at
+``>'', so ``list>collection'' is taken as one word. We can
+nevertheless filter all pages of genre ``list'' using a regular
+expression: \cmd{filter.genregexp = /\^{}list\textbackslash b/}.
 
 So feel free to use these tables if they seem useful to
-you.\footnote{I know I should provide a way to give these as text
-  files.}
+you.\footnote{I know I should provide a way to give these tables as
+  text files.}
 
 \subsubsection{wio\_user}
 \label{sec:wio_user}
@@ -1414,26 +1464,428 @@ fine. See \rdoc{mediawiki/db\_libxml.rb} in the manual for a
 description of the file format.
 
 So if you are working with a different wiki engine and can provide an
-XML output following this structure you will be able to analyze it
-using WikiExplorator. We even tested this with data from other domains
-not connected to wikis at all. As long as there is something you can
-call a page, something you can call an user and something you can call
-a revision which connects pages to users and has a creation time
-chances are good that it will work.
-
+XML output following this structure\footnote{or create a database} you
+will be able to analyze it using WikiExplorator. We even tested this
+with data from other domains not connected to wikis at all. As long as
+there is something you can call a page, something you can call an user
+and something you can call a revision which connects pages to users
+and has a creation time chances are good that it will work.
 
 \clearpage
+\section{More Graphs}
+\label{sec:moregraphs}
 
-\section{ToDo}
-\label{sec:todo}
+Until now we only used two simple graphs, the coauthorgraph and the
+pagegraph. In this section we will have a deeper look on different
+graphs. 
 
-\begin{itemize}
-\item further graph generation methods
-\item sonia
-\item more sophisticated examples
-\item scripting
-\item customized reports (html, \LaTeX)
-\item conclusion/summary/overview/architecture
-\end{itemize}
+\subsection{Edge Weights}
+\label{sec:edgeweights}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.5\linewidth]{gv_ca-noweights}\hfill
+  \includegraphics[width=.45\linewidth]{gv_ca-weights}
+  \caption{coauthorgraphs without and with edge weights used for
+    layout}
+  \label{fig:gv_ca-weights}
+\end{figure}
+
+As we could see in figures~\ref{fig:gv-catwopi5}
+and~\ref{fig:gv-catcirco} graphs are by default created with weighted
+edges. We can use these edge weights in different ways. Some of the
+graphviz layout engines can use weight information to compute node
+positions:
+\begin{typed}
+\p{irb(main):034:0>} \c{cgraph = wiki.coauthorgraph; nil}
+=> nil
+\p{irb(main):117:0>} \c{cgraph.to_graphviz('gv_ca-noweights.pdf', 'neato', :pdf,
+                     'overlap=false', 'splines=true') \{ |weight| 
+\hfill ["penwidth=#\{weight**0.5\}", "len=4"] \}}
+=> #<IO:0xf655be7c>
+\p{irb(main):118:0>} \c{cgraph.to_graphviz('gv_ca-weights.pdf', 'neato', :pdf,
+                     'overlap=false', 'splines=true') \{ |weight| 
+\hfill ["penwidth=#\{weight**0.5\}", "len=#\{4/weight**0.25\}"] \}}
+=> #<IO:0xf654cb20>
+\end{typed}
+The \code{neato} layout engine takes ``\code{len}'' as an edge
+attribute and tries to lay out the nodes in a way that all edges are
+close to these lengths. We used this here to drag intense coauthors
+close together, as you can see in figure~\ref{fig:gv_ca-weights} (right).
+Additionally we exposed the edge weights by changing the pen
+width. We could have accomplished a similar effect by changing the
+edge color from grey to black using the weight.
+
+\subsection{Graph Generation Methods}
+\label{sec:graphmethods}
+
+\begin{figure}
+  \centering
+  \parbox[b]{.33\textwidth}{\vspace{-5ex}
+  \includegraphics[width=\linewidth]{gv_drg}\vspace{-5ex}
+  \caption{directresponse}
+  \label{fig:gv_drg}}\hfill
+  \parbox[b]{.33\textwidth}{
+  \includegraphics[width=\linewidth]{gv_grg}\vspace{-3ex}
+  \caption{groupresponse}
+  \label{fig:gv_grg}}\hfill
+  \parbox[b]{.33\textwidth}{
+  \includegraphics[width=\linewidth]{gv_ilrg}\vspace{-3ex}
+  \caption{interlocking}
+  \label{fig:gv_ilrg}}
+\end{figure}
+
+You may have noticed by reading \rdoc{Mediawiki::Wiki.coauthorgraph}
+in the method documentation that the edge weights can be computed in
+two different ways. By default coauthorship edges are weighted by the
+number of pages two users share, but you may prefer the Newman measure
+(see \cite{Newman:2001zr,Newman:2001mz}).
+
+The copagesgraph connects users by the pages they edit but does not
+use the linear structure of the page history for more detailed
+measures. You may interpret the edit history of a page as a kind of
+dialogue between users: each edit is an answer to the edit
+before. This is done by the
+\rdoc{Mediawiki::Wiki.directresponsegraph}.  It gives a rather sparse
+graph with directed edges, as two users are only connected if they
+have successive edits on a page.  Alternatively we can use
+\rdoc{Mediawiki::Wiki.groupresponsegraph}. Here an edit is considered
+as answer to all precedent edits, which gives a directed graph similar
+to the coauthorgraph.
+
+The direct response graph is too picky and the group response graph
+is too coarse and both do not reflect the page history structure very
+well. So we developed the interlocking response graph which lays kind of
+in between (see \cite{Stein/Blaschke:2009a,Blaschke/Stein:2007} for a
+detailed discussion).
+
+\begin{typed}
+\p{irb(main):241:0>} \c{wiki.directresponsegraph \{ |n| n.uid \}.to_graphviz('gv_drg.pdf', 
+                                'neato', 'pdf', 'overlap=false', 'splines=true',
+                                'edge [len=2]') \{ |w| 
+\hfill ["color=\textbackslash"0.7 0.2 #\{4/w**0.5\}\textbackslash""] \}}
+=> #<IO:0xf65fcc3c>
+\p{irb(main):242:0>} \c{wiki.groupresponsegraph \{ |n| n.uid \}.to_graphviz('gv_grg.pdf', 
+                                'neato', 'pdf', 'overlap=false', 'splines=true',
+                                'edge [len=2]') \{ |w|
+\hfill ["color=\textbackslash"0.7 0.2 #\{4/w**0.5\}\textbackslash""] \}}
+=> #<IO:0xf655f52c>
+\p{irb(main):245:0>} \c{wiki.interlockingresponsegraph \{ |n| n.uid \}.to_graphviz(
+                 'gv_ilrg.pdf', 'neato', 'pdf', 'overlap=false', 'splines=true',
+                                'edge [len=2]') \{ |w|
+\hfill ["color=\textbackslash"0.7 0.2 #\{4/w**0.5\}\textbackslash""] \}}
+=> #<IO:0xf64e0074>
+\end{typed}
+Group response and interlocking have the same links but different link
+weights.\footnote{You may have to adapt color computation for your
+  wiki. To get best results we could have asked the graph for the
+  maximum link weight.}
+
+All three methods take various parameters to finetune how exactly the
+link weights are computed (see the given citations for a discussion of
+these). interlocking can also be used to create animations using
+\rdoc{Mediawiki::Wiki.timedinterlockingresponsegraph}. We will discuss
+this in section~\ref{sec:sonia}.
+
+The group response graph and the interlocking graph visually do not
+differ much from the coauthorship graph. Their strength lies in the
+statistical measures as the following example shows:
+\begin{typed}
+\p{irb(main):256:0>} \c{wiki.interlockingresponsegraph(:counts => :max).
+\hfill pp_degrees(:counts => true, :sortby => 1)}
+Node                          :  deg  out   in
+Steffen                       :  145   71   74
+Regina                        :   84   40   44
+Fritz                         :   73   38   35
+Klaus                         :   66   33   33
+Olga                          :   48   25   23
+Tom                           :   39   20   19
+Sam                           :   22   13    9
+Dan                           :   17    9    8
+Helga                         :   16    8    8
+...
+=> nil
+\p{irb(main):257:0>} \c{wiki.interlockingresponsegraph(:counts => :page).
+\hfill pp_degrees(:counts => true, :sortby => 1)}
+Node                          :  deg  out   in
+Steffen                       :  241  123  118
+Klaus                         :  156   74   82
+Fritz                         :  111   56   55
+Regina                        :  100   49   51
+Olga                          :   71   41   30
+Tom                           :   54   24   30
+Helga                         :   15    6    9
+Sam                           :   14    9    5
+Dan                           :   10    6    4
+...
+=> nil
+\end{typed}
+While Regina has a higher collaborative depth Klaus wins for
+collaborative breadth (ok, Steffen outperforms all others). 
+
+\bigskip
+
+The reverse concept to coauthorship is the copages graph. While the
+former connects authors by pages the latter connects pages by authors,
+i.\,e., two pages are linked if they have at least one common author. 
+
+We now have two page graphs: the hyperlink pagegraph showing which
+pages are explicitly linked by the users and the copages graph
+connecting pages which have at least one common author:
+
+\begin{figure}
+  \parbox[b]{.6\textwidth}{
+  \includegraphics[width=\linewidth]{copages}\vspace{-2ex}
+  \caption{copages graph}
+  \label{fig:copages}}%
+\parbox[b]{.4\textwidth}{
+  \includegraphics[width=\linewidth]{pg-copg}\vspace{4ex}
+  \caption{links$-$copages}
+  \label{fig:copages}}
+\end{figure}
+
+\begin{typed}
+\p{irb(main):064:0>} \c{wiki.copagesgraph \{''\}.to_graphviz('copages.pdf', :neato, :pdf, 
+                                   'outputorder=edgesfirst', 'overlap=false', 
+                                   'node [shape=note, style=filled, width=.34]')}
+=> #<IO:0xf6701ad8>
+\end{typed}
+We see that while most pages are well connected there is kind of a
+cluster to the left with only little connection to the rest. We could
+add node labels or create an SVG with tooltips to see which pages do
+the connection. Let's go one step further:
+\begin{typed}
+\p{irb(main):111:0>} \c{pg = wiki.pagegraph; nil}
+=> nil
+\p{irb(main):112:0>} \c{copg = wiki.copagesgraph; nil}
+=> nil
+\p{irb(main):113:0>} \c{pg_copg = DotGraph.new(pg.nodes) \{''\}; nil}
+=> nil
+\p{irb(main):114:0>} \c{pg.links.each \{ |a,l| pg_copg.link(*a) unless copg.links[a] \}; 
+\hfill nil}
+=> nil
+\p{irb(main):115:0>} \c{pg_copg.to_graphviz('pg-copg.pdf', :neato, :pdf, 
+                                   'outputorder=edgesfirst', 'overlap=false', 
+                                   'node [shape=note, style=filled, width=.34]')}
+=> #<IO:0xf66f2754>
+\end{typed}
+Here we created a \emph{new} graph with pages as nodes and set an edge
+between two nodes if they are connected in the page graph and not
+connected in the copages graph (we kind of substract the copages from
+the page graph). This gives us the pages which are explicitly linked
+in the wiki but are edited by different groups of users.
+
+\subsection{Edge Weight Filters}
+\label{sec:edgefilter}
+
+\begin{figure}
+  \begin{tabular}{@{}c@{}c@{}c@{}c@{}}
+    \includegraphics[width=.25\linewidth]{gv_ca0} &
+    \includegraphics[width=.25\linewidth]{gv_ca1} &
+    \includegraphics[width=.25\linewidth]{gv_ca2} & 
+    \includegraphics[width=.25\linewidth]{gv_ca3}\\
+    full & $w>1$ & $w>2$ & $w>3$
+  \end{tabular}
+  \caption{edge weight filtered coauthor graph}
+  \label{fig:ca-weightfilter}
+\end{figure}
+
+We learned before how to use edge weights for graph layout. One way to
+visualize connection strength is edge filtering: we remove all edges
+below a certain weight and show the remaining graph
+(figure~\ref{fig:ca-weightfilter}):
+\begin{typed}
+\p{irb(main):264:0>} \c{cgraph = wiki.coauthorgraph; nil}
+\p{irb(main):265:0>} \c{params = ['neato', :pdf, 'overlap=false', 'splines=true']}
+\p{irb(main):266:0>} \c{cgraph.to_graphviz('gv_ca0.pdf', *params)}
+=> #<IO:0xf6518528>
+\p{irb(main):267:0>} \c{cgraph.remove_links(1.1); nil}
+=> nil
+\p{irb(main):268:0>} \c{cgraph.to_graphviz('gv_ca1.pdf', *params)}
+=> #<IO:0xf650ddf8>
+\p{irb(main):269:0>} \c{cgraph.remove_links(2.1); nil}
+=> nil
+\p{irb(main):270:0>} \c{cgraph.to_graphviz('gv_ca2.pdf', *params)}
+=> #<IO:0xf6503678>
+\p{irb(main):271:0>} \c{cgraph.remove_links(3.1); nil}
+=> nil
+\p{irb(main):272:0>} \c{cgraph.to_graphviz('gv_ca3.pdf', *params)}
+=> #<IO:0xf64f9808>
+\end{typed}
+You get a clear picture about who is working together, and you cannot
+only print these graphs, you can also apply network measures on them
+etc. (did you like my nice trick with the additional \cmd{params} variable?)
+
+The only drawback may be that the nodes change their position from one
+step to the other, as the layout manager renders the network with less
+edges different. So what I would like to do is to render the graph
+once (with all edges), fix the node positions and remove some edges
+and render it again. And we can do this by computing node positions
+once and using them for all four graphs as the following example will
+show, now featuring the interlocking response graph:\footnote{please
+  note that \cmd{render\_graphviz} may trigger a graphviz bug if you
+  decided to use \file{dotgraph-gv}.}
+
+\begin{figure}
+  \centering
+  
+  \begin{tabular}{@{}c@{}c@{}c@{}c@{}}
+    \includegraphics[width=.25\linewidth]{gv_il0} &
+    \includegraphics[width=.25\linewidth]{gv_il1} &
+    \includegraphics[width=.25\linewidth]{gv_il2} & 
+    \includegraphics[width=.25\linewidth]{gv_il3}\\
+    full & $w>1$ & $w>2$ & $w>3$
+  \end{tabular}
+  \caption{edge weight filtered interlocking graph with fixed node positions}
+  \label{fig:il-weightfilter}
+\end{figure}
+
+\begin{typed}
+\p{irb(main):014:0>} \c{ilgraph = wiki.interlockingresponsegraph; nil}
+=> nil
+\p{irb(main):015:0>} \c{gparams = ['overlap=scale', 'splines=true', 'edge [len=3]']}
+=> ["overlap=scale", "splines=true", "edge [len=3]"]
+\p{irb(main):016:0>} \c{nodepos = ilgraph.render_graphviz(:neato, *gparams)}
+=> \{"u12"=>"30,482", "u5"=>"242,196", "u13"=>"245,445", "u6"=>"61,178", ...\}
+\p{irb(main):017:0>} \c{ilgraph.nodeblock \{ |n| ["label=\textbackslash"#\{n.name\}\textbackslash"", 
+                                          "pos=\textbackslash"#\{nodepos[ilgraph.nid(n)]\}\textbackslash"", 
+                                          'pin'] \}}
+=> #<Proc:0xf6699474@(irb):17>
+\p{irb(main):018:0>} \c{ilgraph.to_graphviz('gv_il0.pdf', :nop, 'pdf', *gparams)}
+=> #<IO:0xf6694398>
+\p{irb(main):021:0>} \c{ilgraph.remove_links(1.1); nil}
+=> nil
+\p{irb(main):022:0>} \c{ilgraph.to_graphviz('gv_il1.pdf', :nop, 'pdf', *gparams)}
+=> #<IO:0xf6662de8>
+\p{irb(main):023:0>} \c{ilgraph.remove_links(2.1); nil}
+=> nil
+\p{irb(main):024:0>} \c{ilgraph.to_graphviz(DPATH+'gv_il2.pdf', :nop, 'pdf', *gparams)}
+=> #<IO:0xf6656840>
+\p{irb(main):025:0>} \c{ilgraph.remove_links(3.1); nil}
+=> nil
+\p{irb(main):026:0>} \c{ilgraph.to_graphviz(DPATH+'gv_il3.pdf', :nop, 'pdf', *gparams)}
+=> #<IO:0xf664a52c>
+\end{typed}
+\cmd{render\_graphviz} returns a hash of node positions, and all we
+have to do now is to tell the \cmd{nodeblock} to add these to the
+corresponding node. And now we use \cmd{nop} as layout engine,
+i.\,e. a special version of \cmd{neato} which respects how to deal
+with precomputed node positions\footnote{to be more precisely
+  \cmd{nop} takes node positions to be given in points and not in
+  inches as graphviz by default assumes inches as input unit and
+  points ($=\frac{1}{72}$ inch) as output unit, weird enough, and it
+  requires every node to have an initial position set.} to print the
+graph with more and more edges removed. We could even
+\cmd{remove\_lonely\_nodes} on the graph and the remaining ones would
+keep their positions.
+
+\subsection{\LaTeX\ and Tikz}
+\label{sec:tikz}
+
+\begin{figure}
+  \centering\vspace{-3ex}
+  \input{tikz_ca.tex}
+  \caption{Graphviz, \LaTeX\ and Tikz working together}
+  \label{fig:tikz_ca}
+\end{figure}
+
+Graphviz output is really nice. And there is even a way to improve the
+quality of the rendering if you use \LaTeX\ (and Tikz) to produce your high
+quality documents (well, I use it for nearly every document, including
+this tutorial), and if you have
+\code{dot2tex}\footnote{\url{http://www.fauskes.net/code/dot2tex/}}
+installed. If you want to stay away from the world of good and fast typography and have no connection to \LaTeX\ you may simply skip this section.
+
+\rdoc{Dotgraph.to\_texfile} uses \code{graphviz} and \code{dot2tex} to
+create a \LaTeX-file (figure~\ref{fig:tikz_ca}):%
+\begin{typed}
+\p{irb(main):206:0>} \c{cgraph.nodeblock \{ |u| 
+\hfill "\textbackslash\textbackslash\textbackslash\textbackslash{}textbf\{#\{u.name[0..1]\}\}$_\{#\{u.uid\}\}$" \}}
+=> #<Proc:0xf66f7100@(irb):206>
+\p{irb(main):207:0>} \c{cgraph.to_texfile('gv_ca.tex',:alg => :neato, :fmt => 'tikz', 
+                     :attrs => ['overlap=false', 'splines=true', 
+                'node [fixedsize, style="ball color=blue!15, semitransparent"]',
+                'edge [len=2]']) \{ |w| 
+\hfill ["style=\textbackslash"color=black!50!red!#\{w**0.5*20\}, line width=2\textbackslash""] \}}
+=> #<File:~/mwparser/gv_ca.tex (closed)>
+\end{typed}
+Using tikz has two main advantages: node and edge labels may contain
+arbitrary \LaTeX-code (used here for bold fonts and subscripted uids)
+and all graphical elements can use the full power of Tikz for
+rendering\footnote{have a look in the \code{dot2tex}
+  (\url{http://www.fauskes.net/code/dot2tex/gallery/}) and the Tikz/PGF
+  (\url{http://www.texample.net/tikz/examples/}) galleries for
+  impressing examples.} (see our shiny nodes).
+
+\subsection{Graph Animations}
+\label{sec:sonia}
+
+I promised you in section~\ref{sec:graphmethods} to tell you more
+about how to create nice animantions. The method 
+\rdoc{Mediawiki::Wiki.timedinterlockingresponsegraph} gives an
+interlocking response graph of our wiki where each response is denoted
+by an explicit link attributed by the time stamp of the
+response. Dotgraph is able to create
+SoNIA\footnote{\url{www.stanford.edu/group/sonia/}} animation source
+files if the graph contains edges attributed with timestamps.
+So all we have to do is:
+\begin{typed}
+\p{irb(main):063:0>} \c{wiki.timedinterlockingresponsegraph.to_sonfile('il.son') }
+=> #<File:~/mwparser/il.son (closed)>
+\end{typed}
+\cmd{to\_sonfile} takes various parameters which allow to finetune node
+and edge appearance in the animation. The defaults should give you a
+good starting point.
+
+Now we can start SoNIA, load \file{il.son} and create nice animations
+like the ones you can see at
+\url{http://www.kinf.wiai.uni-bamberg.de/mwstat/Inhalt.html}.
+How to use SoNIA is beyond this tutorial, sorry.
+
+Creating son-files certainly works on any graph if you provide timed links.
+
+
+\section{Writing Scripts}
+\label{sec:scripts}
+
+Up to now we used WikiExplorator interactively with \code{irb}. Ruby
+is a full-featured programming language, so we may want to write some
+ruby programs for our work. So I use my favourite editor to open
+\file{myscript.rb}:
+\begin{File}
+#!/usr/bin/ruby -w
+require 'mediawiki/full'
+wiki = Mediawiki::Wiki.open("wiodb", "wiowiki.kinf.wiai.uni-bamberg.de",
+                            "wiouser", IO.getpw,
+                            :language => 'de', :name => 'WiO')
+wiki.pp_global_userstats
+\end{File}
+The first line tells unixoide platforms that this is a ruby
+script. Then we require the \file{mediawiki/full} library and now we
+can open our wiki. I did not save the password in the script but ask
+the user to type it in using \cmd{IO.getpw}. And finally I print ouzt
+some statistics.
+
+Alternatively we could have used the startup file we created before:
+\begin{File}
+#!/usr/bin/ruby -w
+require 'wio' # load the startup file
+wiki = Mediawiki.mywiki(IO.getpw)
+wiki.pp_global_userstats
+puts "My personnel wiki statistic tool!"
+\end{File}
+
+So, go and learn some Ruby, write nice methods for sophisticated
+statistics and visualization and send them to me to be integrated in
+the codebase.
+
+\section{Customized Reports}
+\label{sec:reports}
+
+ToDo: HTML and \LaTeX-Reports
+
+
+\bibliographystyle{alpha}
+\bibliography{tutorial}
 
 \end{document}

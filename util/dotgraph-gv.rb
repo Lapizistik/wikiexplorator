@@ -1,6 +1,12 @@
 #!/usr/bin/ruby -w
 # :title: Dot Graph gv Extension - Ruby Lib
 # =  Dot Graph Library - gv Extension
+#
+# if this library is required it silently replaces Dotgraph#to_graphviz and
+# Dotgraph#render_graphviz with gv library calls. If there is any need to
+# explicitly use the external program or the library use:
+# external :: Dotgraph#to_graphviz_cmd, Dotgraph#render_graphviz_cmd
+# internal :: Dotgraph#to_gv, Dotgraph#render_gv
 
 require 'util/dotgraph'
 require 'gv'
@@ -83,7 +89,10 @@ class DotGraph
     end
   end
 
+  # see util/dotgraph-gv.rb
   alias to_graphviz to_gv
+
+  # see util/dotgraph-gv.rb
   alias render_graphviz render_gv
 
 end
