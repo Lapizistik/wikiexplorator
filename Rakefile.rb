@@ -28,9 +28,9 @@ Rake::RDocTask.new(:html) do |rd|
 end
 
 desc 'Package files for release'
-Rake::PackageTask.new('mwparser','0.83') do |p|
+Rake::PackageTask.new('mwparser','0.831') do |p|
   globs = %w(mediawiki util test html).collect { |w| w + '/**/*' } +
-    %w(Rakefile.rb mediawiki.rb mywikis.rb) + ['Documentation/usage.pdf']
+    %w(Rakefile.rb mediawiki.rb mywikis.rb) + ['Documentation/tutorial.pdf']
   p.package_files.include(*globs)
   p.need_tar_bz2 = true
 end

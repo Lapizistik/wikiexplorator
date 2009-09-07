@@ -1,7 +1,8 @@
 \documentclass[a4paper]{scrartcl}
 
-\usepackage{lmodern}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{helvet}
 
 \usepackage{alltt}
 \usepackage[x11names, rgb]{xcolor}
@@ -1807,8 +1808,8 @@ create a \LaTeX-file (figure~\ref{fig:tikz_ca}):%
 => #<Proc:0xf66f7100@(irb):206>
 \p{irb(main):207:0>} \c{cgraph.to_texfile('gv_ca.tex',:alg => :neato, :fmt => 'tikz', 
                      :attrs => ['overlap=false', 'splines=true', 
-                'node [fixedsize, style="ball color=blue!15, semitransparent"]',
-                'edge [len=2]']) \{ |w| 
+                                'node [fixedsize, style="ball color=blue!15"]',
+                                'edge [len=2]']) \{ |w| 
 \hfill ["style=\textbackslash"color=black!50!red!#\{w**0.5*20\}, line width=2\textbackslash""] \}}
 => #<File:~/mwparser/gv_ca.tex (closed)>
 \end{typed}
@@ -1819,6 +1820,7 @@ rendering\footnote{have a look in the \code{dot2tex}
   (\url{http://www.fauskes.net/code/dot2tex/gallery/}) and the Tikz/PGF
   (\url{http://www.texample.net/tikz/examples/}) galleries for
   impressing examples.} (see our shiny nodes).
+
 
 \subsection{Graph Animations}
 \label{sec:sonia}
@@ -1919,7 +1921,6 @@ As you can see we use \cmd{@wiki} to access our wiki. The ``\cmd{@}''
 indicates ruby instance variables and within the report file
 WikiExplorator provides the wiki to us in the instance variable
 \cmd{@wiki}. 
-
 
 \begin{figure}
   \centering
