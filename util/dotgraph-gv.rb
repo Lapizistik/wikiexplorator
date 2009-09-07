@@ -7,6 +7,9 @@
 # explicitly use the external program or the library use:
 # external :: Dotgraph#to_graphviz_cmd, Dotgraph#render_graphviz_cmd
 # internal :: Dotgraph#to_gv, Dotgraph#render_gv
+#
+# Please node that you may trigger a graphviz bug when using this library if 
+# your graphviz version is older than 2009-8-7 (bug 1759).
 
 require 'util/dotgraph'
 require 'gv'

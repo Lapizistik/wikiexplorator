@@ -35,6 +35,7 @@
 ]{hyperref}
 
 \colorlet{cmd}{black!30!red}
+\colorlet{rem}{black!60!green}
 \colorlet{file}{black!30!blue}
 \colorlet{code}{black}
 \colorlet{prompt}{black!30}
@@ -54,6 +55,7 @@
 \newcommand{\code}[1]{\texttt{\color{code}#1}}
 \newcommand{\prompt}{\textcolor{prompt}}
 \newcommand{\cmd}[1]{\texttt{\color{cmd}#1}}
+\newcommand{\rem}[1]{\texttt{\color{rem}#1}}
 \newcommand{\cursor}{\textcolor{black!20!cmd!30}{\raisebox{-.2ex}{\rule{.5em}{2ex}}}}
 
 \newcommand{\rdoc}[1]{\texttt{\color{help}#1}}
@@ -645,7 +647,7 @@ different ways and with different layout algorithms using either
 executables are called from ruby.\footnote{If you have the ruby gv library
 installed you could require \file{util/dotgraph-gv.rb} for direct
 library access. This is not done by default because of a graphviz bug
-(which we would trigger in section~\ref{sec:edgefilter}).}
+(reported and fixed since 2009-8-7).}
 We start by using
 different graphviz layout engines\footnote{see the \file{graphviz} manpage and
 \url{http://www.graphviz.org/} for details} and create some PDFs:\footnote{(you may need to use \cmd{:pspdf} instead, see
@@ -1724,7 +1726,8 @@ and render it again. And we can do this by computing node positions
 once and using them for all four graphs as the following example will
 show, now featuring the interlocking response graph:\footnote{please
   note that \cmd{render\_graphviz} may trigger a graphviz bug if you
-  decided to use \file{dotgraph-gv}.}
+  decided to use \file{dotgraph-gv} and your graphviz version is older
+than 2009-8-7.}
 
 \begin{figure}
   \centering
@@ -1853,12 +1856,13 @@ is a full-featured programming language, so we may want to write some
 ruby programs for our work. So I use my favourite editor to open
 \file{myscript.rb}:
 \begin{File}
-#!/usr/bin/ruby -w
-require 'mediawiki/full'
+\rem{#!/usr/bin/ruby -w}
+require 'mediawiki/full'  \rem{# load all parts of the WikiExplorator library}
+\rem{# now we open our wiki:}
 wiki = Mediawiki::Wiki.open("wiodb", "wiowiki.kinf.wiai.uni-bamberg.de",
                             "wiouser", IO.getpw,
                             :language => 'de', :name => 'WiO')
-wiki.pp_global_userstats
+wiki.pp_global_userstats  \rem{# and some output. More should follow}
 \end{File}
 The first line tells unixoide platforms that this is a ruby
 script. Then we require the \file{mediawiki/full} library and now we
@@ -1868,11 +1872,11 @@ some statistics.
 
 Alternatively we could have used the startup file we created before:
 \begin{File}
-#!/usr/bin/ruby -w
-require 'wio' # load the startup file
-wiki = Mediawiki.mywiki(IO.getpw)
-wiki.pp_global_userstats
-puts "My personnel wiki statistic tool!"
+\rem{#!/usr/bin/ruby -w}
+require 'wio'                            \rem{# load the startup file}
+wiki = Mediawiki.mywiki(IO.getpw)        \rem{# open the wiki}
+wiki.pp_global_userstats                 \rem{# some output}
+puts "My personnel wiki statistic tool!" \rem{# Hurray!}
 \end{File}
 
 So, go and learn some Ruby, write nice methods for sophisticated
@@ -1882,7 +1886,127 @@ the codebase.
 \section{Customized Reports}
 \label{sec:reports}
 
-ToDo: HTML and \LaTeX-Reports
+Besides interactive usage and specially written programs
+WikiExplorator is also able to do nice wiki reports as PDF or
+HTML:\footnote{The same command line is also used in our startup
+  file.}
+\begin{typed}
+\p{irb(main):117:0>} \c{Mediawiki::Report.new(wiki, :pdf, :template => 'web', 
+                                       :outputdir => 'mw-report').generate}
+Reading './mediawiki/reports/web.de.tex' failed. 
+Trying './mediawiki/reports/web.tex'.
+Found some NaN's! Removed!
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6)
+ %&-line parsing enabled.
+entering extended mode
+=> "~/mwparser/mw-report/default.pdf"
+\end{typed}
+This generates a report with template ``\code{web}'' in the output
+directory ``\file{mw-report}''. As you can see in the next line
+WikiExplorator first tries to find a report file with the right
+language (``\cmd{de}'' for our example wiki) and falls back to the
+default file. And finally the path of the report is returned.
+
+We may want to create an own report customized to our needs. Let's
+create our own HTML report by creating a new file
+``\file{mediawiki/reports/myreport.html}''
+(figure~\ref{fig:myreport.html}). It is an ordinary HTML file with
+ruby commands embedded (this is similar to PHP). Embedded commands are
+enclosed in \cmd{<\%\dots\%>} or \cmd{<\%=\dots\%>}. The latter form
+includes the return value of the command in the resulting HTML file.
+
+As you can see we use \cmd{@wiki} to access our wiki. The ``\cmd{@}''
+indicates ruby instance variables and within the report file
+WikiExplorator provides the wiki to us in the instance variable
+\cmd{@wiki}. 
+
+
+\begin{figure}
+  \centering
+  \begin{File}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>My report: \cmd{<%= @wiki.to_s %>}</title>
+  </head>
+  \cmd{<% full = @wiki.filter.clone; full.include_all_namespaces %>}
+  \cmd{<% wiki.filter.namespace=0 %>}
+  \cmd{<% users = @wiki.users %>}
+  \cmd{<% pages = @wiki.pages %>}
+  \cmd{<% revisions = @wiki.revisions %>}
+  <body>
+    <h1>My report: \cmd{<%= @wiki.name %>}</h1>
+    <p>
+      We have \cmd{<%=@wiki.pages(full).length%>} pages with 
+      \cmd{<%=@wiki.revisions(full).length%>} revisions from 
+      \cmd{<%=users.length%>} users (\cmd{<%=pages.length%>} pages with
+      \cmd{<%=revisions.length%>} revisions in Namespace 0).
+    </p>
+    \cmd{<% up = users.collect \{ |u| u.pages.length \}
+       up.gp_plot_lorenz(:title => "Lorenz Curve", :xlabel => "authors", 
+                         :ylabel => "pages", :png=>'cdfap.png', 
+                         :size => '480,480')
+    %>}
+    <p>
+      <img alt="lorenz curve - pages vs. authors" src="cdfap.png" />
+    </p>
+  </body>
+</html>
+\end{File}
+  \caption{\file{mediawiki/reports/myreport.html}}
+  \label{fig:myreport.html}\vspace{4ex}
+
+\setlength{\fboxsep}{2ex}
+\fbox{\parbox{.9\textwidth}{
+\textbf{\sffamily\Large My report: WiO}\\[2ex]
+We have 271 pages with 1362 revisions from 14 users (109 pages with 1125 revisions in Namespace 0).\\
+\includegraphics[width=.3\linewidth]{cdfap.png}
+}}
+  \caption{output for \file{myreport.html}}
+  \label{fig:myreport.html-output}
+\end{figure}
+
+So what we are doing here is to create a second filter
+(``\cmd{full}'') including all namespaces, set some local variables
+and write some text with embedded commands giving simple descriptive
+statistics about the wiki. Then we create some nice graphic and
+point to it using the ``\code{img}'' tag.
+
+Try it:
+\begin{typed}
+\p{irb(main):126:0>} \c{Mediawiki::Report.new(wiki, :html, :template => 'myreport', 
+                                       :outputdir => '/tmp/mw-report').generate}
+Reading './mediawiki/reports/myreport.de.html' failed. 
+Trying './mediawiki/reports/myreport.html'.
+=> "~/mwparser/mw-report/default.html"
+\end{typed}
+As you can see first the language specific file was tried and as it
+was missing WikiExplorator fell back to the default.  
+
+Now point your webbrowser to
+``\file{\~{}/mwparser/mw-report/default.html}'' and see the result
+(figure~\ref{fig:myreport.html-output}).
+
+Creating \LaTeX/PDF templates works the same way. Use the files in
+``\file{mediawiki/reports/}'' as starting point for own reports, but
+save them under new names (otherwise you would loose then on update).
+
+And do not forget to send them to me for inclusion in the
+WikiExplorator package, I am interested in new interesting reports, in
+translations of reports to other languages etc., in all kinds of
+improvements.
+
+\section{Acknowledgements}
+\label{sec:ack}
+
+Wiki Explorator\footnote{\url{http://wiki-explorator.rubyforge.org}} 
+was developed\footnote{in the WiO project supported by a grant from the
+  Volkswagen Stiftung.} by\\[2ex]
+Dr.\,Klaus Stein\\
+Laboratory for Semantic Information Technology\\
+Chair of Computing in the Cultural Sciences\\
+Otto-Friedrich Univerity Bamberg\\[2ex]
+and is available as open source.
 
 
 \bibliographystyle{alpha}
