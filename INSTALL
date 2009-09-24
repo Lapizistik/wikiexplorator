@@ -1,0 +1,196 @@
+= Install
+
+Wiki Explorator needs a recent ruby 1.8 installation. It is untested
+on ruby 1.9. 
+
+== Operating System
+
+Wiki Explorator is developed on Linux (Debian) and tested on Linux
+(Debian, Ubuntu), MacOS X and Windows XP, but should run on any OS
+providing the libraries needed. Patches are welcome.
+
+See OS specific installation instructions below.
+
+== Core
+
+Just unpack Wiki Explorator (<tt>mwparser.tar.bz2</tt>) wherever you
+want, enter the directory <tt>mwparser</tt>, make a copy of
+<tt>mywikis.rb</tt> under some different name, e.g. <tt>wio.rb</tt>,
+adapt it to your needs and start irb with it:
+  /mwparser> irb -r wio
+See the documentation to <tt>mywikis.rb</tt>, the tutorial.pdf (and
+the source) for getting started.
+
+== Libraries
+
+Wiki explorator uses a lot of open source tools for getting things
+done including <tt>graphviz</tt> <http://www.graphviz.org/>,
+<tt>gnuplot</tt> <http://www.gnuplot.info/>, <tt>R</tt>
+<http://www.r-project.org/>, <tt>dot2tex</tt>
+<http://www.fauskes.net/code/dot2tex/> and <tt>pdflatex</tt>
+<http://www.latex-project.org/>. It will work without these tools
+being installed but with reduced functionality. Additionally you may
+create SoNIA animation files, where you will need SoNIA
+<http://www.stanford.edu/group/sonia/> to use them.
+
+It tries to use the <tt>rsruby</tt>, <tt>ruby-graphviz</tt> (is
+silently substituted by using the <tt>graphviz</tt> binary if not
+availible) and <tt>dbi</tt>/<tt>mysql</tt> ruby libraries (besides
+others).
+
+<tt>rsruby</tt> is a Ruby to R bridge. If R is availible it
+loads the R-libraries <tt>sna</tt>, <tt>network</tt> and <tt>ergm</tt>
+which have to be installed. To install these just start R on the
+console and type 
+ R> install.packages() 
+This opens a graphical mirror selector and after that a graphical
+package selector, where you can select the corresponding libraries
+(there is no need to save the workspace after this if you are asked).
+Some linux distributions provide pre-packaged libraries.
+
+== Environment variables
+
+On systems with non-standard tool installations you may need to give
+the following environment variables (normally you should not need them):
+<tt>RB_GNUPLOT</tt>::
+  the gnuplot binary. Defaults to <tt>gnuplot</tt>. Give a fully
+  qualified path if gnuplot is not found.
+<tt>RB_GRAPHVIZ_PATH</tt>::
+  the path the graphviz binaries can be found in. Defaults to _nil_.
+  Only set this if the binaries cannot be found by the system.
+<tt>RB_TOPDF</tt>::
+  Tells the report generator how to generate PDFs with <tt>graphviz</tt> and
+  <tt>gnuplot</tt>. May be set to <tt>pdf</tt> or <tt>pspdf</tt> (this
+  is only used for the default report and does not influence other
+  parts of the library).
+  
+  On some systems these tools are compiled without PDF support. In
+  this case <tt>pspdf</tt> may be used as export format which
+  generates PS (postscript) and converts it to PDF using the following
+  tool (see the documentation of the appropriate DotGraph and Gnuplot 
+  methods for details):
+<tt>RB_PS2PDF</tt>:: 
+  an eps to pdf converter for <tt>:pspdf</tt>. 
+  Defaults to <tt>epstopdf --outfile=%o %i</tt>. "%i" is the 
+  placeholder for the input filename, "%o" for the output filename.
+<tt>RB_GNUPLOT_DELAY</tt>::
+  gnuplot pipe delay in seconds (only for <tt>pgnuplot.exe</tt> on
+  windows!).  When using <tt>pgnuplot.exe</tt> there are known problems
+  with larger data sets (data miss by buffer overflow).  So if there
+  are problems with hanging gnuplot processes try to set this to
+  something around 0.01
+
+
+== Windows XP installation notes
+
+I am not a windows guy at all, but I tried an install:
+
+=== Installation steps 
+This is how I did it (the revised version after a lot of errors ;-)
+* Using Ruby 1.8.6 one-click-installer from http://www.ruby-lang.org/.
+  (the one-click-installer gives some nice configuration help and
+  libraries etc)
+* Installed the Ruby 1.8.7 binary package (from http://www.ruby-lang.org/) 
+  on top of it (overwriting). You may omit this step as everything should 
+  also work with Ruby 1.8.6 (please report if it does not), but Ruby 1.8.7
+  brings some convenient new methods.
+* The one-click-installer brings in the +dbi+ library, but only with ODBC 
+  support. I installed the +mysql+ and <tt>dbd-mysql</tt> gems but did not
+  get them working properly (core dumps). So I decided to use ODBC
+* Installed the Mysql ODBC connector for windows from the 
+  http://www.mysql.com website.
+* Installed Gnuplot from http://www.gnupot.info. Gnuplot on windows
+  is kind of complicated to use, for details see the documentation on
+  the Gnuplot class.
+  * As I want to generate reports (i.e. batch processing) I installed
+    the command line gnuplot version (the package is called dj2). For
+    the win32 version see below.
+  * Either include the <tt>...\gnuplot\bin</tt> directory into the +PATH+ 
+    or set <tt>RB_GNUPLOT</tt> to <tt>...\gnuplot\bin\pgnuplot</tt>.
+  * you may need to set <tt>GNUPLOT_PS_DIR</tt> (to the full path of)
+    <tt>...\gnuplot\bin\share\Postscript</tt>.
+* Installed Graphviz using the Windows install package from 
+  http://www.graphviz.org/. This added the graphviz bin directory to the
+  +PATH+.
+* Installed pdflatex using the Basic MikTeX installer from 
+  http://www.miktex.org/. This nicely gives us <tt>epstopdf</tt> which we
+  need for <tt>:pspdf</tt> in graphviz and gnuplot. The installer also
+  adds everything to the +PATH+.
+* Now I edited the parameters in <tt>Mediawiki.mywiki</tt> in the file
+  <tt>mywikis.rb</tt> to fit to my database (I used SciTE which came with 
+  the Ruby installer). As described above I did use the ODBC connector
+  (see the second example wiki in the file).
+* And finally I opened the dos shell, entered the +mwstat+ directory and
+  typed
+    > ruby mywikis.rb report
+  which gave me a nice pdf (in fact it did after one week of patching ;-)
+
+=== Gnuplot on Windows
+Using gnuplot on Windows has known issues. 
+* If you have cygwin installed the cygwin port seems to be the best 
+  solution (but needs X).
+* For batch processing the commandline/DOS version is best (package dj2), 
+  but its interactive display is somehow limited.
+* The win32 version gives a nice graphical display but has known limits
+  with processing piped data. You must call <tt>pgnuplot.exe</tt> to deliver
+  the data (so set the environment variable <tt>RB_GNUPLOT</tt> to 
+  <tt>"pgnuplot"</tt>). If <tt>pgnuplot</tt> gets to much data in short time 
+  some data may be lost ddue to buffer overflow.
+  The workaround here is to set the environment variable 
+  <tt>RB_GNUPLOT_DELAY</tt> to something arount 0.01 which delays the data
+  transfer to gnuplot line by line.
+  The drawback is that things get slower.
+
+=== Remarks on Ruby on Windows
+* The +libxml+ gem seems to be missing for windows (patches welcome).
+* I did not try to install R, please report if you did it successfully.
+* If you want to use the mysql dbd (maybe you have more luck to get 
+  this working) you need some DLLs: I took the MySQL
+  Essentials from the http://www.mysql.com website and only installed
+  the client part. This installed some programs and DLLs into
+  <tt>C:\Programme\MySQL\MySQL Server 5.1\bin</tt>, and finally I
+  added this directory to the +PATH+ variable (afaik we only need
+  <tt>libmysql.dll</tt>, but it may help to have the other tools
+  availible).
+
+=== Remarks on windows
+Some hints for unix guys like me who are not familiar with the windows
+platform but need to do the install on it:
+* Environment variables can be accessed by <tt>%PATH%</tt>, separator for 
+  entries in +PATH+ is ";".
+* Environment variables can be permanently set from the "System Properties" 
+  menu ("Advanced" tab).
+* Windows is <i>just</i> different. Even if I had to do some ugly patches...
+
+== Ubuntu 8.04
+The following installation protocol was sent to me describing
+successful install on Ubuntu 8.04 (which is AFAIK kind of out of
+date).
+
+Installing ubuntu packages (as root):
+ > aptitude install ruby irb r-base graphviz gnuplot dot2tex texlive-math-extra rubygems libdbi-ruby libdbd-mysql-ruby libxml-ruby texlive-fonts-extra texlive-extra-utils ruby1.8-dev irb1.8 libreadline-ruby1.8 libruby1.8 ruby1.8
+Preparing Ruby gems:
+ > gem update; gem update --system
+Installing R:
+ > R_HOME=/usr/lib/R gem install rsruby -- --with-R-dir=/usr/lib/R --with-R-include=/usr/share/R/include
+ > R
+ R> install.packages('network')
+ R> install.packages('ergm')
+ R> install.packages('sna')
+ R> q()
+ Save workspace image? [y/n/c]: n
+
+This installed everything needed. There were two problems with the R install: 
+* The R included in Ubuntu 8.04 is rather old, therefore <tt>dev.new()</tt>
+  does not work, which is needed for interactive graphical R output on screen.
+
+  You may add the ubuntu repository from the R homepage to 
+  <tt>/etc/apt/sources.list</tt> to get a new version (see 
+  <http://www.r-project.org/>)
+* <tt>sna</tt> did not install properly (perhaps caused by the old R
+  version), the following workaround was successful: 
+   R> download.packages('sna', '/tmp')
+   R> q()
+   Save workspace image? [y/n/c]: n
+   > R CMD INSTALL --no-docs /tmp/sna_2.0-1.tar.gz
+

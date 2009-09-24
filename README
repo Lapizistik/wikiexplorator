@@ -1,0 +1,29 @@
+= Wiki Explorator
+
+Wiki Explorator is a library for scientific research on wikis (and
+other CMS, focus: Mediawiki) for interactive exploration, statistics
+and visualization of (network) data.
+
+It can be used for customized reports generation as well as
+interactive wiki analysis.
+
+== Getting started
+
+The instructions in INSTALL may help you to get everything run, after
+that the tutorial.pdf should give you an overview. 
+
+You may test Wiki Explorator without installing using the online
+version (see links).
+
+== Files
+
+INSTALL[link:files/INSTALL.html] :: installation instructions for various platforms
+TODO[link:files/TODO.html]    :: whatever is currently missing
+README  :: this file
+Documentation/tutorial.pdf[http://wiki-explorator.rubyforge.org/tutorial.pdf] :: an introductory tutorial
+mywikis.rb[link:files/mywikis_rb.html] :: personal startup file
+
+== Links
+
+http://www.kinf.wiai.uni-bamberg.de/mwstat :: Online Wiki Explorator
+http://wiki-explorator.rubyforge.org :: Download and documentation

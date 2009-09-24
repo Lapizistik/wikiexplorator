@@ -16,7 +16,19 @@ module Epstopdf
     tmpname = tf.path # the filename
     yield(tmpname) # and call the block where the eps is created
     ps2pdf = PS2PDF.gsub('%i', tmpname).gsub('%o', outfile)
-    system(ps2pdf)
-    tf.unlink # and remove it
+    begin
+      unless system(ps2pdf)
+        es = $?.exitstatus
+        if es==127 # hopefully this holds true on several OSes
+          raise "Executable not found when trying `#{ps2pdf}'."
+        elsif es>128 # hopefully this holds true on several OSes
+          raise "Executable aborted while running `#{ps2pdf}'."
+        else
+          raise "Error running `#{ps2pdf}'."
+        end
+      end
+    ensure
+      tf.unlink # and remove it
+    end
   end
 end
