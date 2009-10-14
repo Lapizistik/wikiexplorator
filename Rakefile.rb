@@ -32,7 +32,7 @@ Rake::RDocTask.new do |rd|
 end
 
 # the following is a hack to circumvent rdoc limitations
-# (we want external links to open outside the frameset)
+# (we want external links to open outside the frameset).
 # Perhaps we should really switch to yard.
 task :doc => :rdoc do
   warn 'changing links'

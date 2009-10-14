@@ -830,8 +830,9 @@ Warning: node 'u15', graph 'G' size too small for label
 \label{sec:vizR}
 
 Graphviz allows for rather pretty and sophisticated graph prints, but
-has the drawback not to display graphs on screen (which was rather
-convenient with gnuplot). Thankfully we can use \code{R} for this
+has the drawback that it has no direct display mode (which was rather
+convenient with gnuplot), you have to create some pdf, svg, png,
+etc. and use an external viewer. Thankfully we can use \code{R} for this
 (figure~\ref{fig:r_coauthor}):
 \begin{typed}
 \p{irb(main):182:0>} \c{dev = cgraph.r_plot}

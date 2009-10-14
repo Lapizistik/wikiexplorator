@@ -469,7 +469,7 @@ class DotGraph
   end
 
   # Compute the adjacency matrix (Array of Arrays) of this graph.
-  def adjacencymatrix
+  def adjacencymatrix(weighted=false)
     # prepare matrix
     ni = Hash.new
     @nodes.each_with_index { |n,i| ni[n]=i }
