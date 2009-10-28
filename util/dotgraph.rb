@@ -13,7 +13,7 @@ require 'util/epstopdf.rb'
 # class with support for R and others and some drawbacks due to its history.
 #
 # Perhaps I should rewrite this to use rgl (by subclassing?) 
-# <http://rgl.rubyforge.org/rgl/index.html> (which I found to late)
+# <http://rgl.rubyforge.org/rgl> (which I found to late)
 class DotGraph
   include Epstopdf
 
@@ -469,18 +469,57 @@ class DotGraph
   end
 
   # Compute the adjacency matrix (Array of Arrays) of this graph.
-  def adjacencymatrix(weighted=false)
+  #
+  # If the graph is not directed both triangular matices will be identical.
+  #
+  # _mode_:: 
+  #   the type of adjacency matrix to compute:
+  #   <tt>:standard</tt>:: 1 for link, 0 otherwise
+  #   <tt>:linkcount</tt>:: number of links from _a_ to _b_.
+  #   <tt>:weight</tt>:: (sum of) link weight(s) from _a_ to _b_.
+  #   <tt>:reciprocal</tt>:: reciprocal of (sum of) link weight(s)
+  #                          from _a_ to _b_.
+  #   <tt>:inverted</tt>::
+  #     inverted (sum of) link weight(s) from _a_ to _b_:
+  #     with _wmax_ being the maximum link weight (sum), each weight
+  #     _w_ is set to _wmax_-_w_+1.
+  # _diagonal_::
+  #   whether the diagonal should be set or filled with 0.
+  def adjacencymatrix(mode=:standard, diagonal=false)
     # prepare matrix
     ni = Hash.new
     @nodes.each_with_index { |n,i| ni[n]=i }
     matrix = Array.new(@nodes.length) { Array.new(@nodes.length, 0) }
-    matrix.each_with_index { |a,i| a[i]=0 }
-    @links.each_key do |s,d| 
+    @links.each do |(s,d),l| 
       i = ni[s]
       j = ni[d]
-      if i!=j
-        matrix[i][j] += 1 
-        matrix[j][i] += 1 unless @directed
+      if (i!=j) || diagonal
+        case mode
+        when :standard
+          matrix[i][j] = 1 
+          matrix[j][i] = 1 unless @directed
+        when :linkcount
+          matrix[i][j] += 1 
+          matrix[j][i] += 1 unless @directed
+        when :weight, :reciprocal, :inverted
+          matrix[i][j] += l.weight 
+          matrix[j][i] += l.weight unless @directed
+        end
+      end
+    end
+    case mode
+    when :reciprocal
+      matrix.each do |row|
+        row.each_with_index do |v,i|
+          row[i] = 1.0/v unless v == 0
+        end
+      end
+    when :inverted
+      wmax1 = matrix.flatten.max + 1
+      matrix.each do |row|
+        row.each_with_index do |v,i|
+          row[i] = wmax1 - v unless v == 0
+        end
       end
     end
     matrix
@@ -501,11 +540,12 @@ class DotGraph
 
   # compute distance matrix for all nodes
   # this is native ruby and therefor slow on large datasets
-  def distances_native(debug=false)
-    matrix = adjacencymatrix
+  #
+  # See #adjacencymatrix for parameter description.
+  def distances_native(mode=:standard, diagonal=false)
+    matrix = adjacencymatrix(mode, diagonal)
     # compute pathes (Floyd)
     matrix.each_index do |k|
-      print '.' if debug
       matrix.each_index do |i|
         matrix.each_index do |j|
           d = matrix[i][k]+matrix[k][j]
@@ -604,11 +644,12 @@ class DotGraph
   #  g.to_graphviz('graph2.pdf', :nop, :pdf) # output the changed graph with identical node positions
   def render_graphviz_cmd(cmd, *attrs, &block)
     node_pos = Hash.new
-    IO.popen("#{cmd}", 'r+') do |c| 
+    lines = IO.popen("#{cmd}", 'r+') do |c| 
       c << to_dot(*attrs, &block)
       c.close_write
       c.read
-    end.each_line do |line|
+    end
+    lines.each_line do |line|
       if line =~ /^\s*(\S+)\s+\[.*pos="([^"]+)".*\];\s*$/
         node_pos[$1] = $2
       end

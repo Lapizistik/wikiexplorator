@@ -47,10 +47,26 @@ else
   class DotGraph
     R = RSRuby.instance
     # create an R matrix object representing the adjacency matrix of this graph
-    def to_r_matrix
+    #
+    # See DotGraph#adjacencymatrix for parameter description.
+    def to_r_matrix(mode=:standard, diagonal=false)
+      c = R.matrix.conversion
+      R.matrix.conversion = RSRuby::NO_CONVERSION
+      l = @nodes.length
+      m = R.matrix(adjacencymatrix(mode, diagonal).transpose.flatten, l, l)
+      R.matrix.conversion = c
+      m
+    end
+
+    # create an R (multi-way) array object representing the adjacency 
+    # matrix of this graph
+    #
+    # See DotGraph#adjacencymatrix for parameter description.
+    def to_r_array(mode=:standard, diagonal=false)
       c = R.array.conversion
       R.array.conversion = RSRuby::NO_CONVERSION
-      m = R.array(adjacencymatrix.flatten,[@nodes.length]*2)
+      m = R.array(adjacencymatrix(mode, diagonal).transpose.flatten,
+                  [@nodes.length]*2)
       R.array.conversion = c
       m
     end
@@ -94,17 +110,25 @@ else
 
     # computes the betweenness for all nodes using R/sna.
     #
-    # _params_:: 
-    #     Hash with all named parameters for R::betweenness.
+    # _params_::
+    #     <tt>:adjm_mode</tt>, <tt>:adjm_diag</tt>:: 
+    #       see DotGraph#adjacencymatrix
+    #     All other params are forwarded to R::betweenness.
     #     Try e.g.:
     #       g.betweenness(:rescale => true) 
     #     or
     #       g.betweenness(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
+    #     If <tt>:adjm_mode</tt> is set to some other value than 
+    #     <tt>:standard</tt> (i.e. the anjacency matrix is weighted),
+    #     <tt>:ignore_eval</tt> is by default set to _true_.
     def betweenness(params={})
       params[:gmode] ||= (@directed ? 'digraph' : 'graph')
       params[:cmode] ||= (@directed ? 'directed' : 'undirected')
-      b = R.betweenness(to_r_matrix, params) 
+      adjm_mode = params.delete(:adjm_mode) || :standard
+      adjm_diag = params.delete(:adjm_diag) || false
+      params[:ignore_eval] ||= false unless adjm_mode == :standard
+      b = R.betweenness(to_r_matrix(adjm_mode, adjm_diag), params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -129,17 +153,25 @@ else
 
     # computes the closeness for all nodes using R/sna.
     #
-    # _params_:: 
-    #     Hash with all named parameters for R::closeness.
+    # _params_::
+    #     <tt>:adjm_mode</tt>, <tt>:adjm_diag</tt>:: 
+    #       see DotGraph#adjacencymatrix
+    #     All other params are forwarded to R::closeness.
     #     Try e.g.:
     #       g.closeness(:rescale => true) 
     #     or
     #       g.closeness(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
+    #     If <tt>:adjm_mode</tt> is set to some other value than 
+    #     <tt>:standard</tt> (i.e. the anjacency matrix is weighted),
+    #     <tt>:ignore_eval</tt> is by default set to _true_.
     def closeness(params={})
       params[:gmode] ||= (@directed ? 'digraph' : 'graph')
-      params[:cmode] ||= (@directed ? 'directed' : 'undirected') 
-      b = R.closeness(to_r_matrix, params)
+      params[:cmode] ||= (@directed ? 'directed' : 'undirected')
+      adjm_mode = params.delete(:adjm_mode) || :standard
+      adjm_diag = params.delete(:adjm_diag) || false
+      params[:ignore_eval] ||= false unless adjm_mode == :standard
+      b = R.closeness(to_r_matrix(adjm_mode, adjm_diag), params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -165,16 +197,24 @@ else
     # computes the stress centrality scores for all nodes using R/sna.
     #
     # _params_:: 
-    #     Hash with all named parameters for R::stresscent.
+    #     <tt>:adjm_mode</tt>, <tt>:adjm_diag</tt>:: 
+    #       see DotGraph#adjacencymatrix
+    #     All other params are forwarded to R::stresscent.
     #     Try e.g.:
     #       g.stresscent(:rescale => true) 
     #     or
     #       g.stresscent(:cmode => 'undirected', :rescale => true)
     #     By default <i>:gmode</i> and <i>:cmode</i> are set automatically.
+    #     If <tt>:adjm_mode</tt> is set to some other value than 
+    #     <tt>:standard</tt> (i.e. the anjacency matrix is weighted),
+    #     <tt>:ignore_eval</tt> is by default set to _true_.
     def stresscent(params={})
       params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
       params[:cmode] ||= (@directed ? 'directed' : 'undirected')
-      b = R.stresscent(to_r_matrix, params)
+      adjm_mode = params.delete(:adjm_mode) || :standard
+      adjm_diag = params.delete(:adjm_diag) || false
+      params[:ignore_eval] ||= false unless adjm_mode == :standard
+      b = R.stresscent(to_r_matrix(adjm_mode, adjm_diag), params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -197,20 +237,27 @@ else
       pp_key_value(stresscent(params), sortby, up, &block)
     end
 
-
-
     # computes the prestige for all nodes using R/sna.
     #
-    # _params_:: 
-    #     Hash with all named parameters for R::prestige.
+    # _params_::
+    #     <tt>:adjm_mode</tt>, <tt>:adjm_diag</tt>:: 
+    #       see DotGraph#adjacencymatrix
+    #     All other params are forwarded to R::prestige.
     #     Try e.g.:
     #       g.prestige(:rescale => true) 
     #     or
     #       g.prestige(:cmode => 'indegree', :rescale => true)
     #     By default <i>:gmode</i> is set automatically.
+    #
+    #     Contrary to R::betweenness, R::closeness, R::stresscount and
+    #     others R::prestige by default uses link weights when provided
+    #     (by setting <tt>:adjm_mode</tt>), so you may not set 
+    #     <tt>:ignore_eval</tt> (see the R/sna documentation).
     def prestige(params={})
       params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
-      b = R.prestige(to_r_matrix, params)
+      adjm_mode = params.delete(:adjm_mode) || :standard
+      adjm_diag = params.delete(:adjm_diag) || false
+      b = R.prestige(to_r_matrix(adjm_mode, adjm_diag), params)
       h = Hash.new
       @nodes.each_with_index { |n,i| h[n] = b[i] }
       h
@@ -231,6 +278,51 @@ else
       up = params.delete(:up)
       puts "%-30s: %20s" % ["Node","prestige"]
       pp_key_value(prestige(params), sortby, up, '%20i', &block)
+    end
+
+
+    # computes the flow betweenness for all nodes using R/sna.
+    #
+    # _params_::
+    #     <tt>:adjm_mode</tt>, <tt>:adjm_diag</tt>:: 
+    #       see DotGraph#adjacencymatrix
+    #     All other params are forwarded to R::flowbet.
+    #     Try e.g.:
+    #       g.flowbet(:rescale => true) 
+    #     or
+    #       g.flowbet(:cmode => 'undirected', :rescale => true)
+    #     By default <i>:gmode</i> is set automatically.
+    #     <i>:cmode</i> defaults to "rawflow".
+    #     If <tt>:adjm_mode</tt> is set to some other value than 
+    #     <tt>:standard</tt> (i.e. the anjacency matrix is weighted),
+    #     <tt>:ignore_eval</tt> is by default set to _true_.
+    def flowbet(params={})
+      params[:gmode] ||= (@directed ? 'digraph' : 'graph')
+      params[:cmode] ||= 'rawflow'
+      adjm_mode = params.delete(:adjm_mode) || :standard
+      adjm_diag = params.delete(:adjm_diag) || false
+      params[:ignore_eval] ||= false unless adjm_mode == :standard
+      b = R.flowbet(to_r_matrix(adjm_mode, adjm_diag), params)
+      h = Hash.new
+      @nodes.each_with_index { |n,i| h[n] = b[i] }
+      h
+    end
+    
+    # :call-seq:
+    # pp_flowbet(:sortby => 0, :up => false, ...)
+    # pp_flowbet(:sortby => 0, :up => false, ...) { |n| ... }
+    #
+    # Pretty print the flowbet of all nodes (using R/sna).
+    #
+    # _params_ is a Hash of named parameters:
+    # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
+    # #pp_key_value (see there), all other params are passed to 
+    # #flowbet (see there).
+    def pp_flowbet(params={}, &block)
+      sortby = params.delete(:sortby) || 0
+      up = params.delete(:up)
+      puts "%-30s: %20s" % ["Node","flowbet"]
+      pp_key_value(flowbet(params), sortby, up, &block)
     end
 
 
@@ -308,7 +400,7 @@ else
     # _sortby_:: 
     #    by which column the output should be sorted
     #    0 or :node   :: by node
-    #    1 or :value  :: by betweenness
+    #    1 or :value  :: by value
     # _up_:: _true_ for ascending, _false_ for descending sort.
     # <i>&block</i>:: 
     #   if a block is given it is called with each node and its 
