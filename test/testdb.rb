@@ -75,7 +75,7 @@ class TestDB
           texttable[0][1].length],
          [2, 0, 'Working', nil, 0, 0, 0, 23, '20060202000002', 502,
           texttable[2][1].length],
-         [3, 6, 'Testing', nil, 0, 0, 0, 23, '20060909000009', 503,
+         [3, 6, 'Testing', nil, 0, 0, 0, 23, '20060909000009', 508,
           texttable[2][1].length]]
       
       # id, page, text_id, comment, user, user_text, timestamp, 
@@ -96,6 +96,8 @@ class TestDB
          [506, 1, 10006, 'ip', 0, '127.0.0.1', '20060909000012',
           0, nil, nil, nil],
          [507, 1, 10007, 'ip', 0, '168.0.0.1', '20060909000022',
+          0, nil, nil, nil],
+         [508, 3, 10003, '', 99, 'bla', '20060909000009',
           0, nil, nil, nil],
         ]
       

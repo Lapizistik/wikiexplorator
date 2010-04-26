@@ -63,6 +63,7 @@ module Mediawiki
       @name = options[:name] || 'wiki'
       @language = options[:language] || 'en'
       @ips = options[:ips]
+      @create_users = options[:create_users]
       @includetexts = options[:includetexts] || :include
 
       @owner = options[:owner] 
@@ -138,6 +139,10 @@ module Mediawiki
     #     IP-adress. In both cases uid-aliases mapping is applied.
     #     (We may later enhance this by mapping address ranges to uids?)
     #     For all created users: uid<0.
+    #   <tt>:create_users</tt>=><tt>false</tt>::
+    #     if true users missing in the user table but showing up in the 
+    #     revision table are created on the fly. Aliasing to users created this
+    #     way will break!
     #   <tt>:name</tt>=><tt>"Wiki"</tt>::
     #     The official name of the wiki as given in <tt>LocalSettings.php</tt>
     #     in the variable <tt>$wgSitename</tt>, as this is used for the Project
@@ -473,6 +478,14 @@ module Mediawiki
               uid = alias_uid
               uname = @users_id[uid].name
             end
+            if @create_users && !@users_id[uid] # create missing users
+              user = User.new(self, uid, uname, uname + ' (created User)', nil,
+                              nil, '19700101000000', nil, nil, nil, nil, nil);
+              @users_id[user.uid] = user
+              @users_name[user.name] = user
+              warn "User #{uname} (#{uid}) missing (revision #{rid}). Created."
+            end
+
             revision = Revision.new(self, 
                                     rid, pid, tid, comment, uid, uname, *row)
             @revisions_id[revision.rid] = revision
@@ -1089,21 +1102,23 @@ module Mediawiki
     private
     def set_links
       @links = []
-      @full_dangling = []           # TODO: old versions my be different!
-      @text.each_link do |l|
-        # Ok, let's see what's going on:
-        if l =~ /^(.*?):(.*)$/ # maybe linking to some different namespace?
-          r1 = $1.tr(' ', '_')
-          r2 = $2      # we play save and make sure to save the value of $2
-                       # even if we know by now namespace_by_identifier
-                       # does not use Regexps.
-          l = r2 if ns = @wiki.namespace_by_identifier(r1)
-        end
-        ns = ns || 0
-        if (p = @wiki.page_by_title(l, ns)) # TODO: namespaces other than 0.
-          @links << p
-        else
-          @full_dangling << l
+      @full_dangling = []           # TODO: old versions may be different!
+      if @text
+        @text.each_link do |l|
+          # Ok, let's see what's going on:
+          if l =~ /^(.*?):(.*)$/ # maybe linking to some different namespace?
+            r1 = $1.tr(' ', '_')
+            r2 = $2      # we play save and make sure to save the value of $2
+                         # even if we know by now namespace_by_identifier
+                         # does not use Regexps.
+            l = r2 if ns = @wiki.namespace_by_identifier(r1)
+          end
+          ns = ns || 0
+          if (p = @wiki.page_by_title(l, ns)) # TODO: namespaces other than 0.
+            @links << p
+          else
+            @full_dangling << l
+          end
         end
       end
     end
@@ -1239,6 +1254,9 @@ module Mediawiki
     # Timespan of revisions included
     attr_accessor :revision_timespan
 
+    # Timespan of revisions included
+    attr_accessor :pagecreation_timespan
+
     # All Pages/Revisions with one or more genres matching this Regex are
     # included/excluded (dependent on _genreinclude_).
     #
@@ -1345,9 +1363,11 @@ module Mediawiki
       include_namespace(*@wiki.namespaces)
     end
 
-    # sets the revision_timespan to include the whole wiki timeline
+    # sets the revision_timespan and the pagecreation_timespan to include 
+    # the whole wiki timeline
     def full_timespan
       @revision_timespan = (@wiki.timeline.first..@wiki.timeline.last)
+      @pagecreation_timespan = (@wiki.timeline.first..@wiki.timeline.last)
     end
 
     # Gives the begin of the revision timespan
@@ -1372,6 +1392,29 @@ module Mediawiki
       @revision_timespan = (@revision_timespan.begin..time)
     end
 
+    # Gives the begin of the page creation timespan
+    def cstarttime
+      @pagecreation_timespan.begin
+    end
+
+    # Gives the end of the page creation timespan
+    def cendtime
+      @pagecreation_timespan.end
+    end
+
+    # Sets the begin of the page creation timespan
+    def cstarttime=(time)
+      time = convert_to_time(time)
+      @pagecreation_timespan = (time..@pagecreation_timespan.end)
+    end
+
+    # Sets the end of the page creation timespan
+    def cendtime=(time)
+      time = convert_to_time(time)
+      @pagecreation_timespan = (@pagecreation_timespan.begin..time)
+    end
+
+
     # changes all links into corresponding ids.
     def detach_links # :nodoc:
       @denied_users.collect! { |u| u && u.uid }
@@ -1392,7 +1435,7 @@ module Mediawiki
     def clone_attrs
       @namespaces = @namespaces.clone
       @denied_users = @denied_users.clone
-      # @revision_timespan = @revision_timespan.clone
+
       self
     end
 
@@ -1525,12 +1568,12 @@ module Mediawiki
     # Pages are filtered by 
     # namespace :: Filter#namespaces,
     # redirection :: Filter#redirects,
-    # creation time of page :: Filter#revision_timespan,
+    # creation time of page :: Filter#pagecreation_timespan,
     # genre :: Filter#genregexp and Filter#genreinclude
     def allowed?(page)
       @filter.namespaces.include?(page.namespace) &&
         (!(@filter.redirects==:filter) || !page.is_redirect?) &&
-        @filter.revision_timespan.include?(page.creationtime) &&
+        @filter.pagecreation_timespan.include?(page.creationtime) &&
         !(@filter.genreinclude ^ page.has_genre?(@filter.genregexp))
     end
   end
@@ -1566,8 +1609,13 @@ module Mediawiki
     #    puts "s2time: converting time #{s.inspect}" if DEBUG
     return Time.at(0) if !s
     return s if s.kind_of?(Time)
-    return Time.gm(s[0..3], s[4..5], s[6..7], 
-                   s[8..9], s[10..11], s[12..13])
+    begin
+      return Time.gm(s[0..3], s[4..5], s[6..7], 
+                     s[8..9], s[10..11], s[12..13])
+    rescue ArgumentError
+      warn "could not parse bogus time `#{s}'. Substituting #{Time.at(0)}."
+      return Time.at(0)
+    end
   end
 
   # Test whether a string looks like an IP address.

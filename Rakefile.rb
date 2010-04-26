@@ -1,4 +1,4 @@
-WE_VERSION = '0.832'
+WE_VERSION = '0.85'
 
 require 'rake/rdoctask'
 require 'rake/testtask'
@@ -13,7 +13,9 @@ task :default => [:test, :doc]
 desc 'Run the test suite'
 Rake::TestTask.new do |t|
   t.libs << "test"
-  t.test_files = FileList["test/tc_mediawiki.rb","test/tc_dotgraph.rb"]
+  t.test_files = FileList["test/tc_mediawiki.rb",
+                          "test/tc_dotgraph.rb",
+                          "test/tc_pixvis.rb"]
   t.verbose = true
   t.warning = true
 end

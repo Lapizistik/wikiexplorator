@@ -15,6 +15,7 @@ class TestMediawiki < Test::Unit::TestCase
     @testdb = TestDB.default
     @wiki = Mediawiki::Wiki.new(@testdb, {})
     @ipwiki = Mediawiki::Wiki.new(@testdb, {:ips => true})
+    @cwiki = Mediawiki::Wiki.new(@testdb, {:ips => true, :create_users => true})
     @aliases = { 15 => 10, '::2' => '127.0.0.1' }
     @aliasipwiki = Mediawiki::Wiki.new(@testdb, :ips => true, 
                                        :uid_aliases => @aliases)
@@ -24,8 +25,8 @@ class TestMediawiki < Test::Unit::TestCase
     ### Filter
     f1 = @wiki.filter
     # Defaults:
-    assert_equal(f1.namespaces,[0].to_set)
-    assert(f1.denied_users.empty?)
+    assert_equal([0].to_set,f1.namespaces)
+    assert_equal([nil].to_set, f1.denied_users)
     assert_equal(f1.redirects, :keep)
     assert(f1.minor_edits)
     # testing deep cloning
@@ -91,12 +92,15 @@ class TestMediawiki < Test::Unit::TestCase
       end
     end
 
-
+    # user creation:
+    
+    assert(@cwiki.user_by_id(99))
 
     ns0 = @testdb.pagetable.select { |pid, ns,| ns==0 }.size
     assert_equal(@wiki.pages.size, ns0)
 
     @wiki.filter.include_all_namespaces
+    @wiki.filter.undeny_user(nil)
     assert_equal(@wiki.pages.size, @testdb.pagetable.size)
     assert_equal(@wiki.revisions.size, @testdb.revtable.size)
 

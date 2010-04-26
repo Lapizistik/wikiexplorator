@@ -1000,24 +1000,23 @@ and we do this using filters.
 
 So let's see how the wiki looked like a year ago:
 \begin{typed}
-\p{irb(main):260:0>} \c{f3.revision_timespan}
+\p{irb(main):260:0>} \c{f3.pagecreation_timespan}
 => Di Mär 20 18:23:15 UTC 2007..Di Jul 28 13:53:09 UTC 2009
-\p{irb(main):261:0>} \c{f3.endtime = '2008-8-1'}
+\p{irb(main):261:0>} \c{f3.cendtime = '2008-8-1'}
 => "2008-8-1"
-\p{irb(main):262:0>} \c{f3.revision_timespan}
+\p{irb(main):262:0>} \c{f3.pagecreation_timespan}
 => Di Mär 20 18:23:15 UTC 2007..Fr Aug 01 00:00:00 +0200 2008
 \p{irb(main):266:0>} \c{wiki.pages(f3).length}
 => 84
 \p{irb(main):268:0>} \c{wiki.pages(f2).length}
 => 109
 \end{typed}
-Initially \cmd{f3} includes the whole timespan from March 20, 2007 to
-July 28, 2009. We set the endtime to August 1, 2008 and ask again for
-the timespan, fine, worked like expected.
-
-Now we ask the wiki for the pages within this timespam (84) and
-compare it to the number of pages until now (109). So obviously we got
-25 ($=109-84$) new pages added in the last year.
+Initially \cmd{f3} includes the whole page creation timespan from
+March 20, 2007 to July 28, 2009. We set the page creation endtime to
+August 1, 2008 and ask again for the timespan, fine, worked like
+expected.  Now we ask the wiki for the pages within this timespam (84)
+and compare it to the number of pages until now (109). So obviously we
+got 25 ($=109-84$) new pages added in the last year.
 
 Ok, how many revisions within the last four weeks?
 \begin{typed}
@@ -1030,11 +1029,11 @@ Ok, how many revisions within the last four weeks?
 \p{irb(main):273:0>} \c{wiki.revisions(f3).length}
 => 10
 \end{typed}
-We first set \cmd{f3} to full timespan, set the new starttime by
-subtracting four weeks in seconds from the endtime, controlled that it
-worked and asked for the number of revisions. Not much traffic in our
-example wiki the last four weeks.
-
+We first set \cmd{f3} to full timespan (revision and page creation),
+set the new revision starttime by subtracting four weeks in seconds
+from the endtime, controlled that it worked and asked for the number
+of revisions. Not much traffic in our example wiki the last four
+weeks.
 Wouldn't it be nice to have this for the whole timeline? That's easy
 as the wiki helps us generating a custom timeraster:
 \begin{typed}\label{typed:revtr}
@@ -1545,7 +1544,7 @@ two different ways. By default coauthorship edges are weighted by the
 number of pages two users share, but you may prefer the Newman measure
 (see \cite{Newman:2001zr,Newman:2001mz}).
 
-The copagesgraph connects users by the pages they edit but does not
+The coauthorgraph connects users by the pages they edit but does not
 use the linear structure of the page history for more detailed
 measures. You may interpret the edit history of a page as a kind of
 dialogue between users: each edit is an answer to the edit
@@ -1932,7 +1931,7 @@ WikiExplorator provides the wiki to us in the instance variable
     <title>My report: \cmd{<%= @wiki.to_s %>}</title>
   </head>
   \cmd{<% full = @wiki.filter.clone; full.include_all_namespaces %>}
-  \cmd{<% wiki.filter.namespace=0 %>}
+  \cmd{<% @wiki.filter.namespace=0 %>}
   \cmd{<% users = @wiki.users %>}
   \cmd{<% pages = @wiki.pages %>}
   \cmd{<% revisions = @wiki.revisions %>}

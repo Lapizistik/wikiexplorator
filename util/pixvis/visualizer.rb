@@ -1,15 +1,5 @@
 #! /usr/bin/ruby -w
 
-require 'util/jbridge/common'
-
-JavaBridge.addcp(["Visualizer.jar", "lib/prefuse.jar", "lib/forms-1.2.0.jar"
-                 ].collect { |p| "Visualizer/#{p}" })
-
-# I really do not like the following include! I would prefer to not
-# pollute the main namespace, but yajb needs this include (I should
-# file a bug).
-include JavaBridge 
-
 # Adapter module to java: Visualizer.jar
 module Visualizer
   # Table data representation.
@@ -45,23 +35,9 @@ module Visualizer
       Array.new(@tn.length) { Array.new(@an.length,0) }
     end
 
-    # :call-seq:
-    # [<i>a</i>,<i>t</i>]=<i>v</i>
-    #
-    # sets value at _a_,_t_ to _v_.
-    def []=(a,t,v)
-      @data[t][a]=v
-    end
-
-    def javaobj # :nodoc:
-      jnew("visualizer.ruby.FlatTable", [:t_double]+@data.flatten, @tn, @an)
-    end
-
-    # call the java Visualizer with this table.
-    def visualize
-      fc = javaobj
-      vm = jnew("visualizer.VisuMain")
-      vm.init(fc)
+    # get value/sub-array.
+    def [](a)
+      @data[a]
     end
 
     def header_to_string # :nodoc:
@@ -110,90 +86,52 @@ module Visualizer
       Array.new(@an.length) { Array.new(@bn.length) { Array.new(@tn.length,0)}}
     end
 
-    # :call-seq:
-    # [<i>a</i>,<i>b</i>,<i>t</i>]=<i>v</i>
-    #
-    # sets value at _a_,_b_,_t_ to _v_.
-    def []=(a,b,t,v)
-      @data[a][b][t]=v
-    end
-
-    def javaobj # :nodoc:
-      jnew("visualizer.ruby.FlatCube", [:t_double]+@data.flatten, @an,@bn,@tn)
-    end
-
     def header_to_string # :nodoc:
       s =  "xn = " + @an.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
       s << "yn = " + @bn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
       s << "zn = " + @tn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
       s
     end
-  end
-
-  class CubeOld # :nodoc:
-    attr_reader :data
-    attr_reader :xn, :yn, :zn
-    def initialize(xn, yn, zn, data=nil)
-      @xn = xn
-      @yn = yn
-      @zn = zn
-      unless @data = data
-        @data = Array.new(@xn.length) { 
-          Array.new(@yn.length) { Array.new(@zn.length,0) } }
+    
+    # sort rows and columns
+    #
+    # ToDo: implement me!
+    def sort(options={})
+      raise 'Not implemented yet!'
+      
+      # the following code may one time ...
+      
+      mode = options[:mode] || :values
+      diagonal = options[:diagonal] || (@an != @bn)
+      
+      symmetric = (@an == @bn)
+      if options.has_key?(:symmetric)
+        symmetric = options[:symmetric]
       end
+      
+      if (@an.length != @bn.length)
+        if !diagonal
+          warn 'Cube not square. Setting :diagonal => true'
+          diagonal = true
+        end
+        if symmetric
+          warn 'Cube not square. Setting :symmetric => false'
+          symmetric = false
+        end
+      end
+      
     end
-    def []=(x,y,z,v)
-      @data[x][y][z]=v
+    
+    private
+    def compute_sort_values(diagonal)
+      vdata = @data.collect { |o| o.collect { |i| s=0; i.each {|t| s+=t }; s }} 
+      
+      if !diagonal
+        @an.each_index { |i| vdata[i][i] = 0 }
+      end
+      
+      return [vdata.collect { |a| s=0; a.each { |v| s+=v }; s },
+              vdata.transpose.collect { |b| s=0; b.each { |v| s+=v }; s }]
     end
-    def [](x)
-      @data[x]
-    end
-    def visualize
-      fc = jnew("visualizer.ruby.FlatCube",
-                [:t_double] + @data.flatten, @xn, @yn, @zn)
-      vm = jnew("visualizer.VisuMain")
-      vm.init(fc)
-    end
-    def to_string
-      s =  "xn = " + @xn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
-      s << "yn = " + @yn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
-      s << "zn = " + @zn.collect { |v| "\"#{v}\"" }.join(', ') + "\n"
-      s << "data = " + @data.join(', ') + "\n"
-      s
-    end
-  end
-
-end
-
-
-class Array
-  # calls the java visualizer. See Visualizer::Table.
-  #
-  # _an_:: array of strings representing the y-labels
-  #        (this is the _outer_ data of the java Visualizer)
-  # _tn_:: array of strings representing the t-labels
-  #        (this is the _inner_ data of the java Visualizer)
-  # The Array must contain _an_.length arrays with
-  # each having _tn_.length numeric entries)
-  #
-  def jb_visualize2d(an, tn)
-    Visualizer::Table.new(an, tn, self).visualize
-  end
-
-  # calls the java visualizer. See Visualizer::Cube.
-  #
-  # _an_:: array of strings representing the a-labels
-  #        (this is the _outer_ data of the java Visualizer)
-  # _bn_:: array of strings representing the b-labels
-  #        (this is the _second_ _outer_ data of the java Visualizer)
-  # _tn_:: array of strings representing the t-labels
-  #        (this is the _inner_ data of the java Visualizer)
-  # The Array must contain _an_.length arrays with
-  # each containing _bn_.length arrays with _tn_.length
-  # numeric entries each)
-  def jb_visualize3d(an, bn, tn)
-    Visualizer::Cube.new(xn, yn, zn, self).visualize
   end
 end
-
-

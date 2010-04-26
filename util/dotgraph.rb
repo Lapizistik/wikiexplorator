@@ -430,6 +430,7 @@ class DotGraph
   # :call-seq:
   # pp_degrees(:sortby => 0, :up => true, ...)
   # pp_degrees(:sortby => 0, :up => true, ...) { |n| ... }
+  #
   # Pretty print the degrees of all nodes.
   # <tt>:sortby</tt>:: 
   #    by which column the output should be sorted

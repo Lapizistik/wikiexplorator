@@ -18,5 +18,9 @@ require 'util/gp-extras'
 
 # try_to_require('util/dotgraph-gv', 'gv library missing', 'Fallback to graphviz')
 
-try_to_require('util/jbridge/dotgraphdataset',
+require 'util/pixvis/dotgraphdataset'
+
+try_to_require('util/pixvis/jbridge/visualizer',
                'The Java based Visualizer will not work.')
+try_to_require('util/pixvis/visualizer-svg',
+               'The SVG based Visualizer will not work.')

@@ -133,7 +133,8 @@ module Mediawiki
       systemuser = user_by_id(0)
       pages(f).each { |p|
         p.revisions(f).collect { |r|
-          [r.text.internal_links.select { |s| s =~ type }.sort, r.user] 
+          t = r.text
+          [t ? t.internal_links.select { |s| s =~ type }.sort : [], r.user] 
         }.inject([[],systemuser]) { |v,n|
           kusers[n.last] += 1  if (v.first!=n.first)
           n
@@ -325,7 +326,7 @@ module Mediawiki
     #     <tt>:year</tt>:: 
     #       set month and day to 1 and 
     #       hours, minutes and seconds of _starttime_ to 0.
-    #     [<i>y,m,d,h,min,s</i>]:: 
+    #     <tt>[<i>y,m,d,h,min,s</i>]</tt>:: 
     #       each entry may either be _nil_ or an Integer. 
     #       If _nil_ the corresponding Time component of _starttime_
     #       (from year to second) is left untouched, otherwise it is set
