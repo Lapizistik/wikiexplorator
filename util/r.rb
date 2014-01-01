@@ -40,10 +40,25 @@ rescue
 else
   ENV['R_HOME']=r_home
   require 'rsruby'
-  RSRuby.instance.library('sna')
-  RSRuby.instance.library('network')
-  RSRuby.instance.library('ergm')
+
+  def RSRuby.trylib(lib, *args)
+    instance.library(lib)
+  rescue RException => e
+    return false if args.first==:silent
+    warn "Error loading R library: #{lib}"
+    args = ['Some R-based methods may not work as expected!'] if args.empty?
+    args.each do |line|
+      warn "         " + line
+    end
+    return false
+  end
   
+
+  RSRuby.trylib('sna')
+  RSRuby.trylib('network')
+  RSRuby.trylib('ergm')
+  RSRuby.trylib('WGCNA')
+
   class DotGraph
     R = RSRuby.instance
     # create an R matrix object representing the adjacency matrix of this graph
@@ -237,6 +252,47 @@ else
       pp_key_value(stresscent(params), sortby, up, &block)
     end
 
+    # computes the eigenvector centrality scores for all nodes using R/sna.
+    #
+    # _params_:: 
+    #     <tt>:adjm_mode</tt>, <tt>:adjm_diag</tt>:: 
+    #       see DotGraph#adjacencymatrix
+    #     All other params are forwarded to R::evcent.
+    #     By default <i>:gmode</i> is set automatically.
+    #     If <tt>:adjm_mode</tt> is set to some other value than 
+    #     <tt>:standard</tt> (i.e. the anjacency matrix is weighted),
+    #     <tt>:ignore_eval</tt> is by default set to _true_.
+    def evcent(params={})
+      params[:gmode] ||= (@directed ? 'digraph' : 'graph') 
+#      params[:cmode] ||= (@directed ? 'directed' : 'undirected')
+      adjm_mode = params.delete(:adjm_mode) || :standard
+      adjm_diag = params.delete(:adjm_diag) || false
+      params[:ignore_eval] ||= false unless adjm_mode == :standard
+      b = R.evcent(to_r_matrix(adjm_mode, adjm_diag), params)
+      h = Hash.new
+      @nodes.each_with_index { |n,i| h[n] = b[i] }
+      h
+    end
+
+    # :call-seq:
+    # pp_evcent(:sortby => 0, :up => false, ...)
+    # pp_evcent(:sortby => 0, :up => false, ...) { |n| ... }
+    #
+    # Pretty print the eigenvector centrality scores of all nodes (using R/sna).
+    #
+    # _params_ is a Hash of named parameters:
+    # <i>:up</i>, <i>:sortby</i> and the block (if given) are passed to 
+    # #pp_key_value (see there), all other params are passed to 
+    # #evcent (see there).
+    def pp_evcent(params={}, &block)
+      sortby = params.delete(:sortby) || 0
+      up = params.delete(:up)
+      puts "%-30s: %20s" % ["Node","evcent"]
+      pp_key_value(evcent(params), sortby, up, &block)
+    end
+
+
+
     # computes the prestige for all nodes using R/sna.
     #
     # _params_::
@@ -353,9 +409,12 @@ else
       in_file = true
       fn = r_params[:filename] || ''
       case File.extname(fn)
-      when '.ps'  : R.postscript(fn)
-      when '.pdf' : R.pdf(fn)
-      when '.png' : R.png(fn)
+      when '.ps'
+        R.postscript(fn)
+      when '.pdf'
+        R.pdf(fn)
+      when '.png'
+        R.png(fn)
       else in_file = false;  R.eval_R('dev.new()')
       end
 
@@ -369,14 +428,15 @@ else
       R.plot_network(nw, r_params)
       
       if in_file
-        R.eval_R('dev.off()') 
+        R.eval_R('dev.off()')
       else
-        R.eval_R('dev.cur()').values.first # get the number of the device
+        # get the number of the device
+        @r_dev_nr = R.eval_R('dev.cur()').values.first 
       end
     end
 
     # Close the R plot device number _i_.
-    def r_plot_close(i)
+    def r_plot_close(i=@r_dev_nr)
       R.dev_off(i)
     end
 

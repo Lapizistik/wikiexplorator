@@ -4,7 +4,7 @@ try_to_require 'rubygems', :silent
 
 require 'mediawiki'
 
-try_to_require('util/r',
+with_r = try_to_require('util/r',
     'The methods based on R will not work.',
     'Make sure RSRuby and all R packages needed are installed properly')
 require 'util/latex'
@@ -18,7 +18,7 @@ require 'util/gp-extras'
 
 # try_to_require('util/dotgraph-gv', 'gv library missing', 'Fallback to graphviz')
 
-require 'util/pixvis/dotgraphdataset'
+require 'util/pixvis/dotgraphdataset' if with_r
 
 try_to_require('util/pixvis/jbridge/visualizer',
                'The Java based Visualizer will not work.')

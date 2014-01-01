@@ -20,6 +20,7 @@ module Visualizer
 #    end
 #  end
 
+#
   class SVGimg
     attr_reader :svg
 
@@ -39,6 +40,7 @@ module Visualizer
       
       @fontfamily = options[:font_family] || 'Times New Roman'
       @fontsize = options[:font_size] || 10
+      @fontcolor = options[:font_color] || '#000'
 
       @backgroundcolor = options[:background] || '#eee'
 
@@ -144,7 +146,8 @@ module Visualizer
 
       textstyle = SVG::Style.new(:text_anchor => 'start', 
                                  :font_size => @fontsize,
-                                 :font_family => @fontfamily)
+                                 :font_family => @fontfamily,
+                                 :fill => @fontcolor)
 
       @bn.each_with_index do |alabel, ai|
         text = SVG::Text.new(@ysep, iw * ai + @inner_width, alabel.to_s)
@@ -157,7 +160,8 @@ module Visualizer
 
       textstyle = SVG::Style.new(:text_anchor => 'end', 
                                  :font_size => @fontsize,
-                                 :font_family => @fontfamily)
+                                 :font_family => @fontfamily,
+                                 :fill => @fontcolor)
 
       @an.each_with_index do |blabel, bi|
         text = SVG::Text.new(-@xsep, ih * bi + @inner_height, blabel.to_s)
@@ -226,7 +230,8 @@ module Visualizer
       
       textstyle = SVG::Style.new(:text_anchor => 'end', 
                                  :font_size => @fontsize,
-                                 :font_family => @fontfamily)
+                                 :font_family => @fontfamily,
+                                 :fill => @fontcolor)
       
       @an.each_with_index do |label, i|
         text = SVG::Text.new(-@xsep, ih * i + @inner_height, label.to_s)

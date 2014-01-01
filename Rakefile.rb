@@ -1,4 +1,4 @@
-WE_VERSION = '0.85'
+WE_VERSION = '0.86'
 
 require 'rake/rdoctask'
 require 'rake/testtask'

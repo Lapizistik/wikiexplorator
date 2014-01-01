@@ -51,8 +51,10 @@ module Mediawiki
       type = :plain
       params.each do |par|
         case par
-        when Filter : filter = par
-        when Symbol : type = par
+        when Filter
+          filter = par
+        when Symbol
+          type = par
         when Hash
           filter = par[:filter] || filter
           type = par[:type] || type
@@ -193,9 +195,12 @@ module Mediawiki
       paramhash = {}
       params.each do |par|
         case par
-        when Filter : filter = par
-        when Symbol : counts = par
-        when Numeric : k = par
+        when Filter
+          filter = par
+        when Symbol
+          counts = par
+        when Numeric
+          k = par
         when Hash
           filter = par.delete(:filter) || filter
           counts = par.delete(:counts) || counts
@@ -279,7 +284,8 @@ module Mediawiki
       paramhash = {}
       params.each do |par|
         case par
-        when Filter : filter = par
+        when Filter
+          filter = par
         when Hash
           filter = par.delete(:filter) || filter
           paramhash = par
@@ -337,8 +343,10 @@ module Mediawiki
       counts=:add
       params.each { |par|
         case par
-        when Filter : filter = par
-        when Symbol : counts = par
+        when Filter
+          filter = par
+        when Symbol
+          counts = par
         else warn "Ignoring parameter #{par.inspect}"
         end }
       us = users(filter)

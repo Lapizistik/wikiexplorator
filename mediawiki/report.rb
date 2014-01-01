@@ -18,13 +18,13 @@ module Mediawiki
     # For parameter description see the new method of the corresponding
     # class in Report.
     def Report.new(wiki, type=:txt, params={})
-      case type
-      when :txt    : PlainText
-      when :html   : HTML
-      when :tex    : LaTeX
-      when :latex  : LaTeX
-      when :pdf    : PDF
-      end.new(wiki, params)
+      {
+        txt: PlainText,
+        html: HTML,
+        tex: LaTeX,
+        latex: LaTeX,
+        pdf: PDF
+      }[type].new(wiki, params)
     end
 
     # Base class for all reports. Not to be used directly.
@@ -249,7 +249,8 @@ module Mediawiki
         pdflatexmode = @params[:pdflatexmode] || 'batchmode'
         params.each do |par|
           case par
-          when Numeric : loops = par
+          when Numeric
+            loops = par
           when Hash
             loops = par[:loops] || par
             pdflatexmode = par[:pdflatexmode] || pdflatexmode
@@ -293,9 +294,12 @@ module Mediawiki
       params = {}
       options.each do |par|
         case par
-        when Symbol : type = par
-        when Hash   : params.merge!(par); type ||= params[:type]
-        when Filter : params[:filter] = par
+        when Symbol
+          type = par
+        when Hash
+          params.merge!(par); type ||= params[:type]
+        when Filter
+          params[:filter] = par
         else
           raise ArgumentError.new("Wrong argument: #{par.inspect}")
         end

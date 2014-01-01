@@ -1,0 +1,27 @@
+<%# some convenience definitions %>
+<%# wiki = @wiki %>
+<% full = wiki.filter.clone; full.include_all_namespaces %>
+<% wiki.filter.namespace=0 %>
+<% users = @wiki.users %>
+<% pages = @wiki.pages %>
+<% revisions = @wiki.revisions %>
+\documentclass{scrartcl}
+
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tabularx}
+
+\title{Mediawiki Dummy Report -- <%= wiki.to_s %>
+}
+\author{mediawikiparser (<\texttt{klaus.stein@uni-bamberg.de}>)}
+
+
+\begin{document}
+\maketitle
+
+Ein Dummy-Report zum Testen.
+
+
+
+\end{document}

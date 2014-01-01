@@ -125,8 +125,10 @@ module Mediawiki
       f = @filter
       params.each { |par|
         case par
-        when Filter : f = par
-        when Regexp : type = par
+        when Filter
+          f = par
+        when Regexp
+          type = par
         else warn "Ignoring parameter #{par.inspect}"
         end }
       kusers = Hash.new(0)
@@ -172,8 +174,10 @@ module Mediawiki
       f = @filter
       params.each { |par|
         case par
-        when Filter : f = par
-        when Symbol : userkey = par
+        when Filter
+          f = par
+        when Symbol
+          userkey = par
         else warn "Ignoring parameter #{par.inspect}"
         end }
       puts users(f).select { |u| u.pages(f).length>0 }.collect { |u| 
@@ -368,9 +372,12 @@ module Mediawiki
       }.merge(attr)
       
       step = case attr[:step]
-             when :hour : 3600
-             when :day  : 24*3600
-             when :week : 7*24*3600
+             when :hour
+               3600
+             when :day
+               24*3600
+             when :week
+               7*24*3600
              else attr[:step]
              end
       

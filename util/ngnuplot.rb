@@ -201,8 +201,11 @@ class Gnuplot
   #
   # See also #<<, Enumerable#gp_data().
   def add(data, params={})
-    if data.kind_of?(DataSet)
+    case data
+    when DataSet
       data.update(params)
+    when String
+      data = Gnuplot::DataSet.new(data,params)
     else
       data = data.gp_data(params)
     end
@@ -247,6 +250,7 @@ class Gnuplot
   #  gp.plot(:fig => 'test.fig') # a nice xfig.
   def xplot(plotcmd, params={})
     size = params[:size]
+
     if file = params[:pspdf]  # this needs special handling
       if size
         size = '4,4' if size == :square
@@ -260,7 +264,7 @@ class Gnuplot
         s = xplot_to_s(plotcmd, params[:ranges] || params[:range])
         gnuplot(s, params[:persist])
       end
-
+      
     else # other output devices
       persist = false  # we assume output to go to file.
       if file = params[:png]
@@ -274,6 +278,14 @@ class Gnuplot
           @sets << ['terminal', "pdf size #{size}"]
         else
           @sets << ['terminal', "pdf"]
+        end
+        @sets << ['output', "'#{file}'"]
+      elsif file = params[:eps]  # this needs special handling
+        if size
+          size = '4,4' if size == :square
+          @sets << ['terminal', "postscript eps enhanced color size #{size}"]
+        else
+          @sets << ['terminal', "postscript eps enhanced color"]
         end
         @sets << ['output', "'#{file}'"]
       elsif file = params[:svg]
@@ -481,8 +493,10 @@ class Gnuplot
     end
     def gp_s(v)
       case v
-      when String : '"'+v+'"'
-      when Time   : @timefmt ? v.strftime(@timefmt) : (v-T0)
+      when String
+        '"'+v+'"'
+      when Time
+        @timefmt ? v.strftime(@timefmt) : (v-T0)
       else
         v
       end

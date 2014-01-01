@@ -1,6 +1,7 @@
 #!/usr/bin/ruby -w
 
 require 'util/enumstat'
+require 'util/ngnuplot'
 require 'set'
 
 class Gnuplot
@@ -59,9 +60,9 @@ class Gnuplot
     titles = (params[:titles] ||
               (1..args.length).collect { |i| "G_#{i} = %.2f" })
     Gnuplot.new do |gp|
-      gp.add([[0,0],[1,1]], :with => "lines 1", 
+      gp.add([[0,0],[1,1]], :with => "lines linetype 1", 
              :title => params[:equality]) if params[:equality]
-      gp.add([[0.8,0.2]], :with => "points 1", 
+      gp.add([[0.8,0.2]], :with => "points pointtype 1", 
              :title => params[:pareto]) if params[:pareto]
       args.each_with_index do |a,i|
         al=a.stat_lorenz

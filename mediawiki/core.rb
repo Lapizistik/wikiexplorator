@@ -15,7 +15,7 @@ try_to_require('mediawiki/db',
 try_to_require('mediawiki/db_libxml', 
                'Loading Wikis from XML will fail.',
                'Marshal or YAML files will still work.')
-require 'parsedate'
+require 'time'
 require 'yaml'
 require 'singleton'
 
@@ -193,6 +193,8 @@ module Mediawiki
       wiki = File.open(filename) { |f| YAML::load(f) }
       puts 'postprocessing (attach links)...'
       wiki.attach_internal_links
+      wiki.filter.pagecreation_timespan ||= 
+        (wiki.timeline.first..wiki.timeline.last) # add if not there
       puts 'done'
       wiki
     end
@@ -203,6 +205,8 @@ module Mediawiki
       puts 'MARSHAL load...'
       wiki = File.open(filename) { |f| Marshal::load(f) }
       warn 'Warning: loaded object is not a wiki!' unless self === wiki
+      wiki.filter.pagecreation_timespan ||= 
+        (wiki.timeline.first..wiki.timeline.last) # add if not there
       puts 'done'
       wiki
     end
@@ -1442,8 +1446,7 @@ module Mediawiki
     private
     def convert_to_time(time)
       unless time.kind_of?(Time)
-        ta = ParseDate.parsedate(time)
-        time = Time.local(*ta)
+        time = Time.parse(time)
       end
       time
     end

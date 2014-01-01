@@ -122,7 +122,13 @@ class DotGraph
   #                             used.
   #   <tt>:min</tt> :: the minimum of the old link weight and _w_ is used.
   def link(src, dest, w=1, add=:add)
-    src, dest = dest, src  if (!@directed) && (src.object_id > dest.object_id)
+    if (!@directed) 
+      begin
+        src, dest = dest, src   if (src > dest)
+      rescue ArgumentError
+        src, dest = dest, src   if (src.object_id > dest.object_id)
+      end
+    end
     key = [src,dest]
     unless l = @links[key]
       l = Link.new(self, src, dest)
@@ -199,7 +205,7 @@ class DotGraph
   # remove nodes based on degree.
   #
   # _attrs_:
-  # <tt>:treshold</tt> => 2 :: delete all nodes with smaller degree.
+  # <tt>:threshold</tt> => 2 :: delete all nodes with smaller degree.
   # <tt>:weight</tt> => false :: 
   #   indicates how the degree is counted:
   #   _true_, <tt>:add</tt>:: sum of link weights
@@ -220,10 +226,10 @@ class DotGraph
   #   <tt>:plain</tt> :: 
   #     Nodes are removed based on their degree in the current graph.
   #     Through the deletion process some nodes will loose links, so the
-  #     new graph may contain nodes with degree lower than the treshold.
+  #     new graph may contain nodes with degree lower than the threshold.
   #   <tt>:full</tt>, <tt>:core</tt> ::
   #     Nodes are recursively removed from the graph until all degrees keep
-  #     the given treshold. This is equivalent to calling <tt>:plain</tt>
+  #     the given threshold. This is equivalent to calling <tt>:plain</tt>
   #     several times (until a fixpoint is reached, i.e. the graph does not 
   #     longer change).
   # <tt>:hirsch</tt> ::
@@ -235,22 +241,22 @@ class DotGraph
   # outgoing or incoming, so here only <tt>:dir</tt> => :all is useful!
   #
   # Example:
-  #   g.remove_nodes(:treshold => 3, :weight => false, :dir => :out)
+  #   g.remove_nodes(:threshold => 3, :weight => false, :dir => :out)
   # will remove all nodes which have currently less than 3 outgoing links.
-  #   g.remove_nodes(:treshold => 3, :weight => false, :dir => :out, :type => :full)
+  #   g.remove_nodes(:threshold => 3, :weight => false, :dir => :out, :type => :full)
   # will repeatedly remove all nodes with less than 3 outgoing links until
   # only nodes with at least 3 outgoing links are left.
   #
   # For convenience this method returns self (i.e. the DotGraph object).
   def remove_nodes(attr={})
     attr = {
-      :treshold => 2,
+      :threshold => 2,
       :weight => false,
       :dir => :all,
       :type => :plain
     }.merge(attr)
 
-    treshold = attr[:treshold]
+    threshold = attr[:threshold]
     weight = attr[:weight]
     dir = attr[:dir]
     plain = (attr[:type] == :plain)
@@ -271,34 +277,34 @@ class DotGraph
       ndels = if weight==:hirsch
                 case attr[:dir]
                 when :in
-                  testnodes.select { |n| !hirsch?(@destlinks[n],treshold,b) }
+                  testnodes.select { |n| !hirsch?(@destlinks[n],threshold,b) }
                 when :out
-                  testnodes.select { |n| !hirsch?(@sourcelinks[n],treshold,b) }
+                  testnodes.select { |n| !hirsch?(@sourcelinks[n],threshold,b) }
                 when :max
-                  testnodes.select { |n| !(hirsch?(@destlinks[n],treshold,b) ||
-                                     hirsch?(@sourcelinks[n],treshold,b)) }
+                  testnodes.select { |n| !(hirsch?(@destlinks[n],threshold,b) ||
+                                     hirsch?(@sourcelinks[n],threshold,b)) }
                 when :min
-                  testnodes.select { |n| (!hirsch?(@destlinks[n],treshold,b) ||
-                                    !hirsch?(@sourcelinks[n],treshold,b)) }
+                  testnodes.select { |n| (!hirsch?(@destlinks[n],threshold,b) ||
+                                    !hirsch?(@sourcelinks[n],threshold,b)) }
                 else
                   testnodes.select { |n| !hirsch?(@destlinks[n] + 
                                             @sourcelinks[n],
-                                            treshold,b) }
+                                            threshold,b) }
                 end
               else
                 case attr[:dir]
                 when :in
-                  testnodes.select { |n| n_indegree(n,weight) < treshold }
+                  testnodes.select { |n| n_indegree(n,weight) < threshold }
                 when :out
-                  testnodes.select { |n| n_outdegree(n,weight) < treshold }
+                  testnodes.select { |n| n_outdegree(n,weight) < threshold }
                 when :max
-                  testnodes.select { |n| ((n_outdegree(n,weight) < treshold) &&
-                                          (n_indegree(n,weight) < treshold)) }
+                  testnodes.select { |n| ((n_outdegree(n,weight) < threshold) &&
+                                          (n_indegree(n,weight) < threshold)) }
                 when :min
-                  testnodes.select { |n| ((n_outdegree(n,weight) < treshold) ||
-                                          (n_indegree(n,weight) < treshold)) }
+                  testnodes.select { |n| ((n_outdegree(n,weight) < threshold) ||
+                                          (n_indegree(n,weight) < threshold)) }
                 else
-                  testnodes.select { |n| n_degree(n,weight) < treshold }
+                  testnodes.select { |n| n_degree(n,weight) < threshold }
                 end
               end
       
@@ -333,16 +339,16 @@ class DotGraph
     self
   end
 
-  # returns true if the Enumerable links contains at least _treshold_ links
-  # with at least weight _treshold_ (this is faster than computing the
+  # returns true if the Enumerable links contains at least _threshold_ links
+  # with at least weight _threshold_ (this is faster than computing the
   # real Hirsch-index).
   #
   # Each link-weight is multiplied with _balance_, this allows for rescaling.
-  def hirsch?(links, treshold, balance=1)
+  def hirsch?(links, threshold, balance=1)
     c=0
     links.each do |l| 
-      c+=1 if l.weight*balance >= treshold
-      return true if c >= treshold
+      c+=1 if l.weight*balance >= threshold
+      return true if c >= threshold
     end
     return false
   end
@@ -415,10 +421,13 @@ class DotGraph
     d = n_indegree(node,counts,k) + n_outdegree(node,counts,k)
     if l=@links[[node,node]]
       # to be repaired!
-      if counts 
+      case counts
+      when true, :add
         d -= l.weight
-      else
+      when false, nil, :nodes
         d -= 1
+      else
+        raise "fixme: no self links for these degrees allowed currently"
       end
     end
     d
@@ -556,6 +565,12 @@ class DotGraph
     end
   end
 
+  def inspect
+    ('#<%s:0x%x with %i nodes, %i links. %sdirected, output with %slinkcount included, %susing nids>' % 
+     [self.class, object_id*2, @nodes.length, @links.length, 
+      @directed ? '' : 'un', @linkcount ? '' : 'no ', @use_nid ? '' : 'not '])
+  end
+
   # returns a String representing the whole graph in +dot+-Syntax 
   # (see GraphViz http://www.graphviz.org/ for description).
   #
@@ -651,7 +666,7 @@ class DotGraph
       c.read
     end
     lines.each_line do |line|
-      if line =~ /^\s*(\S+)\s+\[.*pos="([^"]+)".*\];\s*$/
+      if line =~ /^\s*"?(\S+?)"?\s+\[.*pos="([^"]+)".*\];\s*$/
         node_pos[$1] = $2
       end
     end
@@ -935,8 +950,10 @@ class DotGraph
   def nodeparams(node) # :nodoc:
     np = @lproc.call(node)
     case np
-    when String, Symbol : "label=\"#{np.tr('"',"'")}\""
-    when Enumerable : np.join(', ')
+    when String, Symbol
+      "label=\"#{np.tr('"',"'")}\""
+    when Enumerable
+      np.join(', ')
     end
   end
 
@@ -944,8 +961,10 @@ class DotGraph
   def nodelabel(node) # :nodoc:
     np = @lproc.call(node)
     case np
-    when String, Symbol : np.to_s
-    when Enumerable : (np.find { |s| s =~ /label="(.*?)"/ } && $1)
+    when String, Symbol
+      np.to_s
+    when Enumerable
+      (np.find { |s| s =~ /label="(.*?)"/ } && $1)
     end    
   end
 
@@ -1007,8 +1026,10 @@ class DotGraph
       if block_given?
         wl = yield(@weight)
         s << '[' << case wl
-                    when String, Symbol : "label=\"#{wl.tr('"',"'")}\""
-                    when Enumerable : wl.join(', ')
+                    when String, Symbol
+                      "label=\"#{wl.tr('"',"'")}\""
+                    when Enumerable
+                      wl.join(', ')
                     end << ']'
       else
         s << weightlabel(@weight) if linkcount
