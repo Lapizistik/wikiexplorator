@@ -26,9 +26,11 @@ version (see links).
 
 ## Files ##
 
-INSTALL: installation instructions for various platforms
-TODO: whatever is currently missing
-README.md: this file
-Documentation/tutorial.pdf: an introductory tutorial
-mywikis.rb: personal startup file
+<dl>
+<dt>INSTALL</dt><dd>installation instructions for various platforms<dd>
+<dt>TODO</dt><dd>whatever is currently missing</dd>
+<dt>README.md</dt><dd>this file</dd>
+<dt>Documentation/tutorial.pdf</dt><dd>an introductory tutorial</dd>
+<dt>mywikis.rb</dt><dd>personal startup file</dd>
+</dl>
 
